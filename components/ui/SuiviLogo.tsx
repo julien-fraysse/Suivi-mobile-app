@@ -18,13 +18,14 @@ export const SuiviLogo: React.FC<SuiviLogoProps> = ({
   style,
 }) => {
   // Map variants to asset paths
+  // Temporary: using assets/icon.png until broken assets are replaced
   const assetMap: Record<string, any> = {
-    'full-light': require('../../assets/suivi/logo-full-light.png'),
-    'full-dark': require('../../assets/suivi/logo-full-dark.png'),
-    'icon': require('../../assets/suivi/logo-icon.png'),
-    'icon-white': require('../../assets/suivi/logo-icon-white.png'),
-    'horizontal': require('../../assets/suivi/logo-horizontal.png'),
-    'horizontal-white': require('../../assets/suivi/logo-horizontal-white.png'),
+    'full-light': require('../../assets/icon.png'),
+    'full-dark': require('../../assets/icon.png'),
+    'icon': require('../../assets/icon.png'),
+    'icon-white': require('../../assets/icon.png'),
+    'horizontal': require('../../assets/icon.png'),
+    'horizontal-white': require('../../assets/icon.png'),
   };
   
   const source = assetMap[variant];

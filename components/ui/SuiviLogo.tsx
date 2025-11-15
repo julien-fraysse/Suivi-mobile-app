@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ImageProps, StyleSheet, ViewStyle } from 'react-native';
+import { Image, ImageProps, ImageStyle, StyleSheet } from 'react-native';
 import { tokens } from '../../theme';
 
 export interface SuiviLogoProps {
@@ -7,7 +7,7 @@ export interface SuiviLogoProps {
   size?: number;
   width?: number;
   height?: number;
-  style?: ViewStyle;
+  style?: ImageStyle;
 }
 
 export const SuiviLogo: React.FC<SuiviLogoProps> = ({
@@ -18,14 +18,13 @@ export const SuiviLogo: React.FC<SuiviLogoProps> = ({
   style,
 }) => {
   // Map variants to asset paths
-  // Temporary: using assets/icon.png until broken assets are replaced
   const assetMap: Record<string, any> = {
-    'full-light': require('../../assets/icon.png'),
-    'full-dark': require('../../assets/icon.png'),
-    'icon': require('../../assets/icon.png'),
-    'icon-white': require('../../assets/icon.png'),
-    'horizontal': require('../../assets/icon.png'),
-    'horizontal-white': require('../../assets/icon.png'),
+    'full-light': require('../../assets/suivi/logo-full-light.png'),
+    'full-dark': require('../../assets/suivi/logo-full-dark.png'),
+    'icon': require('../../assets/suivi/logo-icon.png'),
+    'icon-white': require('../../assets/suivi/logo-icon-white.png'),
+    'horizontal': require('../../assets/suivi/logo-horizontal.png'),
+    'horizontal-white': require('../../assets/suivi/logo-horizontal-white.png'),
   };
   
   const source = assetMap[variant];

@@ -143,8 +143,8 @@ export const suiviDarkTheme = {
 // Default theme (light)
 export const suiviTheme = suiviLightTheme;
 
-// Font configuration
-export const suiviFonts = {
+// Font configuration - Base font weights
+const baseFonts = {
   regular: {
     fontFamily: typography.fontFamily.primary,
     fontWeight: typography.fontWeight.regular as any,
@@ -161,6 +161,38 @@ export const suiviFonts = {
     fontFamily: typography.fontFamily.primary,
     fontWeight: typography.fontWeight.thin as any,
   },
+};
+
+// Material Design 3 Typography Variants Mapping
+// Maps MD3 font variants to our base font weights
+export const suiviFonts = {
+  // Base font weights
+  ...baseFonts,
+  
+  // Material Design 3 Body variants -> regular weight
+  bodySmall: baseFonts.regular,
+  bodyMedium: baseFonts.regular,
+  bodyLarge: baseFonts.regular,
+  
+  // Material Design 3 Label variants -> medium weight
+  labelSmall: baseFonts.medium,
+  labelMedium: baseFonts.medium,
+  labelLarge: baseFonts.medium,
+  
+  // Material Design 3 Title variants -> medium weight
+  titleSmall: baseFonts.medium,
+  titleMedium: baseFonts.medium,
+  titleLarge: baseFonts.medium,
+  
+  // Material Design 3 Headline variants -> medium weight
+  headlineSmall: baseFonts.medium,
+  headlineMedium: baseFonts.medium,
+  headlineLarge: baseFonts.medium,
+  
+  // Material Design 3 Display variants -> regular weight
+  displaySmall: baseFonts.regular,
+  displayMedium: baseFonts.regular,
+  displayLarge: baseFonts.regular,
 };
 
 // Apply custom fonts to theme

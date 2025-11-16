@@ -14,8 +14,8 @@ import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
 import { TaskItem } from '../components/ui/TaskItem';
 import { QuickCaptureModal } from '../components/ui/QuickCaptureModal';
-import { useTasksStore } from '../features/tasks/taskStore';
-import type { Task, TaskStatus } from '../features/tasks/taskStore';
+import { useTasks } from '../tasks/useTasks';
+import type { Task, TaskFilter } from '../tasks/tasks.types';
 import { tokens } from '../theme';
 
 type FilterOption = 'all' | 'active' | 'completed';
@@ -28,11 +28,11 @@ type MyTasksRouteProp = RouteProp<MainTabParamList, 'MyTasks'>;
  * 
  * Liste des tâches avec :
  * - Filtres : All / Active / Completed
- * - Liste des tâches depuis le store (source unique de vérité)
+ * - Liste des tâches depuis useTasks() (source unique de vérité)
  * - Empty State quand aucune tâche
  * - Action : Quick Capture
  * 
- * TODO: Replace useTasksStore() with real Suivi API calls when backend is ready.
+ * TODO: Replace useTasks() with real Suivi API calls when backend is ready.
  */
 export function MyTasksScreen() {
   const navigation = useNavigation<MyTasksNavigationProp>();
@@ -42,7 +42,7 @@ export function MyTasksScreen() {
   const [quickCaptureVisible, setQuickCaptureVisible] = useState(false);
 
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
-  const { tasks: allTasks } = useTasksStore();
+  const { tasks: visibleTasks, isLoading, error, refresh } = useTasks(filter);
 
   // Mettre à jour le filtre si le paramètre de route change
   useEffect(() => {
@@ -50,19 +50,6 @@ export function MyTasksScreen() {
       setFilter(route.params.initialFilter);
     }
   }, [route.params?.initialFilter]);
-
-  // Filtrer les tâches côté client selon le filtre sélectionné
-  // Logique cohérente : active = todo, in_progress, blocked (tout sauf done)
-  const visibleTasks = useMemo(() => {
-    if (filter === 'completed') {
-      return allTasks.filter((t) => t.status === 'done');
-    }
-    if (filter === 'active') {
-      return allTasks.filter((t) => t.status === 'todo' || t.status === 'in_progress' || t.status === 'blocked');
-    }
-    // filter === 'all'
-    return allTasks;
-  }, [allTasks, filter]);
 
   // Ouvrir le modal Quick Capture
   const handleOpenQuickCapture = () => {
@@ -74,11 +61,10 @@ export function MyTasksScreen() {
     setQuickCaptureVisible(false);
   };
 
-  // Après capture rapide, la liste se met à jour automatiquement via le store
+  // Après capture rapide, rafraîchir la liste des tâches
   // TODO: When Suivi API is ready, trigger a refresh from API here if needed
   const handleQuickCaptureSuccess = () => {
-    // Le store se met à jour automatiquement via quickCapture dans tasksApi.mock.ts
-    // Plus tard, on pourra ajouter un refresh explicite si nécessaire
+    refresh();
   };
 
   const renderFilterButton = (option: FilterOption, label: string) => {
@@ -150,9 +136,9 @@ export function MyTasksScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderTaskItem}
         contentContainerStyle={visibleTasks.length === 0 ? styles.emptyList : styles.listContent}
-        ListEmptyComponent={visibleTasks.length === 0 ? renderEmptyState : null}
-        refreshing={false}
-        onRefresh={handleQuickCaptureSuccess}
+        ListEmptyComponent={visibleTasks.length === 0 && !isLoading ? renderEmptyState : null}
+        refreshing={isLoading}
+        onRefresh={refresh}
       />
 
       {/* Quick Capture Modal */}

@@ -21,6 +21,7 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 
 import { AuthProvider } from './auth';
+import { TasksProvider } from './tasks/TasksContext';
 import { ThemeProvider, useThemeMode } from './theme/ThemeProvider';
 import { tokens } from './theme';
 
@@ -131,7 +132,9 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider initialMode="auto">
           <AuthProvider>
-            <AppContent />
+            <TasksProvider>
+              <AppContent />
+            </TasksProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

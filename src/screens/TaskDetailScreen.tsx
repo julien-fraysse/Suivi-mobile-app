@@ -13,8 +13,9 @@ import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
 import { UserAvatar } from '../components/ui/UserAvatar';
-import { useTasksStore } from '../features/tasks/taskStore';
-import type { TaskStatus } from '../features/tasks/taskStore';
+import { useTaskById } from '../tasks/useTaskById';
+import { useUpdateTaskStatus } from '../tasks/useUpdateTaskStatus';
+import type { TaskStatus } from '../tasks/tasks.types';
 import { useTaskActivity } from '../hooks/useActivity';
 import { useUser } from '../hooks/useUser';
 import { tokens } from '../theme';
@@ -26,13 +27,13 @@ type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
  * TaskDetailScreen
  * 
  * Détails d'une tâche avec :
- * - Détails complets de la tâche depuis le store (source unique de vérité)
- * - Status toggle qui met à jour le store (synchronise avec MyTasksScreen et HomeScreen)
+ * - Détails complets de la tâche depuis useTaskById() (source unique de vérité)
+ * - Status toggle qui met à jour via useUpdateTaskStatus() (synchronise avec MyTasksScreen et HomeScreen)
  * - Breadcrumb projet
  * - Assigned user (useUser)
  * - Section "Recent updates" (useActivityFeed filtré par taskId)
  * 
- * TODO: Replace useTasksStore() with real Suivi API calls when backend is ready.
+ * TODO: Replace useTaskById() and useUpdateTaskStatus() with real Suivi API calls when backend is ready.
  */
 export function TaskDetailScreen() {
   const route = useRoute<TaskDetailRoute>();
@@ -40,10 +41,8 @@ export function TaskDetailScreen() {
   const { taskId } = route.params;
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
-  const { getTaskById, updateTaskStatus } = useTasksStore();
-  
-  // Trouver la tâche dans le store
-  const task = getTaskById(taskId);
+  const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
+  const { updateStatus, isUpdating } = useUpdateTaskStatus();
   
   const { data: user } = useUser();
   const { data: taskActivities = [] } = useTaskActivity(taskId);
@@ -53,13 +52,37 @@ export function TaskDetailScreen() {
 
   // Toggle du statut de la tâche
   // TODO: When Suivi API is ready, add error handling for failed API calls
-  const handleChangeStatus = (newStatus: TaskStatus) => {
-    if (!taskId || !task) return;
-    updateTaskStatus(taskId, newStatus);
+  const handleChangeStatus = async (newStatus: TaskStatus) => {
+    if (!taskId || !task || isUpdating) return;
+    try {
+      await updateStatus(taskId, newStatus);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      // TODO: Afficher une notification d'erreur à l'utilisateur
+    }
   };
 
+  // Loading state
+  if (isLoadingTask) {
+    return (
+      <Screen>
+        <ScreenHeader
+          title="Task Detail"
+          showBackButton
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={tokens.colors.brand.primary} />
+          <SuiviText variant="body" color="secondary" style={styles.loadingText}>
+            Loading task...
+          </SuiviText>
+        </View>
+      </Screen>
+    );
+  }
+
   // Error state: tâche introuvable
-  if (!task) {
+  if (taskError || !task) {
     return (
       <Screen>
         <ScreenHeader
@@ -69,7 +92,7 @@ export function TaskDetailScreen() {
         />
         <View style={styles.centerContainer}>
           <SuiviText variant="body" color="primary" style={styles.errorText}>
-            Task not found
+            {taskError?.message || 'Task not found'}
           </SuiviText>
           <SuiviText variant="body" color="secondary" style={styles.errorSubtext}>
             {/* TODO: handle this case properly when wired to real API */}
@@ -107,10 +130,14 @@ export function TaskDetailScreen() {
               const newStatus = statusOrder[nextIndex];
               handleChangeStatus(newStatus);
             }}
+            disabled={isUpdating}
           >
             <SuiviText variant="body" color="inverse">
               {formatStatus(taskStatus!)}
             </SuiviText>
+            {isUpdating && (
+              <ActivityIndicator size="small" color="#FFFFFF" style={styles.statusLoader} />
+            )}
           </TouchableOpacity>
         </SuiviCard>
       </View>
@@ -182,7 +209,7 @@ export function TaskDetailScreen() {
             <SuiviText variant="label" color="secondary" style={styles.label}>
               Updated:
             </SuiviText>
-            <SuiviText variant="body2" color="secondary">
+            <SuiviText variant="body" color="secondary">
               {formatDate(task.updatedAt)}
             </SuiviText>
           </View>
@@ -208,7 +235,7 @@ export function TaskDetailScreen() {
                 <SuiviText variant="body" color="primary">
                   {activity.actor.name} {activity.message} "{activity.target.name}"
                 </SuiviText>
-                <SuiviText variant="caption" color="secondary" style={styles.activityMeta}>
+                <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
                   {formatActivityDate(activity.createdAt)}
                 </SuiviText>
               </SuiviCard>
@@ -308,6 +335,9 @@ const styles = StyleSheet.create({
   errorSubtext: {
     textAlign: 'center',
     marginTop: tokens.spacing.xs,
+  },
+  statusLoader: {
+    marginLeft: tokens.spacing.sm,
   },
   statusSection: {
     marginBottom: tokens.spacing.lg,

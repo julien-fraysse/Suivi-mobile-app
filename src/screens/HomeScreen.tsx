@@ -11,7 +11,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { SuiviText } from '../components/ui/SuiviText';
 import { QuickCaptureModal } from '../components/ui/QuickCaptureModal';
 import { useActivityFeed } from '../hooks/useActivity';
-import { useTasksStore } from '../features/tasks/taskStore';
+import { useTasks } from '../tasks/useTasks';
 import { tokens } from '../theme';
 
 type HomeNavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -35,8 +35,22 @@ export function HomeScreen() {
   const [quickCaptureVisible, setQuickCaptureVisible] = useState(false);
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
-  const { stats } = useTasksStore();
-  const { activeCount, dueTodayCount } = stats;
+  const { tasks: allTasks } = useTasks('all');
+  
+  // Calculer les statistiques depuis les tâches
+  const activeCount = useMemo(() => {
+    return allTasks.filter((t) => t.status !== 'done').length;
+  }, [allTasks]);
+
+  const dueTodayCount = useMemo(() => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    return allTasks.filter((t) => {
+      if (!t.dueDate) return false;
+      const taskDate = t.dueDate.split('T')[0]; // Comparer uniquement la date (ignore l'heure)
+      return taskDate === todayStr;
+    }).length;
+  }, [allTasks]);
 
   // Données activité depuis api.ts via hooks
   const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities, error: errorActivities, refetch: refetchActivities } = useActivityFeed(5);

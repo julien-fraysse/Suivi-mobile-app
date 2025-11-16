@@ -50,7 +50,9 @@ export function ScreenHeader({
             style={[
               styles.title,
               {
-                color: theme.colors.onSurface,
+                color: theme.dark 
+                  ? tokens.colors.text.dark.primary // #FFFFFF en dark mode
+                  : theme.colors.onSurface, // Paper gère en light mode
               },
             ]}
           >
@@ -61,7 +63,9 @@ export function ScreenHeader({
               style={[
                 styles.subtitle,
                 {
-                  color: theme.colors.onSurfaceVariant,
+                  color: theme.dark
+                    ? tokens.colors.text.dark.secondary // #CACACA en dark mode
+                    : theme.colors.onSurfaceVariant, // Paper gère en light mode
                 },
               ]}
             >

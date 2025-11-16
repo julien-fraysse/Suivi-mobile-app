@@ -32,6 +32,10 @@ export type NotificationType =
  * Notification Interface
  * 
  * Represents a notification in the Suivi mobile app.
+ * 
+ * TODO: When Suivi backend API is ready, the relatedTaskId field will come from
+ * the backend response. The linking mechanism (navigation to TaskDetail when
+ * relatedTaskId is set) will remain unchanged.
  */
 export interface Notification {
   id: string;
@@ -40,7 +44,7 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string; // ISO string
-  taskId?: string; // ID de la tâche liée (pour navigation vers TaskDetail)
+  relatedTaskId?: string | null; // ID de la tâche liée (pour navigation vers TaskDetail) - Doit référencer un ID réel de MOCK_TASKS
   projectId?: string; // ID du projet lié (pour navigation future)
 }
 
@@ -48,53 +52,62 @@ export interface Notification {
  * INITIAL_NOTIFICATIONS
  * 
  * Mock notifications data for the MVP.
- * TODO: Replace this array with real API calls (GET /api/notifications) when backend is ready.
+ * 
+ * IMPORTANT: relatedTaskId must reference REAL task IDs from MOCK_TASKS (src/mocks/tasks/mockTasks.ts).
+ * Available task IDs: task-1, task-2, task-3, ..., task-16
+ * 
+ * TODO: When Suivi backend API is ready:
+ *   - Replace this array with real API calls (GET /api/notifications)
+ *   - The backend will provide notifications with relatedTaskId fields that link to real tasks
+ *   - Tasks will come from GET /api/tasks (also from backend)
+ *   - The linking mechanism (navigation to TaskDetail when relatedTaskId is set) remains unchanged
  */
 const INITIAL_NOTIFICATIONS: Notification[] = [
   {
-    id: '1',
+    id: 'notif-1',
     type: 'task_assigned',
     title: 'New task assigned',
     message: 'You have been assigned to "Implémenter le design system Suivi"',
     read: false,
     createdAt: '2024-11-16T10:00:00Z',
-    taskId: '1',
+    relatedTaskId: 'task-1', // Référence réelle à MOCK_TASKS[0]
   },
   {
-    id: '2',
+    id: 'notif-2',
     type: 'task_completed',
     title: 'Task completed',
     message: '"Créer les composants UI réutilisables" has been completed',
     read: false,
     createdAt: '2024-11-15T16:30:00Z',
-    taskId: '2',
+    relatedTaskId: 'task-4', // Référence réelle à MOCK_TASKS[3] - "Créer les composants UI réutilisables"
   },
   {
-    id: '3',
+    id: 'notif-3',
     type: 'task_overdue',
     title: 'Task overdue',
     message: '"Review design mockups" is overdue',
     read: true,
     createdAt: '2024-11-16T08:00:00Z',
-    taskId: '9',
+    relatedTaskId: 'task-2', // Référence réelle à MOCK_TASKS[1] - "Review design mockups"
   },
   {
-    id: '4',
+    id: 'notif-4',
     type: 'project_update',
     title: 'Project update',
     message: 'New update on project "Mobile App"',
     read: false,
     createdAt: '2024-11-16T09:00:00Z',
-    projectId: 'mobile-app',
+    projectId: 'project-mobile-app',
+    // Pas de relatedTaskId car c'est une notification de projet, pas de tâche
   },
   {
-    id: '5',
+    id: 'notif-5',
     type: 'comment',
     title: 'New comment',
     message: 'Julien commented on "Configurer la navigation entre écrans"',
     read: true,
     createdAt: '2024-11-16T11:00:00Z',
-    taskId: '4',
+    relatedTaskId: 'task-3', // Référence réelle à MOCK_TASKS[2] - "Configurer la navigation entre écrans"
   },
 ];
 

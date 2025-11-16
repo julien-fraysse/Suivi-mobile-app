@@ -15,13 +15,20 @@ export const SuiviListItem: React.FC<SuiviListItemProps> = ({
   ...props
 }) => {
   const theme = useTheme();
+  const isDark = theme.dark;
   
+  // Background color adapté selon le thème (surface en dark mode)
+  const backgroundColor = isDark
+    ? tokens.colors.surface.dark // #1A1A1A en dark mode (surface)
+    : undefined; // Laisser Paper gérer en light mode
+
   return (
     <List.Item
       style={[
         {
           paddingHorizontal: tokens.spacing.md,
           paddingVertical: tokens.spacing.sm,
+          backgroundColor,
         },
         style,
       ]}
@@ -30,7 +37,9 @@ export const SuiviListItem: React.FC<SuiviListItemProps> = ({
           fontSize: tokens.typography.fontSize.md,
           fontFamily: tokens.typography.fontFamily.primary,
           fontWeight: tokens.typography.fontWeight.medium,
-          color: theme.colors.onSurface,
+          color: isDark 
+            ? tokens.colors.text.dark.primary // #FFFFFF en dark mode
+            : theme.colors.onSurface, // Paper gère en light mode
         },
         titleStyle,
       ]}
@@ -38,7 +47,9 @@ export const SuiviListItem: React.FC<SuiviListItemProps> = ({
         {
           fontSize: tokens.typography.fontSize.sm,
           fontFamily: tokens.typography.fontFamily.primary,
-          color: theme.colors.onSurfaceVariant,
+          color: isDark
+            ? tokens.colors.text.dark.secondary // #BFBFBF en dark mode
+            : theme.colors.onSurfaceVariant, // Paper gère en light mode
         },
         descriptionStyle,
       ]}

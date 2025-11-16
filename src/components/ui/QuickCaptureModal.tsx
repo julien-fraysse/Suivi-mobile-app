@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { TextInput, useTheme } from 'react-native-paper';
 import { SuiviButton } from './SuiviButton';
 import { SuiviText } from './SuiviText';
 import { SuiviCard } from './SuiviCard';
@@ -26,6 +26,8 @@ export interface QuickCaptureModalProps {
  * - Utilise EXCLUSIVEMENT les tokens Suivi
  */
 export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureModalProps) {
+  const theme = useTheme();
+  const isDark = theme.dark;
   const [title, setTitle] = useState('');
   const [saved, setSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,10 +97,10 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
           >
             <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
               <SuiviCard padding="lg" elevation="lg" variant="default" style={styles.modalCard}>
-                <SuiviText variant="h4" style={styles.title}>
+                <SuiviText variant="h2" style={styles.title}>
                   Quick Capture
                 </SuiviText>
-                <SuiviText variant="body2" color="secondary" style={styles.subtitle}>
+                <SuiviText variant="body" color="secondary" style={styles.subtitle}>
                   Capture quickly what you want to remember
                 </SuiviText>
 
@@ -112,12 +114,37 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
                     multiline
                     numberOfLines={4}
                     disabled={isLoading || saved}
-                    style={styles.input}
-                    contentStyle={styles.inputContent}
-                    outlineStyle={styles.inputOutline}
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: isDark 
+                          ? tokens.colors.surface.darkElevated // #242424 en dark mode
+                          : tokens.colors.background.default, // #FFFFFF en light mode
+                      },
+                    ]}
+                    contentStyle={[
+                      styles.inputContent,
+                      {
+                        color: isDark 
+                          ? tokens.colors.text.dark.primary // #FFFFFF en dark mode
+                          : tokens.colors.text.primary, // #4F4A45 en light mode
+                      },
+                    ]}
+                    outlineStyle={[
+                      styles.inputOutline,
+                      {
+                        borderColor: isDark
+                          ? tokens.colors.border.darkMode.default // rgba(255,255,255,0.08) en dark mode
+                          : tokens.colors.border.default, // #E8E8E8 en light mode
+                      },
+                    ]}
                     activeOutlineColor={tokens.colors.brand.primary}
-                    textColor={tokens.colors.text.primary}
-                    placeholderTextColor={tokens.colors.text.hint}
+                    textColor={isDark 
+                      ? tokens.colors.text.dark.primary 
+                      : tokens.colors.text.primary}
+                    placeholderTextColor={isDark
+                      ? tokens.colors.text.dark.hint // #CACACA en dark mode
+                      : tokens.colors.text.hint}
                   />
                 </View>
 
@@ -137,14 +164,12 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
                       style={styles.cancelButton}
                     />
                     <SuiviButton
-                      title="Save to Inbox"
+                      title={isLoading ? "Saving..." : "Save to Inbox"}
                       onPress={handleSave}
                       variant="primary"
                       disabled={!title.trim() || isLoading}
                       style={styles.saveButton}
-                    >
-                      {isLoading && <ActivityIndicator size="small" color={tokens.colors.text.onPrimary} style={styles.loader} />}
-                    </SuiviButton>
+                    />
                   </View>
                 )}
               </SuiviCard>
@@ -187,17 +212,17 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.lg,
   },
   input: {
-    backgroundColor: tokens.colors.background.default,
+    // backgroundColor is set dynamically in the component
   },
   inputContent: {
     fontFamily: tokens.typography.body.fontFamily, // Inter_400Regular
     fontSize: tokens.typography.body.fontSize, // 15
     lineHeight: tokens.typography.body.lineHeight, // 22
-    color: tokens.colors.text.primary, // #4F4A45
+    // color is set dynamically in the component
   },
   inputOutline: {
     borderRadius: tokens.radius.md,
-    borderColor: tokens.colors.border.default,
+    // borderColor is set dynamically in the component
   },
   actions: {
     flexDirection: 'row',

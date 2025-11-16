@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { tokens } from '../../theme';
 
 export interface SuiviTextProps extends TextProps {
@@ -21,6 +22,10 @@ export interface SuiviTextProps extends TextProps {
  * - mono : IBM Plex Mono Regular, 13px (texte technique, badges)
  * 
  * Text always Inter, sauf badges techniques et labels → Plex Mono.
+ * 
+ * En dark mode :
+ * - Les titres (h1, h2, display) utilisent #FFFFFF (white)
+ * - Le texte secondaire (secondary) utilise #CACACA (soft gray)
  */
 export const SuiviText: React.FC<SuiviTextProps> = ({
   variant = 'body',
@@ -28,6 +33,9 @@ export const SuiviText: React.FC<SuiviTextProps> = ({
   style,
   ...props
 }) => {
+  const theme = useTheme();
+  const isDark = theme.dark;
+
   // Variant styles - Utilise les tokens typography
   const variantStyles = {
     display: {
@@ -56,13 +64,37 @@ export const SuiviText: React.FC<SuiviTextProps> = ({
     },
   };
   
-  // Color mapping - Utilise les tokens colors
-  const colorMap = {
-    primary: tokens.colors.neutral.dark, // #4F4A45
-    secondary: tokens.colors.neutral.medium, // #98928C
-    disabled: tokens.colors.neutral.medium, // #98928C
-    hint: tokens.colors.neutral.medium, // #98928C
-    inverse: '#FFFFFF', // Blanc pour texte sur fond coloré
+  // Determine text color based on variant, color prop, and theme
+  const getTextColor = () => {
+    // Inverse color is always white (for text on colored backgrounds)
+    if (color === 'inverse') {
+      return '#FFFFFF';
+    }
+
+    // In dark mode, apply dark mode text colors
+    if (isDark) {
+      // Titles (h1, h2, display) always use white in dark mode when color is primary
+      if ((variant === 'h1' || variant === 'h2' || variant === 'display') && color === 'primary') {
+        return tokens.colors.text.dark.primary; // #FFFFFF
+      }
+      // All secondary, disabled, hint text uses soft gray in dark mode
+      if (color === 'secondary' || color === 'disabled' || color === 'hint') {
+        return tokens.colors.text.dark.secondary; // #CACACA
+      }
+      // Body text with primary color uses white in dark mode
+      if (color === 'primary') {
+        return tokens.colors.text.dark.primary; // #FFFFFF
+      }
+    }
+
+    // Light mode - use standard colors
+    const colorMap = {
+      primary: tokens.colors.neutral.dark, // #4F4A45
+      secondary: tokens.colors.neutral.medium, // #98928C
+      disabled: tokens.colors.neutral.medium, // #98928C
+      hint: tokens.colors.neutral.medium, // #98928C
+    };
+    return colorMap[color] || colorMap.primary;
   };
   
   return (
@@ -70,7 +102,7 @@ export const SuiviText: React.FC<SuiviTextProps> = ({
       style={[
         variantStyles[variant],
         {
-          color: colorMap[color],
+          color: getTextColor(),
         },
         style,
       ]}

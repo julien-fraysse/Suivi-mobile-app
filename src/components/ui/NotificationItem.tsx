@@ -11,6 +11,8 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
+  relatedTaskId?: string | null; // ID de la tâche liée (pour navigation vers TaskDetail)
+  projectId?: string; // ID du projet lié (pour navigation future)
 }
 
 export interface NotificationItemProps {
@@ -62,7 +64,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
       </SuiviText>
 
       {/* Date */}
-      <SuiviText variant="caption" color="secondary" style={styles.date}>
+      <SuiviText variant="body" color="secondary" style={styles.date}>
         {formatNotificationDate(notification.createdAt)}
       </SuiviText>
     </SuiviCard>

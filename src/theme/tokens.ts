@@ -43,8 +43,10 @@ export const colors = {
   background: {
     default: '#FFFFFF', // Blanc pour fond d'écran par défaut (cards et surfaces blanches) - Light mode
     surface: '#F4F2EE', // Sand - équivalent à neutral.background, pour fond d'écran principal - Light mode
-    dark: '#1A1A1A', // Fond sombre pour dark mode
-    darkSurface: '#252525', // Surface sombre pour dark mode (cards, etc.)
+    // Dark mode tokens (utilisés via ThemeProvider)
+    dark: '#0F0F0F', // Fond sombre pour dark mode (matte black style)
+    darkSurface: '#1A1A1A', // Surface sombre pour dark mode (surface principale)
+    darkSurfaceElevated: '#242424', // Surface élevée pour dark mode (cards, modals)
   },
   
   // Text colors - Backward compatible aliases
@@ -57,10 +59,10 @@ export const colors = {
     onPrimary: '#FFFFFF', // Blanc sur fond primary (boutons, etc.)
     // Dark mode variants (utilisés via ThemeProvider)
     dark: {
-      primary: '#FFFFFF', // Texte principal pour dark mode
-      secondary: '#98928C', // Texte secondaire pour dark mode
+      primary: '#FFFFFF', // Texte principal pour dark mode (white) - utilisé pour les titres
+      secondary: '#CACACA', // Texte secondaire pour dark mode (soft gray) - utilisé pour body/metadata
       disabled: '#98928C', // Texte désactivé pour dark mode
-      hint: '#98928C', // Texte d'aide pour dark mode
+      hint: '#CACACA', // Texte d'aide pour dark mode (placeholders) - même gris clair que secondary
     },
   },
   
@@ -71,9 +73,9 @@ export const colors = {
     dark: '#98928C', // Équivalent à neutral.medium - bordure sombre - Dark mode
     // Dark mode variants (utilisés via ThemeProvider)
     darkMode: {
-      default: '#98928C', // Bordure par défaut pour dark mode
-      light: '#2C2C2C', // Bordure légère pour dark mode
-      dark: '#E8E8E8', // Bordure sombre pour dark mode (plus claire)
+      default: 'rgba(255,255,255,0.08)', // Bordure par défaut pour dark mode (subtle white overlay)
+      light: 'rgba(255,255,255,0.04)', // Bordure légère pour dark mode
+      dark: 'rgba(255,255,255,0.12)', // Bordure sombre pour dark mode (more visible)
     },
   },
   
@@ -81,8 +83,10 @@ export const colors = {
   surface: {
     default: '#FFFFFF', // Blanc pour surfaces/cards
     variant: '#F4F2EE', // Sand pour variante de surface
-    dark: '#1A1A1A', // Surface sombre pour dark mode
-    darkVariant: '#252525', // Variante de surface sombre
+    // Dark mode tokens (utilisés via ThemeProvider)
+    dark: '#1A1A1A', // Surface sombre pour dark mode (surface principale)
+    darkElevated: '#242424', // Surface élevée pour dark mode (cards, modals)
+    darkVariant: '#2C2C2C', // Variante de surface sombre
   },
 } as const;
 

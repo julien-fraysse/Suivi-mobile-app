@@ -35,16 +35,25 @@ export function NotificationsScreen() {
   const { notifications, markAsRead, markAllAsRead } = useNotificationsStore();
 
   // Marquer une notification comme lue et naviguer vers la tâche si applicable
+  // 
+  // IMPORTANT: Si relatedTaskId est défini, navigue vers TaskDetail.
+  // Si relatedTaskId est absent/null, ne fait rien (pas de navigation, pas de crash).
+  // 
+  // TODO: When Suivi backend API is ready, relatedTaskId will come from the backend response.
+  // The linking mechanism (navigation to TaskDetail when relatedTaskId is set) remains unchanged.
   const handleNotificationPress = (notification: any) => {
     // Marquer comme lue
     markAsRead(notification.id);
 
-    // Naviguer vers TaskDetail si la notification est liée à une tâche
-    if (notification.taskId) {
-      navigation.navigate('TaskDetail', { taskId: notification.taskId });
+    // Naviguer vers TaskDetail UNIQUEMENT si relatedTaskId est défini et non null
+    if (notification.relatedTaskId) {
+      navigation.navigate('TaskDetail', { taskId: notification.relatedTaskId });
+      return;
     }
+
+    // Si la notification n'est pas liée à une tâche, ne rien faire (pas de crash)
     // TODO: Ajouter la navigation vers les projets quand implémentée
-    // else if (notification.projectId) {
+    // if (notification.projectId) {
     //   navigation.navigate('ProjectDetail', { projectId: notification.projectId });
     // }
   };

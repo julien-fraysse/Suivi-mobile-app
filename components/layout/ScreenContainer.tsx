@@ -31,10 +31,10 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   const theme = useTheme();
   const isDark = theme.dark;
 
-  // Utiliser le background du thème Paper (light: surface, dark: dark surface)
+  // Background adapté selon le thème (background en dark mode)
   const backgroundColor = isDark 
-    ? tokens.colors.background.dark // #1A1A1A
-    : tokens.colors.background.surface; // #F4F2EE
+    ? tokens.colors.background.dark // #0F0F0F en dark mode (matte black style)
+    : tokens.colors.background.surface; // #F4F2EE en light mode (sand)
 
   const containerStyle = [
     styles.container,

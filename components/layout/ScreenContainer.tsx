@@ -1,5 +1,6 @@
 import React from 'react';
-import { SafeAreaView, StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet, ViewStyle, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
 import { tokens } from '../../theme';
 
@@ -8,29 +9,65 @@ export interface ScreenContainerProps {
   padding?: keyof typeof tokens.spacing;
   style?: ViewStyle;
   safeAreaEdges?: ('top' | 'bottom' | 'left' | 'right')[];
+  scrollable?: boolean;
+  contentContainerStyle?: ViewStyle;
 }
 
+/**
+ * ScreenContainer
+ * 
+ * Conteneur de base pour tous les écrans.
+ * Gère SafeAreaView, padding cohérent, background, et optionnellement le scroll.
+ * Utilise EXCLUSIVEMENT les tokens Suivi pour les couleurs.
+ */
 export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   children,
   padding = 'md',
   style,
-  safeAreaEdges = ['top', 'bottom'],
+  safeAreaEdges = ['top'], // Par défaut : seulement top (le bottom est géré par la TabBar dans les tabs)
+  scrollable = false,
+  contentContainerStyle,
 }) => {
   const theme = useTheme();
-  
-  return (
-    <SafeAreaView
-      edges={safeAreaEdges}
-      style={[
-        styles.container,
+  const isDark = theme.dark;
+
+  // Utiliser le background du thème Paper (light: surface, dark: dark surface)
+  const backgroundColor = isDark 
+    ? tokens.colors.background.dark // #1A1A1A
+    : tokens.colors.background.surface; // #F4F2EE
+
+  const containerStyle = [
+    styles.container,
+    {
+      backgroundColor,
+    },
+    !scrollable && {
+      padding: tokens.spacing[padding],
+    },
+    style,
+  ];
+
+  const content = scrollable ? (
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.scrollContent,
         {
-          backgroundColor: theme.colors.background,
           padding: tokens.spacing[padding],
         },
-        style,
+        contentContainerStyle,
       ]}
+      showsVerticalScrollIndicator={false}
     >
       {children}
+    </ScrollView>
+  ) : (
+    children
+  );
+
+  return (
+    <SafeAreaView edges={safeAreaEdges} style={containerStyle}>
+      {content}
     </SafeAreaView>
   );
 };
@@ -38,6 +75,12 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
 });
 

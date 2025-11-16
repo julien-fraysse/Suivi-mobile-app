@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useTheme, TextInput as PaperTextInput, Button } from 'react-native-paper';
 import { Screen } from '../components/Screen';
+import { SuiviText } from '../components/ui/SuiviText';
 import { useAuth } from '../auth';
+import { useThemeMode } from '../theme/ThemeProvider';
 import { tokens } from '../../theme';
 
 export function LoginScreen() {
   const theme = useTheme();
+  const { isDark } = useThemeMode();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sélectionner le logo selon le thème
+  const logoSource = isDark
+    ? require('../../assets/suivi/logo-full-light.png')
+    : require('../../assets/suivi/logo-full-dark.png');
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
@@ -38,16 +46,23 @@ export function LoginScreen() {
         style={styles.container}
       >
         <View style={styles.content}>
-          <Text
-            style={[
-              styles.title,
-              {
-                color: theme.colors.onSurface,
-              },
-            ]}
-          >
+          {/* Logo Suivi */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={logoSource}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Titre */}
+          <SuiviText variant="h1" style={styles.title}>
             Sign In
-          </Text>
+          </SuiviText>
+          
+          <SuiviText variant="body" color="secondary" style={styles.subtitle}>
+            Welcome to Suivi
+          </SuiviText>
 
           {error && (
             <Text
@@ -110,9 +125,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: tokens.spacing.lg,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: tokens.spacing.xl,
+  },
+  logo: {
+    width: 200,
+    height: 80,
+    maxWidth: '100%',
+  },
   title: {
-    fontSize: tokens.typography.h4.fontSize,
-    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: tokens.spacing.sm,
+  },
+  subtitle: {
     textAlign: 'center',
     marginBottom: tokens.spacing.xl,
   },
@@ -129,4 +155,5 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.md,
   },
 });
+
 

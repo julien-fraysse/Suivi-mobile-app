@@ -5,17 +5,30 @@
 
 // Brand Colors
 export const colors = {
-  // Primary brand colors
+  // Brand colors (primary, secondary, accent)
+  brand: {
+    primary: '#0066FF',
+    primaryLight: '#3385FF',
+    primaryDark: '#0052CC',
+    secondary: '#00C853',
+    secondaryLight: '#33D573',
+    secondaryDark: '#00A043',
+    accent: '#FF6B35',
+    accentLight: '#FF8C66',
+    accentDark: '#E55A2B',
+  },
+  
+  // Primary brand colors (backward compatibility)
   primary: '#0066FF',
   primaryLight: '#3385FF',
   primaryDark: '#0052CC',
   
-  // Secondary colors
+  // Secondary colors (backward compatibility)
   secondary: '#00C853',
   secondaryLight: '#33D573',
   secondaryDark: '#00A043',
   
-  // Accent colors
+  // Accent colors (backward compatibility)
   accent: '#FF6B35',
   accentLight: '#FF8C66',
   accentDark: '#E55A2B',

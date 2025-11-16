@@ -4,93 +4,68 @@ import { useTheme } from 'react-native-paper';
 import { tokens } from '../../theme';
 
 export interface SuiviTextProps extends TextProps {
-  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body1' | 'body2' | 'caption' | 'overline';
+  variant?: 'display' | 'h1' | 'h2' | 'body' | 'label' | 'mono';
   color?: 'primary' | 'secondary' | 'disabled' | 'hint' | 'inverse';
-  weight?: 'thin' | 'light' | 'regular' | 'medium' | 'semibold' | 'bold';
 }
 
+/**
+ * SuiviText
+ * 
+ * Composant de texte réutilisable utilisant EXCLUSIVEMENT les typographies Suivi (Inter + IBM Plex Mono).
+ * 
+ * Variantes :
+ * - display : Inter Bold, 28px (titres principaux)
+ * - h1 : Inter Semibold, 22px (titres de section)
+ * - h2 : Inter Medium, 18px (sous-titres)
+ * - body : Inter Regular, 15px (texte principal)
+ * - label : Inter Medium, 13px (labels et boutons)
+ * - mono : IBM Plex Mono Regular, 13px (texte technique, badges)
+ * 
+ * Text always Inter, sauf badges techniques et labels → Plex Mono.
+ */
 export const SuiviText: React.FC<SuiviTextProps> = ({
-  variant = 'body1',
+  variant = 'body',
   color = 'primary',
-  weight = 'regular',
   style,
   ...props
 }) => {
   const theme = useTheme();
   
-  // Variant styles
+  // Variant styles - Utilise les tokens typography
   const variantStyles = {
+    display: {
+      fontFamily: tokens.typography.display.fontFamily, // Inter_700Bold
+      fontSize: tokens.typography.display.fontSize, // 28
+    },
     h1: {
-      fontSize: tokens.typography.fontSize.xxxl,
-      lineHeight: tokens.typography.lineHeight.xxxl,
-      fontWeight: tokens.typography.fontWeight.bold,
+      fontFamily: tokens.typography.h1.fontFamily, // Inter_600SemiBold
+      fontSize: tokens.typography.h1.fontSize, // 22
     },
     h2: {
-      fontSize: tokens.typography.fontSize.xxl,
-      lineHeight: tokens.typography.lineHeight.xxl,
-      fontWeight: tokens.typography.fontWeight.bold,
+      fontFamily: tokens.typography.h2.fontFamily, // Inter_500Medium
+      fontSize: tokens.typography.h2.fontSize, // 18
     },
-    h3: {
-      fontSize: tokens.typography.fontSize.xl,
-      lineHeight: tokens.typography.lineHeight.xl,
-      fontWeight: tokens.typography.fontWeight.semibold,
+    body: {
+      fontFamily: tokens.typography.body.fontFamily, // Inter_400Regular
+      fontSize: tokens.typography.body.fontSize, // 15
     },
-    h4: {
-      fontSize: tokens.typography.fontSize.lg,
-      lineHeight: tokens.typography.lineHeight.lg,
-      fontWeight: tokens.typography.fontWeight.medium,
+    label: {
+      fontFamily: tokens.typography.label.fontFamily, // Inter_500Medium
+      fontSize: tokens.typography.label.fontSize, // 13
     },
-    h5: {
-      fontSize: tokens.typography.fontSize.md,
-      lineHeight: tokens.typography.lineHeight.md,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-    h6: {
-      fontSize: tokens.typography.fontSize.sm,
-      lineHeight: tokens.typography.lineHeight.sm,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-    body1: {
-      fontSize: tokens.typography.fontSize.md,
-      lineHeight: tokens.typography.lineHeight.md,
-      fontWeight: tokens.typography.fontWeight.regular,
-    },
-    body2: {
-      fontSize: tokens.typography.fontSize.sm,
-      lineHeight: tokens.typography.lineHeight.sm,
-      fontWeight: tokens.typography.fontWeight.regular,
-    },
-    caption: {
-      fontSize: tokens.typography.fontSize.xs,
-      lineHeight: tokens.typography.lineHeight.xs,
-      fontWeight: tokens.typography.fontWeight.regular,
-    },
-    overline: {
-      fontSize: tokens.typography.fontSize.xs,
-      lineHeight: tokens.typography.lineHeight.xs,
-      fontWeight: tokens.typography.fontWeight.medium,
-      textTransform: 'uppercase' as const,
-      letterSpacing: 1.5,
+    mono: {
+      fontFamily: tokens.typography.mono.fontFamily, // IBMPlexMono_400Regular
+      fontSize: tokens.typography.mono.fontSize, // 13
     },
   };
   
-  // Color mapping
+  // Color mapping - Utilise les tokens colors
   const colorMap = {
-    primary: theme.colors.onSurface,
-    secondary: theme.colors.onSurfaceVariant,
-    disabled: theme.colors.onSurfaceDisabled,
-    hint: tokens.colors.text.hint,
-    inverse: theme.colors.inverseOnSurface,
-  };
-  
-  // Weight mapping
-  const weightMap = {
-    thin: tokens.typography.fontWeight.thin,
-    light: tokens.typography.fontWeight.light,
-    regular: tokens.typography.fontWeight.regular,
-    medium: tokens.typography.fontWeight.medium,
-    semibold: tokens.typography.fontWeight.semibold,
-    bold: tokens.typography.fontWeight.bold,
+    primary: tokens.colors.neutral.dark, // #4F4A45
+    secondary: tokens.colors.neutral.medium, // #98928C
+    disabled: tokens.colors.neutral.medium, // #98928C
+    hint: tokens.colors.neutral.medium, // #98928C
+    inverse: '#FFFFFF', // Blanc pour texte sur fond coloré
   };
   
   return (
@@ -99,8 +74,6 @@ export const SuiviText: React.FC<SuiviTextProps> = ({
         variantStyles[variant],
         {
           color: colorMap[color],
-          fontWeight: weightMap[weight],
-          fontFamily: tokens.typography.fontFamily.primary,
         },
         style,
       ]}

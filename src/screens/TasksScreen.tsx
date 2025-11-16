@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/layout/ScreenHeader';
+import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
@@ -187,7 +187,7 @@ export function TasksScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Tasks" subtitle="Manage your tasks" />
+      <AppHeader />
       
       <ScrollView showsVerticalScrollIndicator={false}>
         {renderFilterBar()}
@@ -252,4 +252,5 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.sm,
   },
 });
+
 

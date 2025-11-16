@@ -4,7 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/layout/ScreenHeader';
+import { AppHeader } from '../components/AppHeader';
+import { HomeSearchBar } from '../components/HomeSearchBar';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { StatCard } from '../components/ui/StatCard';
@@ -88,18 +89,22 @@ export function HomeScreen() {
     setQuickCaptureVisible(false);
   };
 
+  // Handler pour la recherche (prêt pour intégration future avec les APIs Suivi)
+  const handleSearch = (query: string) => {
+    // TODO: wire this search to real Suivi APIs (tasks, notifications, boards) later.
+    console.log('Search query:', query);
+  };
+
   return (
     <Screen>
-      <ScreenHeader
-        title="Home"
-        subtitle="Welcome to Suivi"
-      />
+      <AppHeader />
+      <HomeSearchBar onSearch={handleSearch} />
       
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Quick Actions - Statistiques calculées depuis useTasks() avec helpers de filtre partagés */}
+        {/* What's new - Statistiques calculées depuis useTasks() avec helpers de filtre partagés */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Quick Actions
+            What's new
           </SuiviText>
           <View style={styles.tileRow}>
             <StatCard

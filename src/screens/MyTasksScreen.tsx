@@ -8,7 +8,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/layout/ScreenHeader';
+import { AppHeader } from '../components/AppHeader';
 import { FilterChip } from '../components/ui/FilterChip';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
@@ -112,7 +112,7 @@ export function MyTasksScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="My Tasks" />
+      <AppHeader />
       
       {/* Action bar with Quick Capture */}
       <View style={styles.actionBar}>

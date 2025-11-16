@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/layout/ScreenHeader';
+import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
@@ -66,11 +66,7 @@ export function TaskDetailScreen() {
   if (isLoadingTask) {
     return (
       <Screen>
-        <ScreenHeader
-          title="Task Detail"
-          showBackButton
-          onBack={() => navigation.goBack()}
-        />
+        <AppHeader showBackButton onBack={() => navigation.goBack()} />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={tokens.colors.brand.primary} />
           <SuiviText variant="body" color="secondary" style={styles.loadingText}>
@@ -85,11 +81,7 @@ export function TaskDetailScreen() {
   if (taskError || !task) {
     return (
       <Screen>
-        <ScreenHeader
-          title="Task Detail"
-          showBackButton
-          onBack={() => navigation.goBack()}
-        />
+        <AppHeader showBackButton onBack={() => navigation.goBack()} />
         <View style={styles.centerContainer}>
           <SuiviText variant="body" color="primary" style={styles.errorText}>
             {taskError?.message || 'Task not found'}
@@ -107,12 +99,7 @@ export function TaskDetailScreen() {
 
   return (
     <Screen scrollable>
-      <ScreenHeader
-        title={task.title}
-        subtitle={taskStatus ? formatStatus(taskStatus) : 'Unknown'}
-        showBackButton
-        onBack={() => navigation.goBack()}
-      />
+      <AppHeader showBackButton onBack={() => navigation.goBack()} />
 
       {/* Status Selector */}
       <View style={styles.statusSection}>

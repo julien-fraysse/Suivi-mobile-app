@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/layout/ScreenHeader';
+import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
@@ -45,7 +45,7 @@ export function MoreScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="More" />
+      <AppHeader />
       
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* User Profile Card */}

@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/layout/ScreenHeader';
+import { AppHeader } from '../components/AppHeader';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
 import { SuiviCard } from '../components/ui/SuiviCard';
@@ -91,10 +91,7 @@ export function NotificationsScreen() {
 
   return (
     <Screen>
-      <ScreenHeader
-        title="Notifications"
-        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All read'}
-      />
+      <AppHeader />
 
       {/* Action bar with Mark All as Read */}
       {unreadCount > 0 && (
@@ -102,8 +99,7 @@ export function NotificationsScreen() {
           <SuiviButton
             title="Mark All as Read"
             onPress={handleMarkAllAsRead}
-            variant="ghost"
-            fullWidth
+            variant="primary"
           />
         </View>
       )}

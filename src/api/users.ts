@@ -24,3 +24,4 @@ export async function getUser(_accessToken?: string | null): Promise<User> {
   return apiFetch<User>(path, {}, _accessToken);
 }
 
+

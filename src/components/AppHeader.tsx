@@ -2,8 +2,12 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviLogo } from '../../components/ui/SuiviLogo';
+import { UserAvatar } from './ui/UserAvatar';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { tokens } from '../theme';
 
 export interface AppHeaderProps {
@@ -15,6 +19,10 @@ export interface AppHeaderProps {
    * Callback personnalisé pour le bouton retour (par défaut : navigation.goBack())
    */
   onBack?: () => void;
+  /**
+   * Afficher l'avatar utilisateur à droite du logo (désactivé si showBackButton=true)
+   */
+  showAvatar?: boolean;
 }
 
 /**
@@ -31,10 +39,13 @@ export interface AppHeaderProps {
  * 
  * Note: Le SafeAreaView est géré par ScreenContainer parent, donc pas besoin ici.
  */
-export function AppHeader({ showBackButton = false, onBack }: AppHeaderProps) {
+type AppHeaderNavigationProp = NativeStackNavigationProp<AppStackParamList>;
+
+export function AppHeader({ showBackButton = false, onBack, showAvatar = true }: AppHeaderProps) {
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<AppHeaderNavigationProp>();
   const isDark = theme.dark;
+  const { fullName, avatar } = useUserProfile();
 
   // Logo variant : horizontal-dark en light mode, horizontal-white en dark mode
   const logoVariant = isDark ? 'horizontal-white' : 'horizontal';
@@ -45,6 +56,11 @@ export function AppHeader({ showBackButton = false, onBack }: AppHeaderProps) {
     } else {
       navigation.goBack();
     }
+  };
+
+  const handleAvatarPress = () => {
+    // Navigate to More / Account screen
+    navigation.navigate('Main', { screen: 'More' });
   };
 
   return (
@@ -71,10 +87,21 @@ export function AppHeader({ showBackButton = false, onBack }: AppHeaderProps) {
         <View style={styles.logoContainer}>
           <SuiviLogo
             variant={logoVariant}
-            width={160}
-            height={40}
+            width={136}
+            height={34}
           />
         </View>
+
+        {/* Avatar on the right (only if not showing back button) */}
+        {showAvatar && !showBackButton && (
+          <View style={styles.avatarContainer}>
+            <UserAvatar
+              size={32}
+              imageSource={avatar}
+              fullName={fullName}
+            />
+          </View>
+        )}
       </View>
     </View>
   );
@@ -82,15 +109,15 @@ export function AppHeader({ showBackButton = false, onBack }: AppHeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: tokens.spacing.sm,
-    paddingBottom: tokens.spacing.md,
+    paddingTop: 14, // Slightly increased for better vertical centering
+    paddingBottom: tokens.spacing.lg, // 16px spacing below logo (12-16px range)
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    minHeight: 40,
+    minHeight: 44, // Adjusted to accommodate reduced logo size while maintaining good spacing
   },
   backButton: {
     position: 'absolute',
@@ -101,5 +128,16 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     flex: 1,
+  },
+  avatarContainer: {
+    position: 'absolute',
+    right: 0,
+    padding: tokens.spacing.xs,
+    zIndex: 1,
+  },
+  avatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
 });

@@ -1,11 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
-import { TextInput, useTheme } from 'react-native-paper';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Modal,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  TextInput,
+  Keyboard,
+  Text,
+} from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { SuiviButton } from './SuiviButton';
 import { SuiviText } from './SuiviText';
-import { SuiviCard } from './SuiviCard';
 import { quickCapture } from '../../api/tasksApi.mock';
 import { tokens } from '../../theme';
+import { useTasksContext } from '../../tasks/TasksContext';
 
 export interface QuickCaptureModalProps {
   visible: boolean;
@@ -16,50 +27,80 @@ export interface QuickCaptureModalProps {
 /**
  * QuickCaptureModal
  * 
- * Modal pour capturer rapidement une tâche minimaliste (Inbox mobile).
+ * Modal professionnel pour capturer rapidement une tâche minimaliste (Inbox mobile).
  * 
  * Design :
- * - Utilise SuiviCard pour le contenu
- * - Input texte obligatoire : "What do you want to remember?"
- * - Boutons Cancel et "Save to Inbox"
- * - Feedback visuel léger après sauvegarde
- * - Utilise EXCLUSIVEMENT les tokens Suivi
+ * - Modal avec animation fade + scale
+ * - Input multiline autosizing (max 3-4 lignes visibles)
+ * - Container moderne avec coins arrondis 24px, shadow medium
+ * - Titre "Quick Capture" et sous-titre
+ * - Zone d'actions en bas : Cancel (outlined) et Send to Suivi (primary)
+ * - Tap outside to close
+ * - Form reset après submit
+ * - Support light/dark mode complet
  */
 export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureModalProps) {
   const theme = useTheme();
   const isDark = theme.dark;
-  const [title, setTitle] = useState('');
-  const [saved, setSaved] = useState(false);
+  const { refreshTasks } = useTasksContext();
+  const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
   // Réinitialiser le formulaire quand le modal s'ouvre
   useEffect(() => {
     if (visible) {
-      setTitle('');
-      setSaved(false);
+      setText('');
       setIsLoading(false);
+      
+      // Start animations
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Focus input after animation
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 250);
+    } else {
+      // Reset animations
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.95);
     }
-  }, [visible]);
+  }, [visible, fadeAnim, scaleAnim]);
 
   const handleSave = async () => {
-    if (!title.trim() || isLoading) return;
+    if (!text.trim() || isLoading) return;
 
     setIsLoading(true);
     try {
       // TODO: Remplacer par un vrai appel API Suivi quand prêt
       // Pour l'instant, utilise la fonction mock quickCapture depuis tasksApi.mock.ts
-      await quickCapture(title.trim());
+      await quickCapture(text.trim());
       
-      setSaved(true);
+      // Rafraîchir les tâches pour que le TasksProvider reflète la nouvelle tâche
+      await refreshTasks();
+      
       setIsLoading(false);
       
-      // Afficher le feedback "Saved ✓" pendant 1.5s puis fermer
-      setTimeout(() => {
-        setSaved(false);
-        setTitle('');
-        onClose();
-        onSuccess?.();
-      }, 1500);
+      // Reset form et fermer modal
+      setText('');
+      onClose();
+      onSuccess?.();
     } catch (error) {
       console.error('Error creating quick capture:', error);
       setIsLoading(false);
@@ -69,113 +110,169 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
 
   const handleClose = () => {
     if (!isLoading) {
-      setTitle('');
-      setSaved(false);
+      setText('');
       onClose();
     }
   };
+
+  const handleBackdropPress = () => {
+    if (!isLoading) {
+      Keyboard.dismiss();
+      handleClose();
+    }
+  };
+
+  // Background colors selon le thème
+  const modalBackground = isDark ? '#1C1C1E' : '#FFFFFF';
+  const inputBackground = isDark ? '#2A2A2C' : '#F3F3F4';
+  const placeholderColor = isDark ? '#7A7A7A' : '#9A9A9A';
+  const textColor = isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary;
+  
+  // Button colors
+  const cancelTextColor = isDark ? '#B0B0B0' : '#6A6A6A';
+  const cancelBorderColor = isDark ? '#3A3A3A' : '#CACACA';
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={handleClose}
+      statusBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={handleClose}
+        <Animated.View
+          style={[
+            styles.backdrop,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
         >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
+          <TouchableOpacity
+            style={styles.backdropTouchable}
+            activeOpacity={1}
+            onPress={handleBackdropPress}
           >
-            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-              <SuiviCard padding="lg" elevation="lg" variant="default" style={styles.modalCard}>
-                <SuiviText variant="h2" style={styles.title}>
+            <Animated.View
+              style={[
+                styles.modalContainer,
+                {
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={(e) => e.stopPropagation()}
+                style={[
+                  styles.modal,
+                  {
+                    backgroundColor: modalBackground,
+                    ...tokens.shadows.card,
+                  },
+                ]}
+              >
+                {/* Title */}
+                <SuiviText
+                  variant="h2"
+                  style={[
+                    styles.title,
+                    {
+                      color: textColor,
+                      fontSize: 20,
+                      fontWeight: 'bold',
+                    },
+                  ]}
+                >
                   Quick Capture
                 </SuiviText>
-                <SuiviText variant="body" color="secondary" style={styles.subtitle}>
+
+                {/* Subtitle */}
+                <SuiviText
+                  variant="body"
+                  color="secondary"
+                  style={[
+                    styles.subtitle,
+                    {
+                      fontSize: 14,
+                      color: isDark ? tokens.colors.text.dark.secondary : tokens.colors.text.secondary,
+                    },
+                  ]}
+                >
                   Capture quickly what you want to remember
                 </SuiviText>
 
+                {/* Text Input */}
                 <View style={styles.inputContainer}>
                   <TextInput
-                    mode="outlined"
-                    label="What do you want to remember?"
-                    value={title}
-                    onChangeText={setTitle}
-                    placeholder="Enter a quick note..."
-                    multiline
-                    numberOfLines={4}
-                    disabled={isLoading || saved}
+                    ref={inputRef}
                     style={[
                       styles.input,
                       {
-                        backgroundColor: isDark 
-                          ? tokens.colors.surface.darkElevated // #242424 en dark mode
-                          : tokens.colors.background.default, // #FFFFFF en light mode
+                        backgroundColor: inputBackground,
+                        color: textColor,
                       },
                     ]}
-                    contentStyle={[
-                      styles.inputContent,
-                      {
-                        color: isDark 
-                          ? tokens.colors.text.dark.primary // #FFFFFF en dark mode
-                          : tokens.colors.text.primary, // #4F4A45 en light mode
-                      },
-                    ]}
-                    outlineStyle={[
-                      styles.inputOutline,
-                      {
-                        borderColor: isDark
-                          ? tokens.colors.border.darkMode.default // rgba(255,255,255,0.08) en dark mode
-                          : tokens.colors.border.default, // #E8E8E8 en light mode
-                      },
-                    ]}
-                    activeOutlineColor={tokens.colors.brand.primary}
-                    textColor={isDark 
-                      ? tokens.colors.text.dark.primary 
-                      : tokens.colors.text.primary}
-                    placeholderTextColor={isDark
-                      ? tokens.colors.text.dark.hint // #CACACA en dark mode
-                      : tokens.colors.text.hint}
+                    placeholder="Enter a quick note..."
+                    placeholderTextColor={placeholderColor}
+                    value={text}
+                    onChangeText={setText}
+                    multiline
+                    textAlignVertical="top"
+                    maxLength={500}
+                    editable={!isLoading}
+                    autoFocus={false}
                   />
                 </View>
 
-                {saved ? (
-                  <View style={styles.successContainer}>
-                    <SuiviText variant="body" color="primary" style={styles.successText}>
-                      Saved ✓
-                    </SuiviText>
-                  </View>
-                ) : (
-                  <View style={styles.actions}>
-                    <SuiviButton
-                      title="Cancel"
-                      onPress={handleClose}
-                      variant="ghost"
-                      disabled={isLoading}
-                      style={styles.cancelButton}
-                    />
-                    <SuiviButton
-                      title={isLoading ? "Saving..." : "Save to Inbox"}
-                      onPress={handleSave}
-                      variant="primary"
-                      disabled={!title.trim() || isLoading}
-                      style={styles.saveButton}
-                    />
-                  </View>
-                )}
-              </SuiviCard>
-            </TouchableOpacity>
-          </ScrollView>
-        </TouchableOpacity>
+                {/* Buttons Row - Stacked */}
+                <View style={styles.actions}>
+                  {/* Send to Suivi Button */}
+                  <SuiviButton
+                    title={isLoading ? 'Sending...' : 'Send to Suivi'}
+                    onPress={handleSave}
+                    variant="primary"
+                    disabled={!text.trim() || isLoading}
+                    fullWidth
+                    style={styles.sendButton}
+                  />
+
+                  {/* Cancel Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.cancelButton,
+                      {
+                        height: 48,
+                        borderRadius: 16,
+                        borderColor: cancelBorderColor,
+                        borderWidth: 1,
+                        opacity: isLoading ? 0.6 : 1,
+                      },
+                    ]}
+                    onPress={handleClose}
+                    disabled={isLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.cancelButtonText,
+                        {
+                          color: cancelTextColor,
+                        },
+                      ]}
+                    >
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -191,58 +288,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scrollContent: {
-    flexGrow: 1,
+  backdropTouchable: {
+    flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     padding: tokens.spacing.lg,
   },
-  modalCard: {
+  modalContainer: {
     width: '100%',
+    maxWidth: '90%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modal: {
+    width: '100%',
+    borderRadius: 24,
+    padding: 24,
     maxWidth: 500,
-    borderRadius: tokens.radius.xl,
   },
   title: {
     marginBottom: tokens.spacing.xs,
   },
   subtitle: {
-    marginBottom: tokens.spacing.lg,
+    marginBottom: tokens.spacing.xl,
   },
   inputContainer: {
-    marginBottom: tokens.spacing.lg,
+    marginBottom: tokens.spacing.xl,
   },
   input: {
-    // backgroundColor is set dynamically in the component
-  },
-  inputContent: {
-    fontFamily: tokens.typography.body.fontFamily, // Inter_400Regular
-    fontSize: tokens.typography.body.fontSize, // 15
-    lineHeight: tokens.typography.body.lineHeight, // 22
-    // color is set dynamically in the component
-  },
-  inputOutline: {
-    borderRadius: tokens.radius.md,
-    // borderColor is set dynamically in the component
+    borderRadius: 16,
+    padding: 14,
+    minHeight: 80,
+    maxHeight: 120,
+    fontSize: 16,
+    fontFamily: tokens.typography.body.fontFamily,
+    lineHeight: 22,
   },
   actions: {
-    flexDirection: 'row',
     gap: tokens.spacing.md,
   },
+  sendButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 16,
+  },
   cancelButton: {
-    flex: 1,
-  },
-  saveButton: {
-    flex: 1,
-  },
-  successContainer: {
-    paddingVertical: tokens.spacing.md,
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
-  successText: {
-    fontWeight: '600',
-  },
-  loader: {
-    marginLeft: tokens.spacing.xs,
+  cancelButtonText: {
+    fontFamily: tokens.typography.label.fontFamily,
+    fontSize: tokens.typography.label.fontSize,
+    fontWeight: '500',
   },
 });
-

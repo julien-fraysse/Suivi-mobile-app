@@ -1,115 +1,157 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, Image } from 'react-native';
-import { SuiviText } from './SuiviText';
+import React, { useState } from 'react';
+import { View, StyleSheet, Image, Text, ImageSourcePropType, ViewStyle } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { tokens } from '../../theme';
 
 export interface UserAvatarProps {
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string;
-  size?: 'sm' | 'md' | 'lg';
+  /**
+   * Avatar size in pixels (default: 48)
+   */
+  size?: number;
+
+  /**
+   * Image source - can be a local require() or a URL string
+   * Example: require('../assets/images/julien.jpg') or 'https://example.com/avatar.jpg'
+   * Note: From components/ui/, use '../assets/images/...' to reach src/assets/images/
+   */
+  imageSource?: ImageSourcePropType | string;
+
+  /**
+   * Full name of the user (e.g., "Julien Fraysse")
+   * Used to generate initials fallback if image is not available or fails to load
+   */
+  fullName?: string;
+
+  /**
+   * Optional custom style
+   */
   style?: ViewStyle;
 }
 
 /**
  * UserAvatar
  * 
- * Avatar utilisateur avec initiales fallback.
+ * Reusable avatar component with automatic fallback:
+ * 1. If imageSource is provided → displays Image with rounded-full styling
+ * 2. If image fails to load or no imageSource → displays initials from fullName
+ * 3. If no fullName → displays empty avatar with background
  * 
- * Design :
- * - Fond : brand.primary (#4F5DFF)
- * - Texte : blanc (inverse) avec typography selon la taille
- * - Radius : full (circulaire)
- * - Sizes : sm (32px), md (48px), lg (64px)
+ * Design:
+ * - Circular shape (rounded-full)
+ * - Image uses object-cover resize mode
+ * - Background adapts to theme (light/dark)
+ * - Initials are centered and styled appropriately
  * 
- * Utilise EXCLUSIVEMENT les tokens Suivi.
- * Affiche les initiales si avatarUrl n'est pas fourni.
+ * Backend Integration:
+ * - imageSource can be:
+ *   - Local asset: require('../assets/images/julien.jpg') (from src/components/ui/)
+ *   - Remote URL: 'https://api.suivi.app/users/123/avatar.jpg'
+ * - fullName should be the user's display name (e.g., "Julien Fraysse")
+ * - Component automatically falls back to initials if image fails
  */
 export function UserAvatar({
-  firstName,
-  lastName,
-  avatarUrl,
-  size = 'md',
+  size = 48,
+  imageSource,
+  fullName,
   style,
 }: UserAvatarProps) {
-  const getSize = (): number => {
-    switch (size) {
-      case 'sm':
-        return 32;
-      case 'md':
-        return 48;
-      case 'lg':
-        return 64;
-      default:
-        return 48;
+  const theme = useTheme();
+  const isDark = theme.dark;
+  const [imageError, setImageError] = useState(false);
+
+  // Background color adapts to theme
+  const backgroundColor = isDark 
+    ? tokens.colors.surface.darkElevated // #242424 in dark mode
+    : tokens.colors.neutral.light; // #E8E8E8 in light mode
+
+  // Text color for initials
+  const textColor = isDark 
+    ? tokens.colors.text.dark.primary // #FFFFFF in dark mode
+    : tokens.colors.text.primary; // #4F4A45 in light mode
+
+  // Generate initials from fullName
+  const getInitials = (): string => {
+    if (!fullName || fullName.trim().length === 0) return '';
+
+    const words = fullName.trim().split(/\s+/).filter(word => word.length > 0);
+    if (words.length === 0) return '';
+
+    if (words.length === 1) {
+      // Single word: take first letter
+      return words[0].charAt(0).toUpperCase();
     }
+
+    // Multiple words: take first letter of first and last word
+    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
   };
 
-  const getFontSize = (): number => {
-    switch (size) {
-      case 'sm':
-        return tokens.typography.body.fontSize; // 15
-      case 'md':
-        return tokens.typography.h6.fontSize; // 16
-      case 'lg':
-        return tokens.typography.h2.fontSize; // 18
-      default:
-        return tokens.typography.h6.fontSize; // 16
-    }
+  const initials = getInitials();
+  const hasImage = imageSource && !imageError;
+
+  // Avatar container style
+  const containerStyle: ViewStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    backgroundColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   };
 
-  const avatarSize = getSize();
-  const fontSize = getFontSize();
-  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  // Image style
+  const imageStyle = {
+    width: size,
+    height: size,
+  };
 
-  const avatarStyle = [
-    styles.avatar,
-    {
-      width: avatarSize,
-      height: avatarSize,
-      borderRadius: avatarSize / 2,
-      backgroundColor: tokens.colors.brand.primary, // #4F5DFF
-    },
-    style,
-  ];
+  // Font size for initials (proportional to avatar size)
+  const fontSize = Math.max(14, size * 0.4);
 
-  // Si avatarUrl est fourni, afficher l'image, sinon les initiales
-  if (avatarUrl) {
+  // Render content
+  if (hasImage) {
+    // Try to determine if imageSource is a require() object or URL string
+    const source = typeof imageSource === 'string' 
+      ? { uri: imageSource }
+      : imageSource;
+
     return (
-      <Image
-        source={{ uri: avatarUrl }}
-        style={avatarStyle}
-        defaultSource={undefined}
-      />
+      <View style={[containerStyle, style]}>
+        <Image
+          source={source}
+          style={imageStyle}
+          resizeMode="cover"
+          onError={() => {
+            setImageError(true);
+          }}
+        />
+      </View>
     );
   }
 
+  // Fallback: show initials or empty avatar
   return (
-    <View style={avatarStyle}>
-      <SuiviText
-        variant="h2"
-        color="inverse"
-        style={[
-          styles.initials,
-          {
-            fontSize,
-          },
-        ]}
-      >
-        {initials}
-      </SuiviText>
+    <View style={[containerStyle, style]}>
+      {initials ? (
+        <Text
+          style={[
+            styles.initials,
+            {
+              fontSize,
+              color: textColor,
+            },
+          ]}
+        >
+          {initials}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  avatar: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
   initials: {
-    fontWeight: '700',
+    fontWeight: '500', // Medium weight
+    textAlign: 'center',
   },
 });
-

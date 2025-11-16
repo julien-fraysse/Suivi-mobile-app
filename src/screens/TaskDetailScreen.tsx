@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  TouchableOpacity,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/Screen';
@@ -13,6 +12,7 @@ import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
 import { UserAvatar } from '../components/ui/UserAvatar';
+import { SuiviStatusPicker } from '../components/ui/SuiviStatusPicker';
 import { useTaskById } from '../tasks/useTaskById';
 import { useUpdateTaskStatus } from '../tasks/useUpdateTaskStatus';
 import type { TaskStatus } from '../tasks/tasks.types';
@@ -50,7 +50,10 @@ export function TaskDetailScreen() {
   // Status actuel de la tâche (dérivé du store)
   const taskStatus = task?.status;
 
-  // Toggle du statut de la tâche
+  // State for status picker visibility
+  const [isStatusPickerVisible, setIsStatusPickerVisible] = useState(false);
+
+  // Handle status change from picker
   // TODO: When Suivi API is ready, add error handling for failed API calls
   const handleChangeStatus = async (newStatus: TaskStatus) => {
     if (!taskId || !task || isUpdating) return;
@@ -107,25 +110,14 @@ export function TaskDetailScreen() {
           <SuiviText variant="label" color="secondary" style={styles.statusLabel}>
             Status
           </SuiviText>
-          <TouchableOpacity
-            style={[styles.statusButton, { backgroundColor: statusColor }]}
-            onPress={() => {
-              // Cycle through statuses: todo -> in_progress -> blocked -> done -> todo
-              const statusOrder: TaskStatus[] = ['todo', 'in_progress', 'blocked', 'done'];
-              const currentIndex = statusOrder.indexOf(taskStatus!);
-              const nextIndex = (currentIndex + 1) % statusOrder.length;
-              const newStatus = statusOrder[nextIndex];
-              handleChangeStatus(newStatus);
-            }}
+          <SuiviButton
+            title={formatStatus(taskStatus!)}
+            onPress={() => setIsStatusPickerVisible(true)}
             disabled={isUpdating}
-          >
-            <SuiviText variant="body" color="inverse">
-              {formatStatus(taskStatus!)}
-            </SuiviText>
-            {isUpdating && (
-              <ActivityIndicator size="small" color="#FFFFFF" style={styles.statusLoader} />
-            )}
-          </TouchableOpacity>
+            loading={isUpdating}
+            style={[styles.statusButton, { backgroundColor: statusColor }]}
+            textStyle={{ color: '#FFFFFF' }}
+          />
         </SuiviCard>
       </View>
 
@@ -178,9 +170,8 @@ export function TaskDetailScreen() {
             </SuiviText>
             <View style={styles.assigneeContainer}>
               <UserAvatar
-                firstName={task.assigneeName.split(' ')[0]}
-                lastName={task.assigneeName.split(' ')[1] || ''}
-                size="sm"
+                size={32}
+                fullName={task.assigneeName}
                 style={styles.avatar}
               />
               <SuiviText variant="body" color="primary" style={styles.assigneeText}>
@@ -236,6 +227,16 @@ export function TaskDetailScreen() {
           </SuiviCard>
         )}
       </View>
+
+      {/* Status Picker Modal - Rendu à la fin pour être au-dessus de tout */}
+      {taskStatus && (
+        <SuiviStatusPicker
+          visible={isStatusPickerVisible}
+          onClose={() => setIsStatusPickerVisible(false)}
+          currentStatus={taskStatus}
+          onSelectStatus={handleChangeStatus}
+        />
+      )}
     </Screen>
   );
 }
@@ -322,9 +323,6 @@ const styles = StyleSheet.create({
   errorSubtext: {
     textAlign: 'center',
     marginTop: tokens.spacing.xs,
-  },
-  statusLoader: {
-    marginLeft: tokens.spacing.sm,
   },
   statusSection: {
     marginBottom: tokens.spacing.lg,

@@ -219,3 +219,4 @@ Le Quick Capture utilise actuellement `quickCapture()` dans `tasksApi.mock.ts`.
 - `docs/mobile/screens-overview.md` : Vue d'ensemble des écrans
 - `docs/mobile/api-contract.md` : Contrat d'API attendu (si documenté)
 
+

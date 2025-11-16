@@ -86,3 +86,4 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
 
 export const mockNotifications = MOCK_NOTIFICATIONS;
 
+

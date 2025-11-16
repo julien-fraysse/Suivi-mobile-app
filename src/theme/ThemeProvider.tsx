@@ -3,6 +3,7 @@ import { useColorScheme } from 'react-native';
 import { PaperProvider, MD3Theme } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { suiviLightTheme, suiviDarkTheme } from '../../theme/paper-theme';
+import { useSettings } from '../context/SettingsContext';
 
 /**
  * Theme Mode
@@ -63,7 +64,26 @@ export function ThemeProvider({
   initialMode = 'auto',
 }: ThemeProviderProps) {
   const systemColorScheme = useColorScheme();
-  const [themeMode, setThemeMode] = useState<ThemeMode>(initialMode);
+  
+  // Get theme from Settings context (SettingsProvider must be a parent in App.tsx)
+  // Note: SettingsProvider wraps ThemeProvider, so useSettings() is always available
+  const { settings } = useSettings();
+  
+  // Conversion: SettingsContext utilise 'system', ThemeProvider utilise 'auto'
+  const convertThemeFromSettings = (settingsTheme: 'light' | 'dark' | 'system'): ThemeMode => {
+    return settingsTheme === 'system' ? 'auto' : settingsTheme;
+  };
+  
+  const initialThemeMode = convertThemeFromSettings(settings.theme);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(initialThemeMode || initialMode);
+
+  // Sync with Settings context when it changes
+  useEffect(() => {
+    const convertedTheme = convertThemeFromSettings(settings.theme);
+    if (convertedTheme !== themeMode) {
+      setThemeMode(convertedTheme);
+    }
+  }, [settings.theme, themeMode]);
 
   // Détermine le thème effectif en fonction du mode
   const getEffectiveTheme = (): MD3Theme => {

@@ -5,6 +5,7 @@ import { useEffect, useCallback } from 'react';
 
 import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, Theme as NavigationTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MD3Theme } from 'react-native-paper';
@@ -22,6 +23,7 @@ import {
 
 import { AuthProvider } from './auth';
 import { TasksProvider } from './tasks/TasksContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider, useThemeMode } from './theme/ThemeProvider';
 import { tokens } from './theme';
 
@@ -128,16 +130,20 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider initialMode="auto">
-          <AuthProvider>
-            <TasksProvider>
-              <AppContent />
-            </TasksProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <SettingsProvider>
+            <ThemeProvider initialMode="auto">
+              <AuthProvider>
+                <TasksProvider>
+                  <AppContent />
+                </TasksProvider>
+              </AuthProvider>
+            </ThemeProvider>
+          </SettingsProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

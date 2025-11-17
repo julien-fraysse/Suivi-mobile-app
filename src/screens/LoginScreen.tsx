@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useTheme, TextInput as PaperTextInput, Button } from 'react-native-paper';
-import { Screen } from '../components/Screen';
+import { AuthBackground } from '../components/AuthBackground';
 import { SuiviText } from '../components/ui/SuiviText';
 import { useAuth } from '../auth';
 import { useThemeMode } from '../theme/ThemeProvider';
@@ -40,7 +40,7 @@ export function LoginScreen() {
   };
 
   return (
-    <Screen>
+    <AuthBackground>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -112,7 +112,7 @@ export function LoginScreen() {
           </Button>
         </View>
       </KeyboardAvoidingView>
-    </Screen>
+    </AuthBackground>
   );
 }
 

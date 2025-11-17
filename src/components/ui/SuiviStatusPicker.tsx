@@ -44,9 +44,9 @@ export function SuiviStatusPicker({
   const getStatusColor = (status: TaskStatus): string => {
     switch (status) {
       case 'todo':
-        return tokens.colors.neutral.medium; // #98928C - gray/neutral
+        return tokens.colors.brand.primary; // #4F5DFF - violet
       case 'in_progress':
-        return tokens.colors.brand.primary; // #4F5DFF - blue/violet
+        return tokens.colors.accent.maize; // #FDD447 - jaune
       case 'blocked':
         return tokens.colors.semantic.error; // #D32F2F - red
       case 'done':

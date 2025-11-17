@@ -63,7 +63,6 @@ import type {
   Notification,
   User,
   QuickStats,
-  ActivityItem,
   MyTasksPage,
 } from '../mocks/suiviMock';
 import type {
@@ -179,22 +178,6 @@ export const api = {
     // return getQuickStats(_accessToken);
   },
 
-  /**
-   * Récupère le fil d'activité
-   * 
-   * TODO: Créer getActivityFeed(accessToken, limit) dans '../api/activity.ts'
-   */
-  getActivityFeed: async (
-    limit: number = 10,
-    _accessToken?: string | null,
-  ): Promise<ActivityItem[]> => {
-    // PHASE 3: Utilise les mocks
-    return mock.getActivityFeed(limit);
-    
-    // TODO: Migration vers vraie API
-    // if (!_accessToken) throw new Error('No access token');
-    // return getActivityFeed(_accessToken, limit);
-  },
 
   // ============================================================================
   // QUICK CAPTURE (Inbox mobile)

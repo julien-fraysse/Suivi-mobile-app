@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -10,10 +10,8 @@ import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
 import { FilterChip } from '../components/ui/FilterChip';
-import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
 import { TaskItem } from '../components/ui/TaskItem';
-import { QuickCaptureModal } from '../components/ui/QuickCaptureModal';
 import { useTasks } from '../tasks/useTasks';
 import type { Task, TaskFilter } from '../tasks/tasks.types';
 import { tokens } from '../theme';
@@ -30,7 +28,6 @@ type MyTasksRouteProp = RouteProp<MainTabParamList, 'MyTasks'>;
  * - Filtres : All / Active / Completed
  * - Liste des tâches depuis useTasks() (source unique de vérité)
  * - Empty State quand aucune tâche
- * - Action : Quick Capture
  * 
  * TODO: Replace useTasks() with real Suivi API calls when backend is ready.
  */
@@ -39,7 +36,6 @@ export function MyTasksScreen() {
   const route = useRoute<MyTasksRouteProp>();
   const initialFilter: FilterOption = route.params?.initialFilter ?? 'all';
   const [filter, setFilter] = useState<FilterOption>(initialFilter);
-  const [quickCaptureVisible, setQuickCaptureVisible] = useState(false);
 
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { tasks: visibleTasks, isLoading, error, refresh } = useTasks(filter);
@@ -50,22 +46,6 @@ export function MyTasksScreen() {
       setFilter(route.params.initialFilter);
     }
   }, [route.params?.initialFilter]);
-
-  // Ouvrir le modal Quick Capture
-  const handleOpenQuickCapture = () => {
-    setQuickCaptureVisible(true);
-  };
-
-  // Fermer le modal Quick Capture
-  const handleCloseQuickCapture = () => {
-    setQuickCaptureVisible(false);
-  };
-
-  // Après capture rapide, rafraîchir la liste des tâches
-  // TODO: When Suivi API is ready, trigger a refresh from API here if needed
-  const handleQuickCaptureSuccess = () => {
-    refresh();
-  };
 
   const renderFilterButton = (option: FilterOption, label: string) => {
     return (
@@ -99,13 +79,6 @@ export function MyTasksScreen() {
         <SuiviText variant="body" color="secondary" style={styles.emptyText}>
           Create your first task to get started
         </SuiviText>
-        <View style={styles.emptyButton}>
-          <SuiviButton
-            title="Quick Capture"
-            onPress={handleOpenQuickCapture}
-            variant="primary"
-          />
-        </View>
       </View>
     );
   };
@@ -114,15 +87,6 @@ export function MyTasksScreen() {
     <Screen>
       <AppHeader />
       
-      {/* Action bar with Quick Capture */}
-      <View style={styles.actionBar}>
-        <SuiviButton
-          title="Quick Capture"
-          onPress={handleOpenQuickCapture}
-          variant="primary"
-        />
-      </View>
-
       {/* Filters */}
       <View style={styles.filterBar}>
         {renderFilterButton('all', 'All')}
@@ -140,21 +104,11 @@ export function MyTasksScreen() {
         refreshing={isLoading}
         onRefresh={refresh}
       />
-
-      {/* Quick Capture Modal */}
-      <QuickCaptureModal
-        visible={quickCaptureVisible}
-        onClose={handleCloseQuickCapture}
-        onSuccess={handleQuickCaptureSuccess}
-      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  actionBar: {
-    marginBottom: tokens.spacing.md,
-  },
   filterBar: {
     flexDirection: 'row',
     gap: tokens.spacing.sm,
@@ -182,10 +136,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginBottom: tokens.spacing.lg,
     textAlign: 'center',
-  },
-  emptyButton: {
-    width: '100%',
-    maxWidth: 200,
   },
 });
 

@@ -14,15 +14,13 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient, UseQueryOptions, UseInfiniteQueryOptions } from '@tanstack/react-query';
 import { useAuth } from '../auth';
 import api, { GetTasksParams } from '../services/api';
-import * as activityAPI from '../api/activity';
+import type { Task } from '../api/tasks';
 import type {
-  Task,
   MyTasksPage,
   Project,
   Notification,
   User,
   QuickStats,
-  ActivityItem,
 } from '../mocks/suiviMock';
 import type {
   QuickCaptureItem,
@@ -160,23 +158,10 @@ export function useQuickStats(options?: Omit<UseQueryOptions<QuickStats>, 'query
 // ============================================================================
 
 /**
- * Hook pour récupérer le fil d'activité
- * 
- * @deprecated Use useActivityFeed from '../hooks/useActivity' instead
+ * @deprecated Legacy query hook (unused)
+ * This file is kept only to avoid breaking imports.
+ * Safe to remove once all code is migrated.
  */
-export function useActivityFeed(
-  limit: number = 10,
-  options?: Omit<UseQueryOptions<ActivityItem[]>, 'queryKey' | 'queryFn'>,
-) {
-  const { accessToken } = useAuth();
-
-  return useQuery<ActivityItem[]>({
-    queryKey: ['activityFeed', limit],
-    enabled: !!accessToken,
-    queryFn: () => activityAPI.getActivityFeed(limit, accessToken),
-    ...options,
-  });
-}
 
 // ============================================================================
 // QUICK CAPTURE (Inbox mobile)

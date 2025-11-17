@@ -5,6 +5,7 @@ import { AppLoadingScreen } from '../screens/AppLoadingScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { MainTabNavigator } from './MainTabNavigator';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
+import { ActivityDetailScreen } from '../screens/ActivityDetailScreen';
 import type { RootStackParamList, AuthStackParamList, AppStackParamList } from './types';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +45,15 @@ function AppNavigator() {
       <AppStack.Screen
         name="TaskDetail"
         component={TaskDetailScreen}
+      />
+      <AppStack.Screen
+        name="ActivityDetail"
+        component={ActivityDetailScreen}
+        options={{
+          headerShown: true,
+          title: '',
+          headerBackTitle: '',
+        }}
       />
     </AppStack.Navigator>
   );

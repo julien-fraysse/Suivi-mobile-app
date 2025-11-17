@@ -57,7 +57,7 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
       setText('');
       setIsLoading(false);
       
-      // Start animations
+      // Start animations - ensure they always complete
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -70,7 +70,15 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
           tension: 40,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start((finished) => {
+        if (finished) {
+          console.log('[QuickCaptureModal] Animations completed');
+        } else {
+          // Fallback: force values if animation was interrupted
+          fadeAnim.setValue(1);
+          scaleAnim.setValue(1);
+        }
+      });
 
       // Focus input after animation
       setTimeout(() => {
@@ -132,11 +140,18 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
   const cancelTextColor = isDark ? '#B0B0B0' : '#6A6A6A';
   const cancelBorderColor = isDark ? '#3A3A3A' : '#CACACA';
 
+  // Debug: Log when modal visibility changes
+  useEffect(() => {
+    if (visible) {
+      console.log('[QuickCaptureModal] Modal should be visible');
+    }
+  }, [visible]);
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={handleClose}
       statusBarTranslucent
     >

@@ -106,7 +106,7 @@ export function UserAvatar({
   };
 
   // Font size for initials (proportional to avatar size)
-  const fontSize = Math.max(14, size * 0.4);
+  const fontSize = size >= 34 ? 14 : Math.max(12, size * 0.4);
 
   // Render content
   if (hasImage) {
@@ -151,7 +151,7 @@ export function UserAvatar({
 
 const styles = StyleSheet.create({
   initials: {
-    fontWeight: '500', // Medium weight
+    fontWeight: '600', // Semi-bold weight for better visibility
     textAlign: 'center',
   },
 });

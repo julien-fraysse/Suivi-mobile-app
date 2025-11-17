@@ -1,21 +1,21 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { useAuth } from '../auth';
 import * as activityAPI from '../api/activity';
-import type { ActivityItem } from '../api/activity';
+import type { SuiviActivityEvent } from '../types/activity';
 
 /**
  * Hook pour récupérer le fil d'activité
  */
 export function useActivityFeed(
   limit: number = 10,
-  options?: Omit<UseQueryOptions<ActivityItem[]>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<SuiviActivityEvent[]>, 'queryKey' | 'queryFn'>,
 ) {
   const { accessToken } = useAuth();
 
   return useQuery({
     queryKey: ['activity', 'feed', limit],
     enabled: !!accessToken,
-    queryFn: () => activityAPI.getActivityFeed(limit, accessToken),
+    queryFn: () => activityAPI.getRecentActivity(accessToken, { limit }),
     ...options,
   });
 }
@@ -25,7 +25,7 @@ export function useActivityFeed(
  */
 export function useTaskActivity(
   taskId: string | null,
-  options?: Omit<UseQueryOptions<ActivityItem[]>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<SuiviActivityEvent[]>, 'queryKey' | 'queryFn'>,
 ) {
   const { accessToken } = useAuth();
 

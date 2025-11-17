@@ -31,6 +31,9 @@ export type AppStackParamList = {
   TaskDetail: {
     taskId: string;
   };
+  ActivityDetail: {
+    eventId: string;
+  };
 };
 
 /**

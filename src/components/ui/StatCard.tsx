@@ -106,6 +106,8 @@ const styles = StyleSheet.create({
   value: {
     marginBottom: tokens.spacing.xs,
     opacity: 1,
+    fontSize: 30, // Taille augmentée pour les chiffres
+    fontWeight: 'bold', // Texte en gras
   },
   title: {
     opacity: 0.9,

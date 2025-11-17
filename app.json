@@ -28,6 +28,10 @@
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "updates": {
+      "enabled": false,
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

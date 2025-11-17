@@ -6,16 +6,23 @@ import type { AppStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
 import { HomeSearchBar } from '../components/HomeSearchBar';
-import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { StatCard } from '../components/ui/StatCard';
 import { SuiviText } from '../components/ui/SuiviText';
-import { QuickCaptureModal } from '../components/ui/QuickCaptureModal';
+import { ActivityCard } from '../components/activity/ActivityCard';
+import { FilterChip } from '../components/ui/FilterChip';
 import { useActivityFeed } from '../hooks/useActivity';
 import { useTasks } from '../tasks/useTasks';
 import { tokens } from '../theme';
+import type { SuiviActivityEvent } from '../types/activity';
 
 type HomeNavigationProp = NativeStackNavigationProp<AppStackParamList>;
+
+/**
+ * Espacement vertical entre les cartes d'activité
+ * Ajustez cette valeur pour modifier l'espacement entre les cartes (en pixels)
+ */
+const ACTIVITY_CARD_SPACING = 4;
 
 /**
  * HomeScreen
@@ -23,17 +30,17 @@ type HomeNavigationProp = NativeStackNavigationProp<AppStackParamList>;
  * Écran d'accueil avec :
  * - Quick Actions : Statistiques rapides (calculées depuis useTasks avec helpers de filtre)
  * - Activity Feed : Fil d'activité récent (useActivityFeed)
- * - Actions : Quick Capture (inbox mobile) et View All Tasks
  * 
  * Note : Les filtres de tâches sont disponibles sur l'écran Tasks, pas sur Home.
- * Les tâches complexes sont créées côté desktop. Le mobile permet uniquement
- * une capture rapide (Quick Capture) pour l'inbox mobile.
  * 
  * Toutes les données viennent de api.ts (mocks pour l'instant).
  */
+
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
-  const [quickCaptureVisible, setQuickCaptureVisible] = useState(false);
+  
+  const [filter, setFilter] = useState<'all' | 'board' | 'portal'>('all');
+  const [limit, setLimit] = useState(5);
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { tasks: allTasks } = useTasks('all');
@@ -54,12 +61,47 @@ export function HomeScreen() {
   }, [allTasks]);
 
   // Données activité depuis api.ts via hooks
-  const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities, error: errorActivities, refetch: refetchActivities } = useActivityFeed(5);
+  const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities } = useActivityFeed(50);
 
-  // Navigation vers les tâches filtrées
-  const handleViewAllTasks = () => {
-    navigation.navigate('Main', { screen: 'MyTasks', params: { initialFilter: 'all' } });
+  /**
+   * Réordonne les activités pour que la première soit un board si disponible
+   */
+  const reorderActivitiesToStartWithBoard = (list: SuiviActivityEvent[]): SuiviActivityEvent[] => {
+    if (!list || list.length === 0) return list;
+    
+    const boards = list.filter((a) => a.eventType.startsWith('BOARD_'));
+    const others = list.filter((a) => !a.eventType.startsWith('BOARD_'));
+    
+    if (boards.length > 0) {
+      // Mettre le premier board en premier, puis les autres activités
+      return [boards[0], ...others, ...boards.slice(1)];
+    }
+    
+    return list;
   };
+
+  // Réordonner les activités pour commencer par un board si disponible
+  const orderedActivities = useMemo(() => {
+    if (!activities) return [];
+    return reorderActivitiesToStartWithBoard(activities);
+  }, [activities]);
+
+  // Filtrer les activités selon le filtre actif
+  const filteredActivities = useMemo(() => {
+    if (!orderedActivities || orderedActivities.length === 0) return [];
+    
+    switch (filter) {
+      case 'board':
+        return orderedActivities.filter((a) => a.eventType.startsWith('BOARD_'));
+      case 'portal':
+        return orderedActivities.filter((a) => a.eventType.startsWith('PORTAL_'));
+      default:
+        return orderedActivities;
+    }
+  }, [orderedActivities, filter]);
+
+  // Calculer les activités visibles avec pagination
+  const visibleActivities = filteredActivities.slice(0, limit);
 
   // Navigation vers les tâches actives
   const handleViewActiveTasks = () => {
@@ -72,28 +114,13 @@ export function HomeScreen() {
   const handleViewDueToday = () => {
     navigation.navigate('Main', { screen: 'MyTasks', params: { initialFilter: 'active' } });
   };
-  
-  // Après Quick Capture, rafraîchir les activités
-  const handleQuickCaptureSuccess = () => {
-    refetchActivities();
-    // TODO: When Suivi API is ready, refresh tasks from API here if needed
-  };
-
-  // Ouvrir le modal Quick Capture
-  const handleOpenQuickCapture = () => {
-    setQuickCaptureVisible(true);
-  };
-
-  // Fermer le modal Quick Capture
-  const handleCloseQuickCapture = () => {
-    setQuickCaptureVisible(false);
-  };
 
   // Handler pour la recherche (prêt pour intégration future avec les APIs Suivi)
   const handleSearch = (query: string) => {
     // TODO: wire this search to real Suivi APIs (tasks, notifications, boards) later.
     console.log('Search query:', query);
   };
+
 
   return (
     <Screen>
@@ -124,120 +151,92 @@ export function HomeScreen() {
           </View>
         </View>
 
-        {/* Activity Feed - Fil d'activité depuis api.getActivityFeed() */}
+        {/* Activités récentes */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Recent Activity
+            Activités récentes
           </SuiviText>
+
           {isLoadingActivities ? (
-            <View style={styles.skeletonContainer}>
-              {[1, 2, 3].map((i) => (
-                <View key={i} style={styles.skeletonCard}>
-                  <View style={styles.skeletonLine} />
-                  <View style={[styles.skeletonLine, { width: '60%', marginTop: tokens.spacing.xs }]} />
-                </View>
-              ))}
+            <View style={styles.activityPreview}>
+              <View style={styles.skeletonLine} />
+              <View style={[styles.skeletonLine, { width: '60%', marginTop: tokens.spacing.xs }]} />
             </View>
           ) : isErrorActivities ? (
-            <SuiviCard padding="md" elevation="card" variant="outlined" style={styles.errorCard}>
-              <SuiviText variant="body" color="primary" style={styles.errorText}>
-                {String(errorActivities?.message || 'Error loading activity')}
+            <View style={styles.activityPreview}>
+              <SuiviText variant="body" color="secondary">
+                Erreur lors du chargement
               </SuiviText>
-              <SuiviButton
-                title="Retry"
-                onPress={() => refetchActivities()}
-                variant="ghost"
-                style={styles.retryButton}
-              />
-            </SuiviCard>
-          ) : activities && activities.length > 0 ? (
-            activities.map((activity) => (
-              <SuiviCard
-                key={activity.id}
-                padding="md"
-                elevation="card"
-                variant="default"
-                style={styles.card}
-              >
-                <SuiviText variant="h2" style={styles.cardTitle}>
-                  {activity.message}
-                </SuiviText>
-                <SuiviText variant="body" color="secondary">
-                  {activity.actor.name} • {formatActivityDate(activity.createdAt)}
-                </SuiviText>
-              </SuiviCard>
-            ))
+            </View>
           ) : (
-            <SuiviCard
-              padding="md"
-              elevation="card"
-              variant="outlined"
-              style={styles.card}
-            >
-              <SuiviText variant="body" color="secondary" style={styles.emptyText}>
-                No recent activity
-              </SuiviText>
-            </SuiviCard>
+            <>
+              {/* Filtres Material 3 - toujours visibles */}
+              <View style={styles.filtersContainer}>
+                <FilterChip
+                  label="Tous"
+                  selected={filter === 'all'}
+                  onPress={() => {
+                    setFilter('all');
+                    setLimit(5);
+                  }}
+                  material3
+                />
+                <FilterChip
+                  label="Boards"
+                  selected={filter === 'board'}
+                  onPress={() => {
+                    setFilter('board');
+                    setLimit(5);
+                  }}
+                  material3
+                />
+                <FilterChip
+                  label="Portails"
+                  selected={filter === 'portal'}
+                  onPress={() => {
+                    setFilter('portal');
+                    setLimit(5);
+                  }}
+                  material3
+                />
+              </View>
+
+              {/* Liste d'activités */}
+              {filteredActivities.length === 0 ? (
+                <View style={styles.activityPreview}>
+                  <SuiviText variant="body" color="secondary" style={styles.emptyText}>
+                    Aucune activité récente
+                  </SuiviText>
+                </View>
+              ) : (
+                <View style={styles.fullListContainer}>
+                  {visibleActivities.map((activity) => (
+                    <ActivityCard
+                      key={activity.id}
+                      event={activity}
+                      onPress={(event) => navigation.navigate('ActivityDetail', { eventId: event.id })}
+                      style={styles.activityCard}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Bouton "Voir plus d'activités" */}
+              {filteredActivities.length > limit && (
+                <SuiviButton
+                  title="Voir plus d'activités"
+                  onPress={() => setLimit(limit + 5)}
+                  variant="ghost"
+                  fullWidth
+                  style={styles.viewMoreButton}
+                />
+              )}
+            </>
           )}
         </View>
-
-        {/* Calls to Action - Boutons d'action */}
-        <View style={styles.section}>
-          <SuiviText variant="h1" style={styles.sectionTitle}>
-            Actions
-          </SuiviText>
-          
-          <View style={styles.buttonRow}>
-            <SuiviButton
-              title="Quick Capture"
-              onPress={handleOpenQuickCapture}
-              variant="primary"
-              fullWidth
-            />
-          </View>
-          
-          <View style={styles.buttonRow}>
-            <SuiviButton
-              title="View All Tasks"
-              onPress={handleViewAllTasks}
-              variant="ghost"
-              fullWidth
-            />
-          </View>
-        </View>
       </ScrollView>
-
-      {/* Quick Capture Modal */}
-      <QuickCaptureModal
-        visible={quickCaptureVisible}
-        onClose={handleCloseQuickCapture}
-        onSuccess={handleQuickCaptureSuccess}
-      />
     </Screen>
   );
-}
-
-/**
- * Formate une date d'activité pour l'affichage
- */
-function formatActivityDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch {
-    return dateString;
-  }
 }
 
 const styles = StyleSheet.create({
@@ -296,7 +295,25 @@ const styles = StyleSheet.create({
   cardTitle: {
     marginBottom: tokens.spacing.xs,
   },
-  buttonRow: {
+  filtersContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: tokens.spacing.lg,
+    paddingVertical: tokens.spacing.md,
     marginBottom: tokens.spacing.md,
+    marginTop: 4, // Espacement réduit entre le titre et les filtres
+  },
+  activityCard: {
+    marginBottom: ACTIVITY_CARD_SPACING,
+  },
+  activityPreview: {
+    marginBottom: tokens.spacing.md,
+  },
+  viewMoreButton: {
+    marginTop: tokens.spacing.md,
+  },
+  fullListContainer: {
+    gap: tokens.spacing.md,
   },
 });

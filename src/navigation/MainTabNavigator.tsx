@@ -2,7 +2,6 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
-import { useWindowDimensions } from 'react-native';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MyTasksScreen } from '../screens/MyTasksScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
@@ -31,10 +30,6 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export function MainTabNavigator() {
   const theme = useTheme();
   const isDark = theme.dark;
-  const { width: screenWidth } = useWindowDimensions();
-  
-  // Calcul de la largeur exacte pour chaque onglet (25% de l'écran)
-  const tabItemWidth = screenWidth / 4;
 
   return (
     <Tab.Navigator
@@ -44,34 +39,22 @@ export function MainTabNavigator() {
         tabBarInactiveTintColor: tokens.colors.neutral.medium, // #98928C
         tabBarHideOnKeyboard: true, // Évite les bugs de layout avec le clavier
         tabBarStyle: {
-          backgroundColor: isDark ? tokens.colors.surface.dark : tokens.colors.background.surface, // Dark: #252525, Light: #F4F2EE
+          backgroundColor: isDark ? tokens.colors.surface.dark : tokens.colors.background.surface,
           borderTopWidth: 1,
-          borderTopColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default, // Dark: #98928C, Light: #E8E8E8
-          paddingHorizontal: 0, // Supprime tout padding horizontal pour forcer l'espacement uniforme
-        },
-        tabBarContentContainerStyle: {
-          justifyContent: 'space-between', // Distribution uniforme
-          paddingHorizontal: 0, // Pas de padding horizontal
+          borderTopColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          flex: 1, // Chaque item prend exactement 1/4 de l'espace disponible
-          width: tabItemWidth, // Force la largeur exacte
-          maxWidth: tabItemWidth, // Empêche tout débordement
-          minWidth: tabItemWidth, // Garantit la largeur minimale
+          paddingVertical: 4,
         },
         tabBarLabelStyle: {
-          fontFamily: tokens.typography.label.fontFamily, // Inter_500Medium
+          fontFamily: tokens.typography.label.fontFamily,
           fontSize: 12,
-          fontWeight: tokens.typography.label.fontWeight, // '500'
+          fontWeight: tokens.typography.label.fontWeight,
           marginTop: 0,
-          textAlign: 'center', // Centre le texte
-        },
-        tabBarIconStyle: {
-          marginTop: 0,
-          marginBottom: 0,
+          textAlign: 'center',
         },
       }}
     >
@@ -81,7 +64,7 @@ export function MainTabNavigator() {
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size = 24 }) => (
-            <MaterialCommunityIcons name="home" size={size} color={color} />
+            <MaterialCommunityIcons name="home" size={24} color={color} />
           ),
         }}
       />
@@ -91,7 +74,7 @@ export function MainTabNavigator() {
         options={{
           tabBarLabel: 'My Tasks',
           tabBarIcon: ({ color, size = 24 }) => (
-            <MaterialCommunityIcons name="check-circle" size={size} color={color} />
+            <MaterialCommunityIcons name="clipboard-check-outline" size={size} color={color} />
           ),
         }}
       />

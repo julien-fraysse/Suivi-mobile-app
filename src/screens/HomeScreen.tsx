@@ -11,7 +11,7 @@ import { SuiviButton } from '../components/ui/SuiviButton';
 import { StatCard } from '../components/ui/StatCard';
 import { SuiviText } from '../components/ui/SuiviText';
 import { ActivityCard } from '../components/activity/ActivityCard';
-import { FilterChip } from '../components/ui/FilterChip';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { useActivityFeed } from '../hooks/useActivity';
 import { useTasks } from '../tasks/useTasks';
 import { tokens } from '../theme';
@@ -174,33 +174,20 @@ export function HomeScreen() {
             <>
               {/* Filtres Material 3 - toujours visibles */}
               <View style={styles.filtersContainer}>
-                <FilterChip
-                  label={t('home.filters.all')}
-                  selected={filter === 'all'}
-                  onPress={() => {
-                    setFilter('all');
-                    setLimit(5);
-                  }}
-                  material3
-                />
-                <FilterChip
-                  label={t('home.filters.boards')}
-                  selected={filter === 'board'}
-                  onPress={() => {
-                    setFilter('board');
-                    setLimit(5);
-                  }}
-                  material3
-                />
-                <FilterChip
-                  label={t('home.filters.portals')}
-                  selected={filter === 'portal'}
-                  onPress={() => {
-                    setFilter('portal');
-                    setLimit(5);
-                  }}
-                  material3
-                />
+                <View style={{ alignSelf: 'flex-start', marginBottom: tokens.spacing.md }}>
+                  <SegmentedControl
+                    options={[
+                      { key: 'all', label: t('home.filters.all') },
+                      { key: 'board', label: t('home.filters.boards') },
+                      { key: 'portal', label: t('home.filters.portals') },
+                    ]}
+                    value={filter}
+                    onChange={(newValue) => {
+                      setFilter(newValue as 'all' | 'board' | 'portal');
+                      setLimit(5);
+                    }}
+                  />
+                </View>
               </View>
 
               {/* Liste d'activités */}
@@ -298,12 +285,6 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.xs,
   },
   filtersContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: tokens.spacing.lg,
-    paddingVertical: tokens.spacing.md,
-    marginBottom: tokens.spacing.md,
     marginTop: 4, // Espacement réduit entre le titre et les filtres
   },
   activityCard: {

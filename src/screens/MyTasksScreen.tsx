@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
-import { FilterChip } from '../components/ui/FilterChip';
+import { TasksFilterControl } from '../components/ui/TasksFilterControl';
 import { SuiviText } from '../components/ui/SuiviText';
 import { TaskItem } from '../components/ui/TaskItem';
 import { useTasks } from '../tasks/useTasks';
@@ -62,16 +62,6 @@ export function MyTasksScreen() {
 
   const dateHeader = formatDateHeader();
 
-  const renderFilterButton = (option: FilterOption, label: string) => {
-    return (
-      <FilterChip
-        key={option}
-        label={label}
-        selected={filter === option}
-        onPress={() => setFilter(option)}
-      />
-    );
-  };
 
   const renderTaskItem = ({ item }: { item: any }) => {
     return (
@@ -114,9 +104,12 @@ export function MyTasksScreen() {
       
       {/* Filters */}
       <View style={styles.filterBar}>
-        {renderFilterButton('all', t('tasks.filters.all'))}
-        {renderFilterButton('active', t('tasks.filters.active'))}
-        {renderFilterButton('completed', t('tasks.filters.completed'))}
+        <View style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+          <TasksFilterControl
+            value={filter}
+            onChange={(newValue) => setFilter(newValue as FilterOption)}
+          />
+        </View>
       </View>
 
       {/* Task list or empty state */}
@@ -145,8 +138,6 @@ const styles = StyleSheet.create({
     // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
   },
   filterBar: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
     marginBottom: tokens.spacing.lg,
   },
   listContent: {

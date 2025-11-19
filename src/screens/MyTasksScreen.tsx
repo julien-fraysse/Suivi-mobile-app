@@ -49,6 +49,19 @@ export function MyTasksScreen() {
     }
   }, [route.params?.initialFilter]);
 
+  // Formater la date du jour selon la locale de l'app (ex: "MERCREDI 19 NOVEMBRE" ou "WEDNESDAY 19 NOVEMBER")
+  const formatDateHeader = (): string => {
+    const today = new Date();
+    // Mapper la locale i18n vers la locale JavaScript
+    const appLocale = i18n.language === 'en' ? 'en-US' : 'fr-FR';
+    const dayName = today.toLocaleDateString(appLocale, { weekday: 'long' });
+    const day = today.getDate();
+    const monthName = today.toLocaleDateString(appLocale, { month: 'long' });
+    return `${dayName.toUpperCase()} ${day} ${monthName.toUpperCase()}`;
+  };
+
+  const dateHeader = formatDateHeader();
+
   const renderFilterButton = (option: FilterOption, label: string) => {
     return (
       <FilterChip
@@ -89,6 +102,16 @@ export function MyTasksScreen() {
     <Screen>
       <AppHeader />
       
+      {/* Date and Title Header */}
+      <View style={styles.dateTitleHeader}>
+        <SuiviText variant="label" color="secondary" style={styles.dateText}>
+          {dateHeader}
+        </SuiviText>
+        <SuiviText variant="h1" style={styles.titleText}>
+          {t('tasks.title')}
+        </SuiviText>
+      </View>
+      
       {/* Filters */}
       <View style={styles.filterBar}>
         {renderFilterButton('all', t('tasks.filters.all'))}
@@ -111,6 +134,16 @@ export function MyTasksScreen() {
 }
 
 const styles = StyleSheet.create({
+  dateTitleHeader: {
+    marginBottom: tokens.spacing.lg,
+  },
+  dateText: {
+    marginBottom: tokens.spacing.xs,
+    textTransform: 'uppercase',
+  },
+  titleText: {
+    // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
+  },
   filterBar: {
     flexDirection: 'row',
     gap: tokens.spacing.sm,

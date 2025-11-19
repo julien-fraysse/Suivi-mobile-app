@@ -27,6 +27,8 @@
     }
   },
   "tasks": {
+    "title": "Mes Tâches",
+    "selectStatus": "Sélectionner un statut",
     "filters": {
       "all": "Tous",
       "active": "Actives",
@@ -50,7 +52,14 @@
     "noActivity": "Aucune activité"
   },
   "notifications": {
+    "youHave": "Vous avez",
+    "notifications": "notifications",
+    "aiBriefing": "Obtenir le briefing quotidien IA",
     "markAllRead": "Tout marquer comme lu",
+    "filters": {
+      "all": "Toutes",
+      "unread": "Non lues"
+    },
     "newTaskAssigned": "Nouvelle tâche assignée",
     "taskCompleted": "Tâche complétée",
     "taskOverdue": "Tâche en retard",

@@ -4,15 +4,16 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
-import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
 import { UserAvatar } from '../components/ui/UserAvatar';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviStatusPicker } from '../components/ui/SuiviStatusPicker';
 import { useTaskById } from '../tasks/useTaskById';
 import { useUpdateTaskStatus } from '../tasks/useUpdateTaskStatus';
@@ -112,14 +113,42 @@ export function TaskDetailScreen() {
           <SuiviText variant="label" color="secondary" style={styles.statusLabel}>
             {t('taskDetail.status')}
           </SuiviText>
-          <SuiviButton
-            title={formatStatus(taskStatus!)}
+          <Pressable
             onPress={() => setIsStatusPickerVisible(true)}
             disabled={isUpdating}
-            loading={isUpdating}
-            style={[styles.statusButton, { backgroundColor: statusColor }]}
-            textStyle={{ color: '#FFFFFF' }}
-          />
+            style={({ pressed }) => [
+              styles.statusButton,
+              {
+                backgroundColor: `${statusColor}14`, // Fond très clair (~8% opacité)
+                borderColor: statusColor,
+                opacity: pressed ? 0.7 : 1,
+                elevation: 2, // Ombre légère
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.12,
+                shadowRadius: 2,
+              },
+            ]}
+          >
+            <View style={styles.statusButtonContent}>
+              <SuiviText variant="body" style={{ color: statusColor, fontWeight: '500' }}>
+                {formatStatus(taskStatus!, t)}
+              </SuiviText>
+              {isUpdating ? (
+                <ActivityIndicator
+                  size="small"
+                  color={statusColor}
+                  style={styles.statusButtonLoader}
+                />
+              ) : (
+                <MaterialCommunityIcons
+                  name="chevron-down"
+                  size={20}
+                  color={statusColor}
+                />
+              )}
+            </View>
+          </Pressable>
         </SuiviCard>
       </View>
 
@@ -262,12 +291,21 @@ function getStatusColor(status: TaskStatus): string {
 }
 
 /**
- * Formate un statut pour l'affichage
+ * Formate un statut pour l'affichage avec i18n
  */
-function formatStatus(status: TaskStatus): string {
-  return status.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
+function formatStatus(status: TaskStatus, t: any): string {
+  switch (status) {
+    case 'todo':
+      return t('tasks.status.todo');
+    case 'in_progress':
+      return t('tasks.status.inProgress');
+    case 'blocked':
+      return t('tasks.status.blocked');
+    case 'done':
+      return t('tasks.status.done');
+    default:
+      return status;
+  }
 }
 
 /**
@@ -336,13 +374,23 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.sm,
   },
   statusButton: {
-    paddingVertical: tokens.spacing.md,
+    paddingVertical: 14,
     paddingHorizontal: tokens.spacing.lg,
-    borderRadius: tokens.radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     minHeight: 48,
+  },
+  statusButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+  },
+  statusButtonLoader: {
+    marginLeft: tokens.spacing.xs,
   },
   card: {
     marginBottom: tokens.spacing.lg,

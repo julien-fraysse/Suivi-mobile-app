@@ -27,6 +27,8 @@
     }
   },
   "tasks": {
+    "title": "My Tasks",
+    "selectStatus": "Select Status",
     "filters": {
       "all": "All",
       "active": "Active",
@@ -50,7 +52,14 @@
     "noActivity": "No activity yet"
   },
   "notifications": {
-    "markAllRead": "Mark All as Read",
+    "youHave": "You have",
+    "notifications": "notifications",
+    "aiBriefing": "Get AI Daily Briefing",
+    "markAllRead": "Mark all read",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
     "newTaskAssigned": "New task assigned",
     "taskCompleted": "Task completed",
     "taskOverdue": "Task overdue",

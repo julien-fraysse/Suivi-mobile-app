@@ -11,7 +11,7 @@ import { colors, radius } from '../src/theme/tokens';
  * - Couleurs : brand.primary (#4F5DFF), accent.maize (#FDD447), neutral.*
  * - Typographies : Inter (interface) + IBM Plex Mono (technique)
  * 
- * Light Theme: Fond sand (#F4F2EE), texte sombre (#4F4A45), couleurs Suivi vives
+ * Light Theme: Fond (#F2F4F7), texte sombre (#4F4A45), couleurs Suivi vives
  * Dark Theme: Fond sombre, texte clair, couleurs Suivi adaptées
  */
 
@@ -79,11 +79,11 @@ export const suiviLightTheme = {
     backdrop: 'rgba(0, 0, 0, 0.5)', // Backdrop semi-transparent
     elevation: {
       level0: 'transparent',
-      level1: 'rgba(244, 242, 238, 0.8)', // Sand avec transparence
-      level2: 'rgba(244, 242, 238, 0.6)',
-      level3: 'rgba(244, 242, 238, 0.4)',
-      level4: 'rgba(244, 242, 238, 0.2)',
-      level5: 'rgba(244, 242, 238, 0.1)',
+      level1: 'rgba(242, 244, 247, 0.8)', // Fond avec transparence
+      level2: 'rgba(242, 244, 247, 0.6)',
+      level3: 'rgba(242, 244, 247, 0.4)',
+      level4: 'rgba(242, 244, 247, 0.2)',
+      level5: 'rgba(242, 244, 247, 0.1)',
     },
   },
   roundness: radius.lg, // 16px par défaut (selon guidelines)

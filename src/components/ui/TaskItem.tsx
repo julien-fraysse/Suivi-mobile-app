@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from './SuiviCard';
 import { SuiviText } from './SuiviText';
 import { Task, TaskStatus } from '../../api/tasks';
@@ -38,38 +39,47 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
       onPress={onPress}
       style={style}
     >
-      {/* Header avec titre et statut */}
-      <View style={styles.header}>
-        <SuiviText variant="h2" style={styles.title}>
-          {task.title}
-        </SuiviText>
+      {/* Catégorie et badge de statut en haut */}
+      <View style={styles.topRow}>
+        {task.projectName && (
+          <SuiviText variant="label" color="secondary" style={styles.category}>
+            {task.projectName.toUpperCase()}
+          </SuiviText>
+        )}
         <View
           style={[
             styles.statusPill,
             {
-              backgroundColor: statusColor,
+              backgroundColor: `${statusColor}20`, // Fond très clair (12% opacité)
+              borderColor: statusColor,
             },
           ]}
         >
-          <SuiviText variant="caption" color="inverse">
+          <SuiviText variant="caption" style={{ color: statusColor }}>
             {formatStatus(task.status, t)}
           </SuiviText>
         </View>
       </View>
 
-      {/* Project name */}
-      {task.projectName && (
-        <SuiviText variant="body2" color="secondary" style={styles.projectName}>
-          {task.projectName}
-        </SuiviText>
-      )}
-
-      {/* Due date */}
-      <SuiviText variant="body2" color="secondary">
-        {task.dueDate
-          ? `${t('tasks.due')}${formatDate(task.dueDate)}`
-          : 'No due date'}
+      {/* Titre */}
+      <SuiviText variant="h2" style={styles.title}>
+        {task.title}
       </SuiviText>
+
+      {/* Due date avec icône calendrier */}
+      {task.dueDate && (
+        <View style={styles.dueDateRow}>
+          <MaterialCommunityIcons
+            name="calendar"
+            size={16}
+            color={tokens.colors.neutral.medium}
+            style={styles.calendarIcon}
+          />
+          <SuiviText variant="body2" color="secondary">
+            {`${t('tasks.due')}${formatDate(task.dueDate)}`}
+          </SuiviText>
+        </View>
+      )}
     </SuiviCard>
   );
 }
@@ -123,23 +133,33 @@ function formatDate(dateString: string): string {
 }
 
 const styles = StyleSheet.create({
-  header: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: tokens.spacing.xs,
+    alignItems: 'center',
+    marginBottom: tokens.spacing.sm,
   },
-  title: {
-    flex: 1,
-    marginRight: tokens.spacing.sm,
+  category: {
+    opacity: 0.7,
+    fontSize: 11,
+    textTransform: 'uppercase',
   },
   statusPill: {
     paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: tokens.spacing.xs,
+    paddingVertical: tokens.spacing.xs / 2,
     borderRadius: tokens.radius.sm,
+    borderWidth: 1,
   },
-  projectName: {
-    marginBottom: tokens.spacing.xs,
+  title: {
+    marginBottom: tokens.spacing.sm,
+  },
+  dueDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: tokens.spacing.xs,
+  },
+  calendarIcon: {
+    marginRight: tokens.spacing.xs,
   },
 });
 

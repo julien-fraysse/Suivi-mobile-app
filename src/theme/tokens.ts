@@ -29,7 +29,7 @@ export const colors = {
     dark: '#4F4A45',
     medium: '#98928C',
     light: '#E8E8E8',
-    background: '#F4F2EE',
+    background: '#F2F4F7',
   },
   
   // Semantic Colors
@@ -42,7 +42,7 @@ export const colors = {
   // Maps old structure (colors.background.default, colors.background.surface) to new structure
   background: {
     default: '#FFFFFF', // Blanc pour fond d'écran par défaut (cards et surfaces blanches) - Light mode
-    surface: '#F4F2EE', // Sand - équivalent à neutral.background, pour fond d'écran principal - Light mode
+    surface: '#F2F4F7', // Fond principal - équivalent à neutral.background, pour fond d'écran principal - Light mode
     // Dark mode tokens (utilisés via ThemeProvider)
     dark: '#0F0F0F', // Fond sombre pour dark mode (matte black style)
     darkSurface: '#1A1A1A', // Surface sombre pour dark mode (surface principale)
@@ -82,7 +82,7 @@ export const colors = {
   // Surface colors - Backward compatible aliases (for cards, sheets, etc.)
   surface: {
     default: '#FFFFFF', // Blanc pour surfaces/cards
-    variant: '#F4F2EE', // Sand pour variante de surface
+    variant: '#F2F4F7', // Variante de surface pour fond d'écran principal
     // Dark mode tokens (utilisés via ThemeProvider)
     dark: '#1A1A1A', // Surface sombre pour dark mode (surface principale)
     darkElevated: '#242424', // Surface élevée pour dark mode (cards, modals)

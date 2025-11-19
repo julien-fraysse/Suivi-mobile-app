@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, StyleSheet, Pressable, Modal, SafeAreaView } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { SuiviText } from './SuiviText';
 import { tokens } from '../../theme';
 import type { TaskStatus } from '../../tasks/tasks.types';
@@ -30,6 +31,7 @@ export function SuiviStatusPicker({
 }: SuiviStatusPickerProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+  const { t } = useTranslation();
 
   // Handle status selection
   const handleSelectStatus = useCallback(
@@ -56,11 +58,20 @@ export function SuiviStatusPicker({
     }
   };
 
-  // Format status for display
+  // Format status for display using i18n
   const formatStatus = (status: TaskStatus): string => {
-    return status.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+    switch (status) {
+      case 'todo':
+        return t('tasks.status.todo');
+      case 'in_progress':
+        return t('tasks.status.inProgress');
+      case 'blocked':
+        return t('tasks.status.blocked');
+      case 'done':
+        return t('tasks.status.done');
+      default:
+        return status;
+    }
   };
 
   // All available statuses
@@ -115,7 +126,7 @@ export function SuiviStatusPicker({
             {/* Header */}
             <View style={styles.header}>
               <SuiviText variant="h1" style={{ color: textColorPrimary }}>
-                Select Status
+                {t('tasks.selectStatus')}
               </SuiviText>
             </View>
 

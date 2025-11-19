@@ -37,6 +37,10 @@ export interface AppHeaderProps {
  * - Optionnel : bouton retour à gauche quand showBackButton={true}
  * - Hauteur compacte avec padding subtil en haut
  * 
+ * Alignement horizontal standardisé selon les marges globales Suivi.
+ * Header avatar utilise maintenant tokens.spacing.lg pour cohérence
+ * avec toutes les sections de l'app (même marge que SearchBar et sections Home).
+ * 
  * Note: Le SafeAreaView est géré par ScreenContainer parent, donc pas besoin ici.
  */
 type AppHeaderNavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -130,7 +134,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    left: 0,
+    left: tokens.spacing.lg,
     padding: tokens.spacing.xs,
     zIndex: 1,
   },
@@ -140,7 +144,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'absolute',
-    right: 0,
+    right: tokens.spacing.lg,
     padding: tokens.spacing.xs,
     zIndex: 1,
   },

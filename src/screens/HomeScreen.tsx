@@ -103,7 +103,9 @@ export function HomeScreen() {
   return (
     <Screen>
       <AppHeader />
-      <HomeSearchBar onSearch={handleSearch} />
+      <View style={styles.searchBarWrapper}>
+        <HomeSearchBar onSearch={handleSearch} />
+      </View>
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* AI Daily Pulse Card */}
@@ -277,6 +279,9 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
+  },
+  searchBarWrapper: {
+    paddingHorizontal: tokens.spacing.lg,
   },
   scrollContent: {
     paddingHorizontal: tokens.spacing.lg,

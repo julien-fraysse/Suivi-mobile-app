@@ -20,6 +20,10 @@ export interface HomeSearchBarProps {
  * - Style pill-shaped (borderRadius full)
  * - Icône de recherche à gauche
  * - Couleurs adaptées au thème (light/dark mode)
+ * 
+ * Note: SearchBar n'applique aucune marge horizontale pour hériter
+ * du padding global de HomeScreen (paddingHorizontal: tokens.spacing.lg).
+ * Cela garantit un alignement parfait avec toutes les sections de la Home.
  */
 export function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
   const theme = useTheme();

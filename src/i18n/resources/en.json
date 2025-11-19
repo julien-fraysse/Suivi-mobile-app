@@ -67,7 +67,19 @@
     "newComment": "New comment",
     "statusChanged": "Status changed",
     "taskDueToday": "Task due today",
-    "empty": "No notifications"
+    "empty": "No notifications",
+    "justNow": "Just now",
+    "minutesAgo": " min",
+    "hoursAgo": " h",
+    "daysAgo": " d"
+  },
+  "notificationDetail": {
+    "linkedTo": "Linked to",
+    "quickReply": "Quick reply",
+    "replyPlaceholder": "Type your reply...",
+    "send": "Send",
+    "viewTask": "View task",
+    "markAsRead": "Mark as read"
   },
   "more": {
     "title": "My Account",

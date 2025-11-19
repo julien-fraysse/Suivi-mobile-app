@@ -67,7 +67,19 @@
     "newComment": "Nouveau commentaire",
     "statusChanged": "Statut modifié",
     "taskDueToday": "Tâche due aujourd'hui",
-    "empty": "Aucune notification"
+    "empty": "Aucune notification",
+    "justNow": "À l'instant",
+    "minutesAgo": " min",
+    "hoursAgo": " h",
+    "daysAgo": " j"
+  },
+  "notificationDetail": {
+    "linkedTo": "Lié à",
+    "quickReply": "Réponse rapide",
+    "replyPlaceholder": "Tapez votre réponse...",
+    "send": "Envoyer",
+    "viewTask": "Voir la tâche",
+    "markAsRead": "Marquer comme lu"
   },
   "more": {
     "title": "Mon compte",

@@ -6,6 +6,7 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { MainTabNavigator } from './MainTabNavigator';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { ActivityDetailScreen } from '../screens/ActivityDetailScreen';
+import { NotificationDetailScreen } from '../screens/NotificationDetailScreen';
 import type { RootStackParamList, AuthStackParamList, AppStackParamList } from './types';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -53,6 +54,15 @@ function AppNavigator() {
           headerShown: true,
           title: '',
           headerBackTitle: '',
+        }}
+      />
+      <AppStack.Screen
+        name="NotificationDetail"
+        component={NotificationDetailScreen}
+        options={{
+          headerShown: true,
+          title: '', // Titre défini dynamiquement dans NotificationDetailScreen via navigation.setOptions()
+          headerBackTitle: '', // Pas de texte sur le bouton retour (juste la flèche)
         }}
       />
     </AppStack.Navigator>

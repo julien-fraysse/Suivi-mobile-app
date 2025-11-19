@@ -34,6 +34,9 @@ export type AppStackParamList = {
   ActivityDetail: {
     eventId: string;
   };
+  NotificationDetail: {
+    id: string;
+  };
 };
 
 /**

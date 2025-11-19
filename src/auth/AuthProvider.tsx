@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { save, load, remove } from '../utils/storage';
 import { AuthContext, AuthContextValue } from './AuthContext';
 
 const ACCESS_TOKEN_KEY = 'access_token';
@@ -15,7 +15,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadAccessToken() {
     try {
-      const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      const token = await load(ACCESS_TOKEN_KEY);
       if (token) {
         setAccessToken(token);
       }
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const mockToken = `mock-token-${Date.now()}-${email}`;
     
     try {
-      await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, mockToken);
+      await save(ACCESS_TOKEN_KEY, mockToken);
       setAccessToken(mockToken);
     } catch (error) {
       console.error('Error saving access token:', error);
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut(): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+      await remove(ACCESS_TOKEN_KEY);
       setAccessToken(null);
     } catch (error) {
       console.error('Error deleting access token:', error);
@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
 
 
 

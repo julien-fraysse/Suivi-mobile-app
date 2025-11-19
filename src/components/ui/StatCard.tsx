@@ -39,7 +39,7 @@ export function StatCard({
       case 'primary':
         return tokens.colors.brand.primary; // #4F5DFF
       case 'accent':
-        return tokens.colors.accent.maize; // #FDD447
+        return '#FF6F61'; // Couleur personnalisée pour "Due Today"
       case 'success':
         return tokens.colors.semantic.success; // #00C853
       case 'error':

@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "suivi-mobile-app",
+    "name": "Suivi",
     "slug": "suivi-mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "suivi",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
@@ -15,16 +16,20 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "co.suivi.mobile",
+      "buildNumber": "1.0.0",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "co.suivi.mobile",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store"
@@ -32,6 +37,11 @@
     "updates": {
       "enabled": false,
       "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "74ee1122-4614-4e09-940c-b6f4e6b3cfc7"
+      }
     }
   }
 }

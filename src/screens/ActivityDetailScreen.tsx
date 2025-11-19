@@ -236,7 +236,7 @@ export function ActivityDetailScreen() {
 
   // Gestion de l'ouverture du lien Suivi web
   const handleOpenInSuivi = async () => {
-    const url = 'https://app.suivi.fr';
+    const url = 'https://run.suivi.co';
     
     try {
       const canOpen = await Linking.canOpenURL(url);

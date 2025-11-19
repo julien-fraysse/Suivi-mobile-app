@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, Image, Pressable, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { SuiviCard } from './SuiviCard';
+import { useTheme } from 'react-native-paper';
+import { MaterialIcons } from '@expo/vector-icons';
 import { SuiviText } from './SuiviText';
 import { tokens } from '../../theme';
 
@@ -14,6 +15,11 @@ export interface Notification {
   createdAt: string;
   relatedTaskId?: string | null; // ID de la tâche liée (pour navigation vers TaskDetail)
   projectId?: string; // ID du projet lié (pour navigation future)
+  author?: {
+    avatar?: string;
+    avatarUrl?: string; // Alias pour compatibilité
+    name?: string;
+  };
 }
 
 export interface NotificationItemProps {
@@ -38,40 +44,158 @@ export interface NotificationItemProps {
  */
 export function NotificationItem({ notification, onPress, style }: NotificationItemProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const notificationTitle = getNotificationTypeLabel(notification.type, t);
   
+  // Map des icônes MaterialIcons par type de notification
+  const iconMap: Record<string, keyof typeof MaterialIcons.glyphMap> = {
+    task_assigned: 'assignment',
+    task_completed: 'check-circle',
+    task_overdue: 'error-outline',
+    project_update: 'bolt',
+  };
+  
+  // Déterminer la couleur du liseret selon le type
+  const getBorderColor = () => {
+    switch (notification.type) {
+      case 'task_assigned':
+        return tokens.colors.brand.primary;
+      case 'task_completed':
+        return tokens.colors.semantic.success;
+      case 'task_overdue':
+        return tokens.colors.semantic.error;
+      case 'project_update':
+        return tokens.colors.accent.maize;
+      case 'comment':
+        return tokens.colors.brand.primary;
+      default:
+        return tokens.colors.brand.primary;
+    }
+  };
+
+  // Rendre l'icône ou l'avatar selon le type
+  const renderIconOrAvatar = () => {
+    const iconColor = getBorderColor();
+    
+    if (notification.type === 'comment') {
+      // Pour les commentaires, afficher l'avatar si disponible
+      const avatarUrl = notification.author?.avatar || notification.author?.avatarUrl;
+      if (avatarUrl) {
+        return (
+          <Image
+            source={{ uri: avatarUrl }}
+            style={[
+              styles.avatar,
+              {
+                borderWidth: theme.dark ? 1 : 0,
+                borderColor: 'rgba(255,255,255,0.2)',
+              },
+            ]}
+          />
+        );
+      }
+      // Fallback vers icône générique si pas d'avatar
+      return (
+        <View style={[styles.iconCircle, { backgroundColor: `${iconColor}20` }]}>
+          <MaterialIcons
+            name="chat-bubble"
+            size={22}
+            color={iconColor}
+          />
+        </View>
+      );
+    }
+
+    // Pour les autres types, utiliser la map d'icônes MaterialIcons
+    const iconName = iconMap[notification.type] || 'notifications';
+
+    return (
+      <View style={[styles.iconCircle, { backgroundColor: `${iconColor}20` }]}>
+        <MaterialIcons
+          name={iconName}
+          size={22}
+          color={iconColor}
+        />
+      </View>
+    );
+  };
+  
+  const cardBackgroundColor = theme.dark 
+    ? tokens.colors.surface.dark 
+    : tokens.colors.background.default;
+  
+  const cardShadow = theme.dark 
+    ? {} // Pas de shadow en dark mode
+    : Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 2,
+        },
+      });
+
   return (
-    <SuiviCard
-      padding="md"
-      elevation={notification.read ? 'sm' : 'card'}
-      variant={notification.read ? 'outlined' : 'default'}
+    <Pressable
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.card,
-        !notification.read && styles.unreadCard,
+        {
+          backgroundColor: cardBackgroundColor,
+          borderRadius: 12,
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          opacity: pressed ? 0.8 : 1,
+          ...cardShadow,
+        },
         style,
       ]}
     >
-      {/* Header avec titre et badge non lue */}
-      <View style={styles.header}>
-        <SuiviText variant="h2" style={styles.title}>
-          {notificationTitle}
-        </SuiviText>
-        {!notification.read && (
-          <View style={styles.unreadBadge} />
-        )}
+      {/* Liseret latéral - affiché seulement si non lue */}
+      {!notification.read && (
+        <View
+          style={[
+            styles.liseret,
+            { backgroundColor: getBorderColor() },
+          ]}
+        />
+      )}
+      
+      {/* Pastille unread en position absolute sur la carte */}
+      {!notification.read && (
+        <View style={styles.unreadBadge} />
+      )}
+      
+      <View style={styles.contentRow}>
+        {/* Icône ou Avatar à gauche */}
+        <View style={styles.iconContainer}>
+          {renderIconOrAvatar()}
+        </View>
+
+        {/* Contenu principal à droite */}
+        <View style={styles.textContainer}>
+          {/* Header avec titre */}
+          <View style={styles.header}>
+            <SuiviText variant="h2" style={styles.title}>
+              {notificationTitle}
+            </SuiviText>
+          </View>
+
+          {/* Message */}
+          <SuiviText variant="body" color="secondary" style={styles.message}>
+            {notification.message}
+          </SuiviText>
+
+          {/* Date */}
+          <SuiviText variant="body" color="secondary" style={styles.date}>
+            {formatNotificationDate(notification.createdAt)}
+          </SuiviText>
+        </View>
       </View>
-
-      {/* Message */}
-      <SuiviText variant="body" color="secondary" style={styles.message}>
-        {notification.message}
-      </SuiviText>
-
-      {/* Date */}
-      <SuiviText variant="body" color="secondary" style={styles.date}>
-        {formatNotificationDate(notification.createdAt)}
-      </SuiviText>
-    </SuiviCard>
+    </Pressable>
   );
 }
 
@@ -121,10 +245,42 @@ function formatNotificationDate(dateString: string): string {
 const styles = StyleSheet.create({
   card: {
     marginBottom: tokens.spacing.md,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  unreadCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: tokens.colors.brand.primary, // #4F5DFF
+  liseret: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderRadius: 4,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    marginRight: tokens.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  textContainer: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -136,11 +292,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   unreadBadge: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: tokens.colors.brand.primary, // #4F5DFF
-    marginLeft: tokens.spacing.sm,
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
   message: {
     marginBottom: tokens.spacing.xs,

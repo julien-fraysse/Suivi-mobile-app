@@ -68,11 +68,17 @@
     "empty": "No notifications"
   },
   "more": {
+    "title": "My Account",
     "editProfile": "Edit Profile",
     "themeSettings": "Theme Settings",
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto (System)",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Auto (System)"
+    },
     "notifications": "Notifications",
     "pushNotifications": "Mobile push notifications",
     "language": "Language",

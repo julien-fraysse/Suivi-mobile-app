@@ -68,11 +68,17 @@
     "empty": "Aucune notification"
   },
   "more": {
+    "title": "Mon compte",
     "editProfile": "Modifier le profil",
     "themeSettings": "Thème",
     "light": "Clair",
     "dark": "Sombre",
     "auto": "Auto (Système)",
+    "theme": {
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Auto (Système)"
+    },
     "notifications": "Notifications",
     "pushNotifications": "Notifications push",
     "language": "Langue",

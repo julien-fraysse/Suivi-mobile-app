@@ -21,10 +21,11 @@ export interface SegmentedControlProps {
  * Composant de contrôle segmenté réutilisable avec pill mobile.
  * 
  * Design :
- * - Container blanc arrondi avec bordure gris clair et ombre légère
- * - Pill gris clair (#F2F2F6) qui se déplace derrière l'option active
+ * - Light mode : Container blanc avec bordure gris clair et ombre légère
+ * - Dark mode : Container surface sombre avec bordure subtile, pas d'ombre
+ * - Pill qui se déplace derrière l'option active (gris clair en light, gris moyen en dark)
  * - Taille compacte, centrée, auto-dimensionnée
- * - Support light/dark mode
+ * - Support complet light/dark mode avec tokens Suivi
  * 
  * Utilise EXCLUSIVEMENT les tokens Suivi pour les couleurs.
  */
@@ -42,8 +43,22 @@ export function SegmentedControl({
       : (theme.dark ? tokens.colors.text.dark.secondary : tokens.colors.text.secondary);
     const fontWeight = isSelected ? '600' : '500';
     const backgroundColor = isSelected
-      ? '#F2F2F6' // Pill gris clair pour l'état actif
+      ? (theme.dark ? tokens.colors.surface.darkVariant : '#F2F2F6')
       : 'transparent';
+
+    const tabShadow = isSelected && !theme.dark
+      ? Platform.select({
+          ios: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.06,
+            shadowRadius: 4,
+          },
+          android: {
+            elevation: 1,
+          },
+        })
+      : {};
 
     return (
       <Pressable
@@ -51,10 +66,10 @@ export function SegmentedControl({
         onPress={() => onChange(option.key)}
         style={({ pressed }) => [
           styles.filterTab,
-          isSelected && styles.filterTabActive,
           {
             backgroundColor,
             opacity: pressed ? 0.8 : 1,
+            ...tabShadow,
           },
         ]}
       >
@@ -65,22 +80,35 @@ export function SegmentedControl({
     );
   };
 
+  const containerBackgroundColor = theme.dark 
+    ? tokens.colors.surface.dark 
+    : tokens.colors.background.default;
+  
+  const containerBorderColor = theme.dark 
+    ? tokens.colors.border.darkMode.default 
+    : tokens.colors.border.default;
+
+  const containerShadow = theme.dark 
+    ? {} // Pas de shadow en dark mode
+    : Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 2,
+        },
+      });
+
   return (
     <View style={[
       styles.segmentedControl,
       {
-        borderColor: theme.dark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
-        ...Platform.select({
-          ios: {
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-          },
-          android: {
-            elevation: 2,
-          },
-        }),
+        backgroundColor: containerBackgroundColor,
+        borderColor: containerBorderColor,
+        ...containerShadow,
       },
     ]}>
       {options.map(renderTab)}
@@ -91,12 +119,12 @@ export function SegmentedControl({
 const styles = StyleSheet.create({
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderRadius: 14,
     padding: 4,
     width: 'auto',
     alignSelf: 'center',
+    // backgroundColor et borderColor sont définis dynamiquement selon le thème
   },
   filterTab: {
     alignItems: 'center',
@@ -108,17 +136,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   filterTabActive: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
+    // Shadow est appliquée conditionnellement selon le thème dans le render
+    // En dark mode, pas de shadow pour l'onglet actif
   },
 });
 

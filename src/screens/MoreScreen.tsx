@@ -7,6 +7,7 @@ import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { EditProfileModal, type Profile as EditProfile } from '../components/ui/EditProfileModal';
 import { useAuth } from '../auth';
@@ -154,6 +155,19 @@ export function MoreScreen() {
   // Version app mockée
   const appVersion = '1.0.0';
 
+  // Formater la date du jour selon la locale de l'app (ex: "MERCREDI 19 NOVEMBRE" ou "WEDNESDAY 19 NOVEMBER")
+  const formatDateHeader = (): string => {
+    const today = new Date();
+    // Mapper la locale i18n vers la locale JavaScript
+    const appLocale = i18n.language === 'en' ? 'en-US' : 'fr-FR';
+    const dayName = today.toLocaleDateString(appLocale, { weekday: 'long' });
+    const day = today.getDate();
+    const monthName = today.toLocaleDateString(appLocale, { month: 'long' });
+    return `${dayName.toUpperCase()} ${day} ${monthName.toUpperCase()}`;
+  };
+
+  const dateHeader = formatDateHeader();
+
   // Render skeleton for loading state
   const renderProfileSkeleton = () => (
     <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
@@ -193,6 +207,16 @@ export function MoreScreen() {
   return (
     <Screen>
       <AppHeader />
+      
+      {/* Date and Title Header */}
+      <View style={styles.dateTitleHeader}>
+        <SuiviText variant="label" color="secondary" style={styles.dateText}>
+          {dateHeader}
+        </SuiviText>
+        <SuiviText variant="h1" style={styles.titleText}>
+          {t('more.title')}
+        </SuiviText>
+      </View>
       
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* User Profile Card */}
@@ -246,24 +270,18 @@ export function MoreScreen() {
             {t('more.themeSettings')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
-            <View style={styles.themeOptions}>
-              <SuiviButton
-                title={t('more.light')}
-                onPress={() => handleSetTheme('light')}
-                variant={themeMode === 'light' ? 'primary' : 'ghost'}
-                style={styles.themeButton}
-              />
-              <SuiviButton
-                title={t('more.dark')}
-                onPress={() => handleSetTheme('dark')}
-                variant={themeMode === 'dark' ? 'primary' : 'ghost'}
-                style={styles.themeButton}
-              />
-              <SuiviButton
-                title={t('more.auto')}
-                onPress={() => handleSetTheme('auto')}
-                variant={themeMode === 'auto' ? 'primary' : 'ghost'}
-                style={styles.themeButton}
+            <View style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+              <SegmentedControl
+                options={[
+                  { key: 'light', label: t('more.theme.light') },
+                  { key: 'dark', label: t('more.theme.dark') },
+                  { key: 'system', label: t('more.theme.system') },
+                ]}
+                value={themeMode === 'auto' ? 'system' : themeMode}
+                onChange={(newValue) => {
+                  const mode = newValue === 'system' ? 'auto' : (newValue as 'light' | 'dark');
+                  handleSetTheme(mode);
+                }}
               />
             </View>
           </SuiviCard>
@@ -294,18 +312,14 @@ export function MoreScreen() {
             {t('more.language')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
-            <View style={styles.languageOptions}>
-              <SuiviButton
-                title="FR"
-                onPress={() => handleChangeLanguage('fr')}
-                variant={settings.language === 'fr' ? 'primary' : 'ghost'}
-                style={styles.languageButton}
-              />
-              <SuiviButton
-                title="EN"
-                onPress={() => handleChangeLanguage('en')}
-                variant={settings.language === 'en' ? 'primary' : 'ghost'}
-                style={styles.languageButton}
+            <View style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+              <SegmentedControl
+                options={[
+                  { key: 'fr', label: 'FR' },
+                  { key: 'en', label: 'EN' },
+                ]}
+                value={settings.language}
+                onChange={(newValue) => handleChangeLanguage(newValue as 'fr' | 'en')}
               />
             </View>
           </SuiviCard>
@@ -459,6 +473,16 @@ export function MoreScreen() {
 }
 
 const styles = StyleSheet.create({
+  dateTitleHeader: {
+    marginBottom: tokens.spacing.lg,
+  },
+  dateText: {
+    marginBottom: tokens.spacing.xs,
+    textTransform: 'uppercase',
+  },
+  titleText: {
+    // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
+  },
   section: {
     marginBottom: tokens.spacing.xl,
   },
@@ -510,24 +534,10 @@ const styles = StyleSheet.create({
     width: '60%',
     borderRadius: 4,
   },
-  themeOptions: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-  },
-  themeButton: {
-    flex: 1,
-  },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  languageOptions: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-  },
-  languageButton: {
-    flex: 1,
   },
   infoRow: {
     flexDirection: 'row',

@@ -135,7 +135,7 @@ export function AiBriefingButton({ onPress, style }: AiBriefingButtonProps) {
 const styles = StyleSheet.create({
   container: {
     height: 64,
-    marginHorizontal: 16,
+    marginHorizontal: tokens.spacing.lg,
     borderRadius: 20,
     overflow: 'hidden', // Important pour afficher le gradient proprement
   },

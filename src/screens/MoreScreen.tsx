@@ -218,7 +218,10 @@ export function MoreScreen() {
         </SuiviText>
       </View>
       
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg }}
+      >
         {/* User Profile Card */}
         <View style={styles.section}>
           {isLoading ? (
@@ -474,6 +477,7 @@ export function MoreScreen() {
 
 const styles = StyleSheet.create({
   dateTitleHeader: {
+    paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
   },
   dateText: {

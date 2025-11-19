@@ -140,6 +140,7 @@ export function MyTasksScreen() {
 
 const styles = StyleSheet.create({
   dateTitleHeader: {
+    paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
   },
   dateText: {
@@ -153,9 +154,11 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.lg,
   },
   filterBar: {
+    paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
   },
   listContent: {
+    paddingHorizontal: tokens.spacing.lg,
     paddingBottom: tokens.spacing.md,
     flexGrow: 1,
   },

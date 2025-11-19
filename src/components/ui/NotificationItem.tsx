@@ -155,7 +155,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
       <View style={[styles.iconCircle, { backgroundColor: `${iconColor}20` }]}>
         <MaterialIcons
           name={iconName}
-          size={22}
+          size={28}
           color={iconColor}
         />
       </View>
@@ -189,7 +189,10 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
           backgroundColor: cardBackgroundColor,
           borderRadius: 12,
           paddingVertical: 14,
-          paddingHorizontal: 16,
+          paddingLeft: tokens.spacing.md,
+          // Note: paddingHorizontal est géré par le parent FlatList (NotificationsScreen)
+          // via contentContainerStyle.paddingHorizontal pour un alignement cohérent avec la Home
+          // paddingLeft ajouté pour créer un espace entre le liseret (4px) et le contenu
           opacity: pressed ? 0.8 : 1,
           ...cardShadow,
         },
@@ -306,6 +309,7 @@ const styles = StyleSheet.create({
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: tokens.spacing.xs,
   },
   iconContainer: {
     width: 36,
@@ -323,15 +327,17 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    flexShrink: 1,
+    paddingRight: tokens.spacing.md,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: tokens.spacing.xs,
   },
   title: {
     flex: 1,
+    marginBottom: tokens.spacing.xs,
   },
   unreadBadge: {
     width: 10,
@@ -344,9 +350,11 @@ const styles = StyleSheet.create({
   },
   message: {
     marginBottom: tokens.spacing.xs,
+    lineHeight: 20,
   },
   date: {
     marginTop: tokens.spacing.xs,
+    lineHeight: 20,
   },
 });
 

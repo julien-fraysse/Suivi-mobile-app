@@ -166,6 +166,7 @@ export function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   dateTitleHeader: {
+    paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
   },
   dateText: {
@@ -179,6 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
   },
   markAllReadLink: {
@@ -194,6 +196,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.brand.primary,
   },
   listContent: {
+    paddingHorizontal: tokens.spacing.lg,
     paddingBottom: tokens.spacing.md,
     flexGrow: 1,
   },

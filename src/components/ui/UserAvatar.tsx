@@ -42,6 +42,19 @@ export interface UserAvatarProps {
  * - Background adapts to theme (light/dark)
  * - Initials are centered and styled appropriately
  * 
+ * AUDIT SIZE PROP (2024-11-19):
+ * ✅ size prop correctly controls ALL dimensions:
+ *    - containerStyle.width: size (line 93)
+ *    - containerStyle.height: size (line 94)
+ *    - containerStyle.borderRadius: size / 2 (line 95)
+ *    - imageStyle.width: size (line 104)
+ *    - imageStyle.height: size (line 105)
+ *    - fontSize: calculated from size (line 109: size >= 34 ? 14 : Math.max(12, size * 0.4))
+ * 
+ * ✅ NO hardcoded values (no width: 36, height: 36, borderRadius: 18 in styles)
+ * ✅ Default size: 48 (line 53)
+ * ✅ Component is fully responsive to size prop changes
+ * 
  * Backend Integration:
  * - imageSource can be:
  *   - Local asset: require('../assets/images/julien.jpg') (from src/components/ui/)

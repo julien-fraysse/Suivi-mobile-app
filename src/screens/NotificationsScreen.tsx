@@ -3,9 +3,7 @@ import {
   View,
   FlatList,
   StyleSheet,
-  Pressable,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -138,27 +136,6 @@ export function NotificationsScreen() {
         </SuiviText>
       </View>
       
-      {/* AI Daily Briefing Button */}
-      <Pressable
-        onPress={() => {}} // No-op handler
-        style={({ pressed }) => [
-          styles.aiButton,
-          {
-            opacity: pressed ? 0.8 : 1,
-          },
-        ]}
-      >
-        <MaterialCommunityIcons
-          name="robot"
-          size={20}
-          color="#FFFFFF"
-          style={styles.aiIcon}
-        />
-        <SuiviText variant="body" color="inverse" style={styles.aiButtonText}>
-          {t('notifications.aiBriefing')}
-        </SuiviText>
-      </Pressable>
-      
       {/* Filters and Mark All as Read */}
       <View style={styles.filterBarContainer}>
         <SegmentedControl
@@ -209,22 +186,6 @@ const styles = StyleSheet.create({
   },
   titleText: {
     // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
-  },
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.brand.primary,
-    paddingVertical: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.lg,
-    borderRadius: tokens.radius.md,
-    marginBottom: tokens.spacing.lg,
-  },
-  aiIcon: {
-    marginRight: tokens.spacing.sm,
-  },
-  aiButtonText: {
-    fontWeight: '500',
   },
   filterBarContainer: {
     flexDirection: 'row',

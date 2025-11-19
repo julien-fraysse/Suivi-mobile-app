@@ -28,6 +28,7 @@ import { AuthProvider } from './auth';
 import { TasksProvider } from './tasks/TasksContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider, useThemeMode } from './theme/ThemeProvider';
+import { NotificationsProvider } from './features/notifications/notificationsStore';
 import { tokens } from './theme';
 
 // Navigation root
@@ -141,7 +142,9 @@ export default function App() {
               <ThemeProvider initialMode="auto">
                 <AuthProvider>
                   <TasksProvider>
-                    <AppContent />
+                    <NotificationsProvider>
+                      <AppContent />
+                    </NotificationsProvider>
                   </TasksProvider>
                 </AuthProvider>
               </ThemeProvider>

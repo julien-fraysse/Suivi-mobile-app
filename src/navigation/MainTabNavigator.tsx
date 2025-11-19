@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
@@ -6,6 +7,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { MyTasksScreen } from '../screens/MyTasksScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { MoreScreen } from '../screens/MoreScreen';
+import { useNotificationsStore } from '../features/notifications/notificationsStore';
 import { tokens } from '../theme';
 import type { MainTabParamList } from './types';
 
@@ -83,9 +85,31 @@ export function MainTabNavigator() {
         component={NotificationsScreen}
         options={{
           tabBarLabel: 'Notifications',
-          tabBarIcon: ({ color, size = 24 }) => (
-            <MaterialCommunityIcons name="bell" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size = 24 }) => {
+            // Lire le state directement dans tabBarIcon pour garantir le re-render
+            const { notifications } = useNotificationsStore();
+            const unreadCount = notifications.filter(n => !n.read).length;
+            
+            return (
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="bell" size={size} color={color} />
+                {unreadCount > 0 && (
+                  <View style={[
+                    styles.badge,
+                    unreadCount > 9 && styles.badgeLarge,
+                  ]}>
+                    {unreadCount > 99 ? (
+                      <View style={styles.badgeDot} />
+                    ) : (
+                      <Text style={styles.badgeText}>
+                        {unreadCount}
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          },
         }}
       />
       <Tab.Screen
@@ -101,4 +125,45 @@ export function MainTabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#FF3B30', // Rouge Suivi pour le badge
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#FFFFFF', // Bordure blanche pour contraste
+  },
+  badgeLarge: {
+    minWidth: 20,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 5,
+  },
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
+    textAlign: 'center',
+  },
+});
 

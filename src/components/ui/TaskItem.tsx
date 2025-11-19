@@ -30,6 +30,7 @@ export interface TaskItemProps {
 export function TaskItem({ task, onPress, style }: TaskItemProps) {
   const { t } = useTranslation();
   const statusColor = getStatusColor(task.status);
+  const breadcrumb = "WORKSPACE > BOARD";
 
   return (
     <SuiviCard
@@ -41,11 +42,9 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
     >
       {/* Catégorie et badge de statut en haut */}
       <View style={styles.topRow}>
-        {task.projectName && (
-          <SuiviText variant="label" color="secondary" style={styles.category}>
-            {task.projectName.toUpperCase()}
-          </SuiviText>
-        )}
+        <SuiviText variant="label" color="secondary" style={styles.category}>
+          {breadcrumb}
+        </SuiviText>
         <View
           style={[
             styles.statusPill,

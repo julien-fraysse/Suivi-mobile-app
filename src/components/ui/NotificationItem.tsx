@@ -1,23 +1,33 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, Image, Pressable, Platform } from 'react-native';
+import { View, StyleSheet, ViewStyle, Pressable, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SuiviText } from './SuiviText';
+import { UserAvatar } from './UserAvatar';
 import { tokens } from '../../theme';
 
 export interface Notification {
   id: string;
-  type: 'task_assigned' | 'task_completed' | 'task_overdue' | 'project_update' | 'comment';
+  type: 'task_assigned' | 'task_completed' | 'task_overdue' | 'project_update' | 'comment' | 'mention_in_comment' | 'status_changed' | 'task_due_today';
   title: string;
   message: string;
   read: boolean;
   createdAt: string;
   relatedTaskId?: string | null; // ID de la tâche liée (pour navigation vers TaskDetail)
   projectId?: string; // ID du projet lié (pour navigation future)
-  author?: {
+  // Champs pour les actions humaines (createdBy, assignedBy, commentedBy, updatedBy, etc.)
+  actor?: {
+    id?: string;
+    name?: string;
     avatar?: string;
     avatarUrl?: string; // Alias pour compatibilité
+    imageUrl?: string; // Alias supplémentaire
+  };
+  // Alias pour compatibilité avec l'ancien format
+  author?: {
+    avatar?: string;
+    avatarUrl?: string;
     name?: string;
   };
 }
@@ -47,12 +57,13 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
   const theme = useTheme();
   const notificationTitle = getNotificationTypeLabel(notification.type, t);
   
-  // Map des icônes MaterialIcons par type de notification
+  // Map des icônes MaterialIcons par type de notification (pour événements système uniquement)
   const iconMap: Record<string, keyof typeof MaterialIcons.glyphMap> = {
     task_assigned: 'assignment',
     task_completed: 'check-circle',
     task_overdue: 'error-outline',
     project_update: 'bolt',
+    task_due_today: 'schedule',
   };
   
   // Déterminer la couleur du liseret selon le type
@@ -67,46 +78,77 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
       case 'project_update':
         return tokens.colors.accent.maize;
       case 'comment':
+      case 'mention_in_comment':
         return tokens.colors.brand.primary;
+      case 'status_changed':
+        return tokens.colors.brand.primary;
+      case 'task_due_today':
+        return tokens.colors.accent.maize;
       default:
         return tokens.colors.brand.primary;
     }
+  };
+
+  /**
+   * Détermine si une notification provient d'un acteur humain
+   * (createdBy, assignedBy, commentedBy, updatedBy, etc.)
+   */
+  const isHumanEvent = (notification: Notification): boolean => {
+    // Vérifier la présence d'un acteur (nouveau format)
+    if (notification.actor && (notification.actor.name || notification.actor.avatar || notification.actor.avatarUrl || notification.actor.imageUrl)) {
+      return true;
+    }
+    // Vérifier l'ancien format author (pour compatibilité)
+    if (notification.author && (notification.author.name || notification.author.avatar || notification.author.avatarUrl)) {
+      return true;
+    }
+    // Types qui sont toujours des événements humains
+    const humanEventTypes = ['comment', 'mention_in_comment', 'status_changed', 'task_assigned'];
+    return humanEventTypes.includes(notification.type);
+  };
+
+  /**
+   * Récupère l'URL de l'avatar depuis actor ou author (compatibilité)
+   */
+  const getAvatarUrl = (): string | undefined => {
+    return notification.actor?.avatarUrl || 
+           notification.actor?.avatar || 
+           notification.actor?.imageUrl ||
+           notification.author?.avatarUrl || 
+           notification.author?.avatar;
+  };
+
+  /**
+   * Récupère le nom de l'acteur depuis actor ou author (compatibilité)
+   */
+  const getActorName = (): string | undefined => {
+    return notification.actor?.name || notification.author?.name;
   };
 
   // Rendre l'icône ou l'avatar selon le type
   const renderIconOrAvatar = () => {
     const iconColor = getBorderColor();
     
-    if (notification.type === 'comment') {
-      // Pour les commentaires, afficher l'avatar si disponible
-      const avatarUrl = notification.author?.avatar || notification.author?.avatarUrl;
-      if (avatarUrl) {
-        return (
-          <Image
-            source={{ uri: avatarUrl }}
-            style={[
-              styles.avatar,
-              {
-                borderWidth: theme.dark ? 1 : 0,
-                borderColor: 'rgba(255,255,255,0.2)',
-              },
-            ]}
-          />
-        );
-      }
-      // Fallback vers icône générique si pas d'avatar
+    // Si c'est un événement humain, afficher l'avatar
+    if (isHumanEvent(notification)) {
+      const avatarUrl = getAvatarUrl();
+      const actorName = getActorName();
+      
+      // Utiliser UserAvatar avec fallback initiales
       return (
-        <View style={[styles.iconCircle, { backgroundColor: `${iconColor}20` }]}>
-          <MaterialIcons
-            name="chat-bubble"
-            size={22}
-            color={iconColor}
-          />
-        </View>
+        <UserAvatar
+          size={36}
+          imageSource={avatarUrl}
+          fullName={actorName}
+          style={theme.dark ? {
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.2)',
+          } : undefined}
+        />
       );
     }
 
-    // Pour les autres types, utiliser la map d'icônes MaterialIcons
+    // Pour les événements système (overdue, reminder, system event), utiliser l'icône
     const iconName = iconMap[notification.type] || 'notifications';
 
     return (
@@ -213,7 +255,12 @@ function getNotificationTypeLabel(type: string, t: any): string {
     case 'project_update':
       return t('notifications.projectUpdate');
     case 'comment':
+    case 'mention_in_comment':
       return t('notifications.newComment');
+    case 'status_changed':
+      return t('notifications.statusChanged');
+    case 'task_due_today':
+      return t('notifications.taskDueToday');
     default:
       return type;
   }
@@ -273,11 +320,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
   },
   textContainer: {
     flex: 1,

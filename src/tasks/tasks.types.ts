@@ -47,6 +47,12 @@ export interface Task {
   /** Nom du projet (optionnel, pour affichage) */
   projectName?: string;
   
+  /** Nom du workspace (optionnel, pour affichage du fil d'Ariane) */
+  workspaceName?: string;
+  
+  /** Nom du board (optionnel, pour affichage du fil d'Ariane) */
+  boardName?: string;
+  
   /** Nom de l'assigné (optionnel) */
   assigneeName?: string;
   

@@ -65,6 +65,8 @@
     "taskOverdue": "Tâche en retard",
     "projectUpdate": "Mise à jour du projet",
     "newComment": "Nouveau commentaire",
+    "statusChanged": "Statut modifié",
+    "taskDueToday": "Tâche due aujourd'hui",
     "empty": "Aucune notification"
   },
   "more": {

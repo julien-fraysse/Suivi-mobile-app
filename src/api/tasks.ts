@@ -13,6 +13,8 @@ export type Task = {
   assigneeName?: string | null;
   updatedAt?: string;
   description?: string | null;
+  workspaceName?: string | null;
+  boardName?: string | null;
 };
 
 export type MyTasksFilters = {

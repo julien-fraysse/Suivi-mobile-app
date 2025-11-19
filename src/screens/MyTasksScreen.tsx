@@ -3,10 +3,12 @@ import {
   View,
   FlatList,
   StyleSheet,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
@@ -102,6 +104,27 @@ export function MyTasksScreen() {
         </SuiviText>
       </View>
       
+      {/* AI Daily Briefing Button */}
+      <Pressable
+        onPress={() => {}} // No-op handler
+        style={({ pressed }) => [
+          styles.aiButton,
+          {
+            opacity: pressed ? 0.8 : 1,
+          },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name="robot"
+          size={20}
+          color="#FFFFFF"
+          style={styles.aiIcon}
+        />
+        <SuiviText variant="body" color="inverse" style={styles.aiButtonText}>
+          {t('notifications.aiBriefing')}
+        </SuiviText>
+      </Pressable>
+      
       {/* Filters */}
       <View style={styles.filterBar}>
         <View style={{ alignSelf: 'flex-start', marginTop: 12 }}>
@@ -136,6 +159,22 @@ const styles = StyleSheet.create({
   },
   titleText: {
     // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.brand.primary,
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.lg,
+    borderRadius: tokens.radius.md,
+    marginBottom: tokens.spacing.lg,
+  },
+  aiIcon: {
+    marginRight: tokens.spacing.sm,
+  },
+  aiButtonText: {
+    fontWeight: '500',
   },
   filterBar: {
     marginBottom: tokens.spacing.lg,

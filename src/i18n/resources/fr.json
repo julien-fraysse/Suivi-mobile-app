@@ -54,7 +54,8 @@
   "notifications": {
     "youHave": "Vous avez",
     "notifications": "notifications",
-    "aiBriefing": "Obtenir le briefing quotidien IA",
+    "aiBriefing": "AI Daily Briefing",
+    "aiBriefingSubtitle": "Synthétise mes tâches",
     "markAllRead": "Tout marquer comme lu",
     "filters": {
       "all": "Toutes",

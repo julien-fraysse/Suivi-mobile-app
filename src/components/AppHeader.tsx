@@ -58,6 +58,10 @@ export function AppHeader({ showBackButton = false, onBack, showAvatar = true }:
     }
   };
 
+  /**
+   * Avatar clickable : redirige vers l'écran "More".
+   * Compatible avec toutes les pages utilisant ce header.
+   */
   const handleAvatarPress = () => {
     // Navigate to More / Account screen
     navigation.navigate('Main', { screen: 'More' });
@@ -95,11 +99,16 @@ export function AppHeader({ showBackButton = false, onBack, showAvatar = true }:
         {/* Avatar on the right (only if not showing back button) */}
         {showAvatar && !showBackButton && (
           <View style={styles.avatarContainer}>
-            <UserAvatar
-              size={32}
-              imageSource={avatar}
-              fullName={fullName}
-            />
+            <TouchableOpacity
+              onPress={handleAvatarPress}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <UserAvatar
+                size={32}
+                imageSource={avatar}
+                fullName={fullName}
+              />
+            </TouchableOpacity>
           </View>
         )}
       </View>

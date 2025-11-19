@@ -15,6 +15,7 @@ import { AppHeader } from '../components/AppHeader';
 import { TasksFilterControl } from '../components/ui/TasksFilterControl';
 import { SuiviText } from '../components/ui/SuiviText';
 import { TaskItem } from '../components/ui/TaskItem';
+import { AiBriefingButton } from '../components/ui/AiBriefingButton';
 import { useTasks } from '../tasks/useTasks';
 import type { Task, TaskFilter } from '../tasks/tasks.types';
 import { tokens } from '../theme';
@@ -105,25 +106,13 @@ export function MyTasksScreen() {
       </View>
       
       {/* AI Daily Briefing Button */}
-      <Pressable
-        onPress={() => {}} // No-op handler
-        style={({ pressed }) => [
-          styles.aiButton,
-          {
-            opacity: pressed ? 0.8 : 1,
-          },
-        ]}
-      >
-        <MaterialCommunityIcons
-          name="robot"
-          size={20}
-          color="#FFFFFF"
-          style={styles.aiIcon}
-        />
-        <SuiviText variant="body" color="inverse" style={styles.aiButtonText}>
-          {t('notifications.aiBriefing')}
-        </SuiviText>
-      </Pressable>
+      <AiBriefingButton
+        onPress={() => {
+          // TODO: When Suivi API is ready, navigate to BriefingScreen
+          // navigation.navigate('Briefing', { date: new Date() });
+        }}
+        style={styles.aiButtonContainer}
+      />
       
       {/* Filters */}
       <View style={styles.filterBar}>
@@ -160,21 +149,8 @@ const styles = StyleSheet.create({
   titleText: {
     // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
   },
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.brand.primary,
-    paddingVertical: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.lg,
-    borderRadius: tokens.radius.md,
+  aiButtonContainer: {
     marginBottom: tokens.spacing.lg,
-  },
-  aiIcon: {
-    marginRight: tokens.spacing.sm,
-  },
-  aiButtonText: {
-    fontWeight: '500',
   },
   filterBar: {
     marginBottom: tokens.spacing.lg,

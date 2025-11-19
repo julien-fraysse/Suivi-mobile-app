@@ -32,6 +32,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from '../ui/SuiviCard';
 import { SuiviText } from '../ui/SuiviText';
@@ -60,6 +61,7 @@ export interface ActivityCardProps {
 export function ActivityCard({ event, onPress, style, compact = false }: ActivityCardProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+  const { t } = useTranslation();
 
   // Couleur du bloc graphique selon source et eventType
   const iconBackgroundColor = getIconBackgroundColor(event.source, event.eventType, isDark);
@@ -73,7 +75,7 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
   const timeAgo = formatRelativeDate(event.createdAt);
 
   // Type d'activité pour le badge
-  const activityTypeLabel = getActivityTypeLabel(event.eventType, event.source);
+  const activityTypeLabel = getActivityTypeLabel(event.eventType, event.source, t);
 
   // Couleurs de texte selon le thème
   const textColorPrimary = isDark
@@ -333,18 +335,14 @@ function formatContext(event: SuiviActivityEvent): string {
 /**
  * Retourne le label du type d'activité pour le badge
  */
-function getActivityTypeLabel(
-  eventType: string,
-  source: 'BOARD' | 'PORTAL',
-): string {
+function getActivityTypeLabel(eventType: string, source: 'BOARD' | 'PORTAL', t: any): string {
   if (eventType.startsWith('BOARD_')) {
-    return 'Board';
+    return t('activity.types.board');
   }
   if (eventType.startsWith('PORTAL_')) {
-    return 'Portail';
+    return t('activity.types.portal');
   }
-  // TASK_* et OBJECTIVE_STATUS_CHANGED
-  return 'Tâche';
+  return t('activity.types.task');
 }
 
 /**

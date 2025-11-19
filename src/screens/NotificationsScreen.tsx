@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import type { AppStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
@@ -30,6 +31,7 @@ type NotificationsNavigationProp = NativeStackNavigationProp<AppStackParamList>;
  */
 export function NotificationsScreen() {
   const navigation = useNavigation<NotificationsNavigationProp>();
+  const { t } = useTranslation();
   
   // Source unique de vérité pour les notifications - TODO: Replace with real Suivi API
   const { notifications, markAsRead, markAllAsRead } = useNotificationsStore();
@@ -78,7 +80,7 @@ export function NotificationsScreen() {
     return (
       <View style={styles.emptyContainer}>
         <SuiviText variant="h2" style={styles.emptyTitle}>
-          No notifications
+          {t('notifications.empty')}
         </SuiviText>
         <SuiviText variant="body" color="secondary" style={styles.emptyText}>
           You're all caught up!
@@ -97,7 +99,7 @@ export function NotificationsScreen() {
       {unreadCount > 0 && (
         <View style={styles.actionBar}>
           <SuiviButton
-            title="Mark All as Read"
+            title={t('notifications.markAllRead')}
             onPress={handleMarkAllAsRead}
             variant="primary"
           />

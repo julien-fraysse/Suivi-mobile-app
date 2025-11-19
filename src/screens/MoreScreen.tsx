@@ -14,6 +14,7 @@ import { useUserProfile } from '../hooks/useUserProfile';
 import { useSettings } from '../hooks/useSettings';
 import { useThemeMode } from '../theme/ThemeProvider';
 import { tokens } from '../theme';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Mock User Profile interface for MoreScreen
@@ -55,6 +56,7 @@ export function MoreScreen() {
   const { fullName, email, avatar } = useUserProfile();
   const { settings, updateSettings } = useSettings();
   const { themeMode, setThemeMode } = useThemeMode();
+  const { t, i18n } = useTranslation();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
   // Mock profile object for display (derived from useUserProfile data)
@@ -121,11 +123,10 @@ export function MoreScreen() {
 
   const handleChangeLanguage = async (lang: 'fr' | 'en') => {
     try {
-      await updateSettings({ language: lang });
-      // TODO: Connect to internationalization if the app becomes multilingual
+      await i18n.changeLanguage(lang);      // Apply new UI language immediately
+      await updateSettings({ language: lang }); // Persist setting
     } catch (error) {
       console.error('Error updating language setting:', error);
-      // Optionally show an error message to the user
       Alert.alert(
         'Error',
         'Failed to save language preference. Please try again.',
@@ -223,7 +224,7 @@ export function MoreScreen() {
               </View>
               <View style={styles.editButtonContainer}>
                 <SuiviButton
-                  title="Edit Profile"
+                  title={t('more.editProfile')}
                   onPress={() => setIsEditModalVisible(true)}
                   variant="ghost"
                   style={styles.editButton}
@@ -242,24 +243,24 @@ export function MoreScreen() {
         {/* Theme Settings */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Theme Settings
+            {t('more.themeSettings')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View style={styles.themeOptions}>
               <SuiviButton
-                title="Light"
+                title={t('more.light')}
                 onPress={() => handleSetTheme('light')}
                 variant={themeMode === 'light' ? 'primary' : 'ghost'}
                 style={styles.themeButton}
               />
               <SuiviButton
-                title="Dark"
+                title={t('more.dark')}
                 onPress={() => handleSetTheme('dark')}
                 variant={themeMode === 'dark' ? 'primary' : 'ghost'}
                 style={styles.themeButton}
               />
               <SuiviButton
-                title="Auto (System)"
+                title={t('more.auto')}
                 onPress={() => handleSetTheme('auto')}
                 variant={themeMode === 'auto' ? 'primary' : 'ghost'}
                 style={styles.themeButton}
@@ -271,12 +272,12 @@ export function MoreScreen() {
         {/* Notifications Section */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Notifications
+            {t('more.notifications')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View style={styles.switchRow}>
               <SuiviText variant="body" color="primary">
-                Mobile push notifications
+                {t('more.pushNotifications')}
               </SuiviText>
               <Switch
                 value={true} // TODO: Add notificationsEnabled to Settings context when needed
@@ -290,7 +291,7 @@ export function MoreScreen() {
         {/* Language Section */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Language
+            {t('more.language')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View style={styles.languageOptions}>
@@ -313,7 +314,7 @@ export function MoreScreen() {
         {/* Organization Section */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Organization
+            {t('more.organization')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View
@@ -327,7 +328,7 @@ export function MoreScreen() {
               ]}
             >
               <SuiviText variant="label" color="secondary">
-                Name:
+                {t('more.name')}
               </SuiviText>
               <SuiviText variant="body" color="primary">
                 {profile.organization.name || 'N/A'}
@@ -340,14 +341,14 @@ export function MoreScreen() {
               ]}
             >
               <SuiviText variant="label" color="secondary">
-                Role:
+                {t('more.role')}
               </SuiviText>
               <SuiviText variant="body" color="primary">
                 {profile.organization.role || 'N/A'}
               </SuiviText>
             </View>
             <SuiviText variant="caption" color="hint" style={styles.hint}>
-              Workspace switching coming soon
+              {t('more.workspaceSoon')}
             </SuiviText>
           </SuiviCard>
         </View>
@@ -355,19 +356,19 @@ export function MoreScreen() {
         {/* Security Section */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Security
+            {t('more.security')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View style={styles.securityActions}>
               <SuiviButton
-                title="Reset Password"
+                title={t('more.resetPassword')}
                 onPress={handleResetPassword}
                 variant="ghost"
                 fullWidth
                 style={styles.securityButton}
               />
               <SuiviButton
-                title="Manage Sessions"
+                title={t('more.manageSessions')}
                 onPress={handleManageSessions}
                 variant="ghost"
                 fullWidth
@@ -380,7 +381,7 @@ export function MoreScreen() {
         {/* App Info Section */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            App Info
+            {t('more.appInfo')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View
@@ -394,7 +395,7 @@ export function MoreScreen() {
               ]}
             >
               <SuiviText variant="label" color="secondary">
-                App Version:
+                {t('more.appVersion')}
               </SuiviText>
               <SuiviText variant="body" color="primary">
                 {appVersion}
@@ -411,7 +412,7 @@ export function MoreScreen() {
               ]}
             >
               <SuiviText variant="label" color="secondary">
-                Design System:
+                {t('more.designSystem')}
               </SuiviText>
               <SuiviText variant="body" color="primary">
                 Suivi v1.0
@@ -424,7 +425,7 @@ export function MoreScreen() {
               ]}
             >
               <SuiviText variant="label" color="secondary">
-                API Status:
+                {t('more.apiStatus')}
               </SuiviText>
               <SuiviText variant="body" color="secondary">
                 Mock mode (not connected to Suivi backend yet)
@@ -436,7 +437,7 @@ export function MoreScreen() {
         {/* Sign Out */}
         <View style={styles.section}>
           <SuiviButton
-            title="Sign Out"
+            title={t('more.signOut')}
             onPress={handleSignOut}
             variant="destructive"
             fullWidth

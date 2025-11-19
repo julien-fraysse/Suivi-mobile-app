@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
@@ -34,6 +35,7 @@ type MyTasksRouteProp = RouteProp<MainTabParamList, 'MyTasks'>;
 export function MyTasksScreen() {
   const navigation = useNavigation<MyTasksNavigationProp>();
   const route = useRoute<MyTasksRouteProp>();
+  const { t, i18n } = useTranslation();
   const initialFilter: FilterOption = route.params?.initialFilter ?? 'all';
   const [filter, setFilter] = useState<FilterOption>(initialFilter);
 
@@ -89,9 +91,9 @@ export function MyTasksScreen() {
       
       {/* Filters */}
       <View style={styles.filterBar}>
-        {renderFilterButton('all', 'All')}
-        {renderFilterButton('active', 'Active')}
-        {renderFilterButton('completed', 'Completed')}
+        {renderFilterButton('all', t('tasks.filters.all'))}
+        {renderFilterButton('active', t('tasks.filters.active'))}
+        {renderFilterButton('completed', t('tasks.filters.completed'))}
       </View>
 
       {/* Task list or empty state */}

@@ -11,6 +11,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { SuiviButton } from './SuiviButton';
 import { SuiviText } from './SuiviText';
 import { tokens } from '../../theme';
@@ -53,6 +54,7 @@ export function EditProfileModal({
 }: EditProfileModalProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+  const { t } = useTranslation();
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -135,7 +137,7 @@ export function EditProfileModal({
                   },
                 ]}
               >
-                Edit Profile
+                {t('editProfile.title')}
               </SuiviText>
 
               {/* First Name */}
@@ -145,7 +147,7 @@ export function EditProfileModal({
                   color="secondary"
                   style={styles.label}
                 >
-                  First Name
+                  {t('editProfile.firstName')}
                 </SuiviText>
                 <TextInput
                   style={[
@@ -172,7 +174,7 @@ export function EditProfileModal({
                   color="secondary"
                   style={styles.label}
                 >
-                  Last Name
+                  {t('editProfile.lastName')}
                 </SuiviText>
                 <TextInput
                   style={[
@@ -199,7 +201,7 @@ export function EditProfileModal({
                   color="secondary"
                   style={styles.label}
                 >
-                  Email
+                  {t('editProfile.email')}
                 </SuiviText>
                 <TextInput
                   style={[
@@ -220,21 +222,21 @@ export function EditProfileModal({
                   color="hint"
                   style={styles.hint}
                 >
-                  Email cannot be changed from the mobile app
+                  {t('editProfile.emailLocked')}
                 </SuiviText>
               </View>
 
               {/* Buttons */}
               <View style={styles.actions}>
                 <SuiviButton
-                  title="Save"
+                  title={t('editProfile.save')}
                   onPress={handleSave}
                   variant="primary"
                   fullWidth
                   style={styles.saveButton}
                 />
                 <SuiviButton
-                  title="Cancel"
+                  title={t('editProfile.cancel')}
                   onPress={handleClose}
                   variant="ghost"
                   fullWidth

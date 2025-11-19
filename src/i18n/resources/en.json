@@ -1,0 +1,93 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error"
+  },
+  "home": {
+    "title": "Home",
+    "whatsNew": "What's new",
+    "recentActivities": "Recent Activities",
+    "activeTasks": "Active Tasks",
+    "dueToday": "Due Today",
+    "filters": {
+      "all": "All",
+      "boards": "Boards",
+      "portals": "Portals"
+    },
+    "noActivities": "No recent activities",
+    "errorLoading": "Error loading",
+    "viewMore": "View more activities",
+    "searchPlaceholder": "Search tasks, notifications..."
+  },
+  "activity": {
+    "types": {
+      "task": "Task",
+      "board": "Board",
+      "portal": "Portal"
+    }
+  },
+  "tasks": {
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "status": {
+      "todo": "Todo",
+      "inProgress": "In Progress",
+      "blocked": "Blocked",
+      "done": "Done"
+    },
+    "due": "Due: "
+  },
+  "taskDetail": {
+    "status": "Status",
+    "projectBoard": "Project / Board",
+    "dueDate": "Due Date",
+    "assignee": "Assignee",
+    "updated": "Updated",
+    "activityTimeline": "Activity Timeline",
+    "noActivity": "No activity yet"
+  },
+  "notifications": {
+    "markAllRead": "Mark All as Read",
+    "newTaskAssigned": "New task assigned",
+    "taskCompleted": "Task completed",
+    "taskOverdue": "Task overdue",
+    "projectUpdate": "Project update",
+    "newComment": "New comment",
+    "empty": "No notifications"
+  },
+  "more": {
+    "editProfile": "Edit Profile",
+    "themeSettings": "Theme Settings",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto (System)",
+    "notifications": "Notifications",
+    "pushNotifications": "Mobile push notifications",
+    "language": "Language",
+    "organization": "Organization",
+    "name": "Name:",
+    "role": "Role:",
+    "workspaceSoon": "Workspace switching coming soon",
+    "security": "Security",
+    "resetPassword": "Reset Password",
+    "manageSessions": "Manage Sessions",
+    "appInfo": "App Info",
+    "appVersion": "App Version:",
+    "designSystem": "Design System:",
+    "apiStatus": "API Status:",
+    "signOut": "Sign Out"
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "emailLocked": "Email cannot be changed from the mobile app",
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}
+

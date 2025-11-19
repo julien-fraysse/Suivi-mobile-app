@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SuiviCard } from './SuiviCard';
 import { SuiviText } from './SuiviText';
 import { tokens } from '../../theme';
@@ -36,6 +37,9 @@ export interface NotificationItemProps {
  * Utilise EXCLUSIVEMENT les tokens Suivi.
  */
 export function NotificationItem({ notification, onPress, style }: NotificationItemProps) {
+  const { t } = useTranslation();
+  const notificationTitle = getNotificationTypeLabel(notification.type, t);
+  
   return (
     <SuiviCard
       padding="md"
@@ -51,7 +55,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
       {/* Header avec titre et badge non lue */}
       <View style={styles.header}>
         <SuiviText variant="h2" style={styles.title}>
-          {notification.title}
+          {notificationTitle}
         </SuiviText>
         {!notification.read && (
           <View style={styles.unreadBadge} />
@@ -69,6 +73,26 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
       </SuiviText>
     </SuiviCard>
   );
+}
+
+/**
+ * Retourne le label traduit pour un type de notification
+ */
+function getNotificationTypeLabel(type: string, t: any): string {
+  switch (type) {
+    case 'task_assigned':
+      return t('notifications.newTaskAssigned');
+    case 'task_completed':
+      return t('notifications.taskCompleted');
+    case 'task_overdue':
+      return t('notifications.taskOverdue');
+    case 'project_update':
+      return t('notifications.projectUpdate');
+    case 'comment':
+      return t('notifications.newComment');
+    default:
+      return type;
+  }
 }
 
 /**

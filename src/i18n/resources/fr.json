@@ -1,0 +1,93 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur"
+  },
+  "home": {
+    "title": "Accueil",
+    "whatsNew": "Nouveautés",
+    "activeTasks": "Tâches actives",
+    "dueToday": "À faire aujourd'hui",
+    "recentActivities": "Activités récentes",
+    "noActivities": "Aucune activité récente",
+    "viewMore": "Voir plus d'activités",
+    "searchPlaceholder": "Rechercher tâches, notifications...",
+    "filters": {
+      "all": "Tous",
+      "boards": "Boards",
+      "portals": "Portails"
+    },
+    "errorLoading": "Erreur lors du chargement"
+  },
+  "activity": {
+    "types": {
+      "task": "Tâche",
+      "board": "Board",
+      "portal": "Portail"
+    }
+  },
+  "tasks": {
+    "filters": {
+      "all": "Tous",
+      "active": "Actives",
+      "completed": "Terminées"
+    },
+    "status": {
+      "todo": "À faire",
+      "inProgress": "En cours",
+      "blocked": "Bloquée",
+      "done": "Terminée"
+    },
+    "due": "Échéance : "
+  },
+  "taskDetail": {
+    "status": "Statut",
+    "projectBoard": "Projet / Board",
+    "dueDate": "Échéance",
+    "assignee": "Assignée à",
+    "updated": "Mis à jour",
+    "activityTimeline": "Historique d'activité",
+    "noActivity": "Aucune activité"
+  },
+  "notifications": {
+    "markAllRead": "Tout marquer comme lu",
+    "newTaskAssigned": "Nouvelle tâche assignée",
+    "taskCompleted": "Tâche complétée",
+    "taskOverdue": "Tâche en retard",
+    "projectUpdate": "Mise à jour du projet",
+    "newComment": "Nouveau commentaire",
+    "empty": "Aucune notification"
+  },
+  "more": {
+    "editProfile": "Modifier le profil",
+    "themeSettings": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "auto": "Auto (Système)",
+    "notifications": "Notifications",
+    "pushNotifications": "Notifications push",
+    "language": "Langue",
+    "organization": "Organisation",
+    "name": "Nom :",
+    "role": "Rôle :",
+    "workspaceSoon": "Changement d'espace de travail bientôt disponible",
+    "security": "Sécurité",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "manageSessions": "Gérer les sessions",
+    "appInfo": "À propos",
+    "appVersion": "Version de l'app :",
+    "designSystem": "Design System :",
+    "apiStatus": "Statut API :",
+    "signOut": "Déconnexion"
+  },
+  "editProfile": {
+    "title": "Modifier le profil",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "emailLocked": "L'email ne peut pas être modifié depuis l'application mobile",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  }
+}
+

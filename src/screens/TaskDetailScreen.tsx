@@ -6,6 +6,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
@@ -38,6 +39,7 @@ type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
 export function TaskDetailScreen() {
   const route = useRoute<TaskDetailRoute>();
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const { taskId } = route.params;
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
@@ -108,7 +110,7 @@ export function TaskDetailScreen() {
       <View style={styles.statusSection}>
         <SuiviCard padding="md" elevation="card" variant="default" style={styles.statusCard}>
           <SuiviText variant="label" color="secondary" style={styles.statusLabel}>
-            Status
+            {t('taskDetail.status')}
           </SuiviText>
           <SuiviButton
             title={formatStatus(taskStatus!)}
@@ -142,7 +144,7 @@ export function TaskDetailScreen() {
         {task.projectName && (
           <View style={styles.infoRow}>
             <SuiviText variant="label" color="secondary" style={styles.label}>
-              Project/Board:
+              {t('taskDetail.projectBoard')}
             </SuiviText>
             <SuiviText variant="body" color="primary">
               {task.projectName}
@@ -154,7 +156,7 @@ export function TaskDetailScreen() {
         {task.dueDate && (
           <View style={styles.infoRow}>
             <SuiviText variant="label" color="secondary" style={styles.label}>
-              Due Date:
+              {t('taskDetail.dueDate')}
             </SuiviText>
             <SuiviText variant="body" color="primary">
               {formatDate(task.dueDate)}
@@ -166,7 +168,7 @@ export function TaskDetailScreen() {
         {task.assigneeName && (
           <View style={styles.infoRow}>
             <SuiviText variant="label" color="secondary" style={styles.label}>
-              Assignee:
+              {t('taskDetail.assignee')}
             </SuiviText>
             <View style={styles.assigneeContainer}>
               <UserAvatar
@@ -185,7 +187,7 @@ export function TaskDetailScreen() {
         {task.updatedAt && (
           <View style={styles.infoRow}>
             <SuiviText variant="label" color="secondary" style={styles.label}>
-              Updated:
+              {t('taskDetail.updated')}
             </SuiviText>
             <SuiviText variant="body" color="secondary">
               {formatDate(task.updatedAt)}
@@ -197,7 +199,7 @@ export function TaskDetailScreen() {
       {/* Activity Timeline Section */}
       <View style={styles.section}>
         <SuiviText variant="h1" style={styles.sectionTitle}>
-          Activity Timeline
+          {t('taskDetail.activityTimeline')}
         </SuiviText>
         {taskActivities.length > 0 ? (
           taskActivities.map((activity, index) => (
@@ -222,7 +224,7 @@ export function TaskDetailScreen() {
         ) : (
           <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.activityCard}>
             <SuiviText variant="body" color="secondary">
-              No activity yet
+              {t('taskDetail.noActivity')}
             </SuiviText>
           </SuiviCard>
         )}

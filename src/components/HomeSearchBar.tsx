@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme, TextInput } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { tokens } from '../theme';
 
 export interface HomeSearchBarProps {
@@ -23,6 +24,7 @@ export interface HomeSearchBarProps {
 export function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = () => {
@@ -43,7 +45,7 @@ export function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
     <View style={styles.container}>
       <TextInput
         mode="outlined"
-        placeholder="Search tasks, notifications..."
+        placeholder={t('home.searchPlaceholder')}
         value={searchQuery}
         onChangeText={setSearchQuery}
         onSubmitEditing={handleSearchSubmit}

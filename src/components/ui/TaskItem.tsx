@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SuiviCard } from './SuiviCard';
 import { SuiviText } from './SuiviText';
 import { Task, TaskStatus } from '../../api/tasks';
@@ -26,6 +27,7 @@ export interface TaskItemProps {
  * Utilise EXCLUSIVEMENT les tokens Suivi.
  */
 export function TaskItem({ task, onPress, style }: TaskItemProps) {
+  const { t } = useTranslation();
   const statusColor = getStatusColor(task.status);
 
   return (
@@ -50,7 +52,7 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
           ]}
         >
           <SuiviText variant="caption" color="inverse">
-            {formatStatus(task.status)}
+            {formatStatus(task.status, t)}
           </SuiviText>
         </View>
       </View>
@@ -65,7 +67,7 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
       {/* Due date */}
       <SuiviText variant="body2" color="secondary">
         {task.dueDate
-          ? `Due: ${formatDate(task.dueDate)}`
+          ? `${t('tasks.due')}${formatDate(task.dueDate)}`
           : 'No due date'}
       </SuiviText>
     </SuiviCard>
@@ -93,10 +95,19 @@ function getStatusColor(status: TaskStatus): string {
 /**
  * Formate un statut pour l'affichage
  */
-function formatStatus(status: TaskStatus): string {
-  return status.split('_').map(word =>
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
+function formatStatus(status: TaskStatus, t: any): string {
+  switch (status) {
+    case 'todo':
+      return t('tasks.status.todo');
+    case 'in_progress':
+      return t('tasks.status.inProgress');
+    case 'blocked':
+      return t('tasks.status.blocked');
+    case 'done':
+      return t('tasks.status.done');
+    default:
+      return status;
+  }
 }
 
 /**

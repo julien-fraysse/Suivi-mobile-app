@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
 import { HomeSearchBar } from '../components/HomeSearchBar';
@@ -38,6 +39,7 @@ const ACTIVITY_CARD_SPACING = 4;
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
+  const { t } = useTranslation();
   
   const [filter, setFilter] = useState<'all' | 'board' | 'portal'>('all');
   const [limit, setLimit] = useState(5);
@@ -131,18 +133,18 @@ export function HomeScreen() {
         {/* What's new - Statistiques calculées depuis useTasks() avec helpers de filtre partagés */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            What's new
+            {t('home.whatsNew')}
           </SuiviText>
           <View style={styles.tileRow}>
             <StatCard
-              title="Active Tasks"
+              title={t('home.activeTasks')}
               value={activeCount}
               color="primary"
               onPress={handleViewActiveTasks}
               style={styles.tile}
             />
             <StatCard
-              title="Due Today"
+              title={t('home.dueToday')}
               value={dueTodayCount}
               color="accent"
               onPress={handleViewDueToday}
@@ -154,7 +156,7 @@ export function HomeScreen() {
         {/* Activités récentes */}
         <View style={styles.section}>
           <SuiviText variant="h1" style={styles.sectionTitle}>
-            Activités récentes
+            {t('home.recentActivities')}
           </SuiviText>
 
           {isLoadingActivities ? (
@@ -165,7 +167,7 @@ export function HomeScreen() {
           ) : isErrorActivities ? (
             <View style={styles.activityPreview}>
               <SuiviText variant="body" color="secondary">
-                Erreur lors du chargement
+                {t('home.errorLoading')}
               </SuiviText>
             </View>
           ) : (
@@ -173,7 +175,7 @@ export function HomeScreen() {
               {/* Filtres Material 3 - toujours visibles */}
               <View style={styles.filtersContainer}>
                 <FilterChip
-                  label="Tous"
+                  label={t('home.filters.all')}
                   selected={filter === 'all'}
                   onPress={() => {
                     setFilter('all');
@@ -182,7 +184,7 @@ export function HomeScreen() {
                   material3
                 />
                 <FilterChip
-                  label="Boards"
+                  label={t('home.filters.boards')}
                   selected={filter === 'board'}
                   onPress={() => {
                     setFilter('board');
@@ -191,7 +193,7 @@ export function HomeScreen() {
                   material3
                 />
                 <FilterChip
-                  label="Portails"
+                  label={t('home.filters.portals')}
                   selected={filter === 'portal'}
                   onPress={() => {
                     setFilter('portal');
@@ -205,7 +207,7 @@ export function HomeScreen() {
               {filteredActivities.length === 0 ? (
                 <View style={styles.activityPreview}>
                   <SuiviText variant="body" color="secondary" style={styles.emptyText}>
-                    Aucune activité récente
+                    {t('home.noActivities')}
                   </SuiviText>
                 </View>
               ) : (
@@ -224,7 +226,7 @@ export function HomeScreen() {
               {/* Bouton "Voir plus d'activités" */}
               {filteredActivities.length > limit && (
                 <SuiviButton
-                  title="Voir plus d'activités"
+                  title={t('home.viewMore')}
                   onPress={() => setLimit(limit + 5)}
                   variant="ghost"
                   fullWidth

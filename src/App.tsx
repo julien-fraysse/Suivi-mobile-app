@@ -10,6 +10,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MD3Theme } from 'react-native-paper';
 
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n/i18n';
+
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -130,20 +133,22 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <SettingsProvider>
-            <ThemeProvider initialMode="auto">
-              <AuthProvider>
-                <TasksProvider>
-                  <AppContent />
-                </TasksProvider>
-              </AuthProvider>
-            </ThemeProvider>
-          </SettingsProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <I18nextProvider i18n={i18n}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <SettingsProvider>
+              <ThemeProvider initialMode="auto">
+                <AuthProvider>
+                  <TasksProvider>
+                    <AppContent />
+                  </TasksProvider>
+                </AuthProvider>
+              </ThemeProvider>
+            </SettingsProvider>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </I18nextProvider>
   );
 }

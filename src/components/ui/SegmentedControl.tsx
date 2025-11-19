@@ -18,7 +18,16 @@ export interface SegmentedControlProps {
 /**
  * SegmentedControl
  * 
- * Composant de contrôle segmenté réutilisable avec pill mobile.
+ * Composant de boutons segmentés réutilisable (Mes Tâches, Home, etc.).
+ * 
+ * Rendu visuel unique aligné avec le design Suivi.
+ * Utilisé pour :
+ * - MyTasksScreen : Tous / Actives / Terminées
+ * - HomeScreen : Tous / Boards / Portails
+ * 
+ * Prépare le terrain pour un futur branchement API :
+ * - ex: GET /activities?filter=board|portal
+ * - ex: GET /tasks?status=active|done
  * 
  * Design :
  * - Light mode : Container blanc avec bordure gris clair et ombre légère

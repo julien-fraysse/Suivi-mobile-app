@@ -124,9 +124,54 @@ export function HomeScreen() {
 
         {/* Activités récentes */}
         <View style={styles.section}>
-          <SuiviText variant="h1" style={styles.sectionTitle}>
-            {t('home.recentActivities')}
-          </SuiviText>
+          {/**
+           * Titre de section "Activités récentes"
+           * 
+           * Standardisé pour utiliser exactement le même style que toutes
+           * les sections de l'app (Mes Tâches, Notifications, etc.).
+           * 
+           * Le variant typographique provient des tokens Suivi :
+           * - tokens.typography.h1 (Inter_600SemiBold, 22px)
+           * - Couleur gérée automatiquement par SuiviText selon le thème
+           * 
+           * Header Row: Titre et filtres sur la même ligne
+           * 
+           * Pourquoi ce layout est meilleur:
+           * - Gain d'espace vertical (titre et filtres sur une seule ligne)
+           * - Meilleure utilisation de l'espace horizontal sur les grands écrans
+           * - Alignement moderne et clean, conforme aux standards iOS/Android
+           * - Filtres toujours visibles sans scroll
+           * 
+           * Composant utilisé: SegmentedControl (même composant que MyTasksScreen)
+           * - Rendu visuel identique à "Mes Tâches" (Tous / Actives / Terminées)
+           * - Design unifié dans toute l'application
+           * 
+           * Comment brancher les filtres réels demain via API:
+           * - SegmentedControl appelle onChange qui met à jour le state local
+           * - Pour l'API: remplacer setFilter par un appel API avec debounce
+           * - Exemple: onChange={(value) => debouncedFetchActivities(value)}
+           * - Les filtres backend seront: ?type=board, ?type=portal, ou sans param pour "all"
+           * - Le state filter reste identique, seul le fetch change
+           */}
+          <View style={styles.headerRow}>
+            <SuiviText variant="h1" style={styles.titleText}>
+              {t('home.recentActivities')}
+            </SuiviText>
+            <View style={styles.filtersRow}>
+              <SegmentedControl
+                options={[
+                  { key: 'all', label: t('home.filters.all') },
+                  { key: 'board', label: t('home.filters.boards') },
+                  { key: 'portal', label: t('home.filters.portals') },
+                ]}
+                value={filter}
+                onChange={(key) => {
+                  setFilter(key as 'all' | 'board' | 'portal');
+                  setLimit(5);
+                }}
+              />
+            </View>
+          </View>
 
           {isLoadingActivities ? (
             <View style={styles.activityPreview}>
@@ -141,24 +186,6 @@ export function HomeScreen() {
             </View>
           ) : (
             <>
-              {/* Filtres Material 3 - toujours visibles */}
-              <View style={styles.filtersContainer}>
-                <View style={{ alignSelf: 'flex-start', marginBottom: tokens.spacing.md }}>
-                  <SegmentedControl
-                    options={[
-                      { key: 'all', label: t('home.filters.all') },
-                      { key: 'board', label: t('home.filters.boards') },
-                      { key: 'portal', label: t('home.filters.portals') },
-                    ]}
-                    value={filter}
-                    onChange={(newValue) => {
-                      setFilter(newValue as 'all' | 'board' | 'portal');
-                      setLimit(5);
-                    }}
-                  />
-                </View>
-              </View>
-
               {/* Liste d'activités */}
               {filteredActivities.length === 0 ? (
                 <View style={styles.activityPreview}>
@@ -199,8 +226,22 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: tokens.spacing.xl,
   },
-  sectionTitle: {
-    marginBottom: tokens.spacing.md,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 0,
+    width: '100%',
+  },
+  titleText: {
+    // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
+    // fontSize, fontFamily, color sont également gérés par SuiviText selon le variant et le thème
+    flexShrink: 1, // Permet au titre de se rétrécir si nécessaire dans le layout horizontal
+  },
+  filtersRow: {
+    flexShrink: 0,
+    alignItems: 'center',
   },
   loadingContainer: {
     paddingVertical: tokens.spacing.lg,
@@ -252,9 +293,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     marginBottom: tokens.spacing.xs,
-  },
-  filtersContainer: {
-    marginTop: 4, // Espacement réduit entre le titre et les filtres
   },
   activityCard: {
     marginBottom: ACTIVITY_CARD_SPACING,

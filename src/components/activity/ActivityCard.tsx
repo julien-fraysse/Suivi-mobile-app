@@ -95,14 +95,14 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
             styles.iconContainer,
             compact && styles.iconContainerCompact,
             {
-              backgroundColor: iconBackgroundColor,
+              backgroundColor: `${iconBackgroundColor}20`,
             },
           ]}
         >
           <MaterialCommunityIcons
             name={iconName}
-            size={compact ? 20 : 24}
-            color={iconColor}
+            size={compact ? 18 : 22}
+            color={iconBackgroundColor}
           />
         </View>
       </View>
@@ -129,13 +129,18 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
               style={[
                 styles.typeBadge,
                 {
-                  backgroundColor: iconBackgroundColor,
+                  backgroundColor: `${iconBackgroundColor}20`,
                 },
               ]}
             >
               <SuiviText
-                variant="label"
-                style={styles.typeBadgeText}
+                variant="body"
+                style={[
+                  styles.typeBadgeText,
+                  {
+                    color: iconBackgroundColor,
+                  },
+                ]}
               >
                 {activityTypeLabel}
               </SuiviText>
@@ -396,15 +401,16 @@ const styles = StyleSheet.create({
     marginRight: tokens.spacing.md,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: tokens.radius.md,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconContainerCompact: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
   },
   textContainer: {
     flex: 1,
@@ -430,16 +436,14 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   typeBadge: {
-    paddingHorizontal: tokens.spacing.xs,
-    paddingVertical: 3,
-    borderRadius: tokens.radius.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
     marginBottom: tokens.spacing.xs / 2,
   },
   typeBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '200',
-    lineHeight: 16,
+    fontSize: 11,
+    fontWeight: '500',
   },
   timeAgo: {
     fontSize: 12,
@@ -452,7 +456,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: tokens.spacing.xs,
   },
   avatar: {
     marginRight: tokens.spacing.xs,

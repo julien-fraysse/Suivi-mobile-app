@@ -3,20 +3,16 @@ import {
   View,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
-  Pressable,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviText } from '../components/ui/SuiviText';
 import { UserAvatar } from '../components/ui/UserAvatar';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SuiviStatusPicker } from '../components/ui/SuiviStatusPicker';
 import { useTaskById } from '../tasks/useTaskById';
-import { useUpdateTaskStatus } from '../tasks/useUpdateTaskStatus';
 import type { TaskStatus } from '../tasks/tasks.types';
 import { useTaskActivity } from '../hooks/useActivity';
 import { useUser } from '../hooks/useUser';
@@ -32,22 +28,23 @@ type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
  * 
  * Détails d'une tâche avec :
  * - Détails complets de la tâche depuis useTaskById() (source unique de vérité)
- * - Status toggle qui met à jour via useUpdateTaskStatus() (synchronise avec MyTasksScreen et HomeScreen)
+ * - Affichage du statut (read-only, les changements se font uniquement via Quick Actions)
  * - Breadcrumb projet
  * - Assigned user (useUser)
  * - Section "Recent updates" (useActivityFeed filtré par taskId)
+ * - Quick Actions pour interagir avec la tâche
  * 
- * TODO: Replace useTaskById() and useUpdateTaskStatus() with real Suivi API calls when backend is ready.
+ * TODO: Replace useTaskById() with real Suivi API calls when backend is ready.
  */
 export function TaskDetailScreen() {
   const route = useRoute<TaskDetailRoute>();
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const theme = useTheme();
   const { taskId } = route.params;
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
-  const { updateStatus, isUpdating } = useUpdateTaskStatus();
   
   const { data: user } = useUser();
   const { data: taskActivities = [] } = useTaskActivity(taskId);
@@ -55,23 +52,8 @@ export function TaskDetailScreen() {
   // Status actuel de la tâche (dérivé du store)
   const taskStatus = task?.status;
 
-  // State for status picker visibility
-  const [isStatusPickerVisible, setIsStatusPickerVisible] = useState(false);
-
   // Local activity history for Quick Actions (mock)
   const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
-
-  // Handle status change from picker
-  // TODO: When Suivi API is ready, add error handling for failed API calls
-  const handleChangeStatus = async (newStatus: TaskStatus) => {
-    if (!taskId || !task || isUpdating) return;
-    try {
-      await updateStatus(taskId, newStatus);
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      // TODO: Afficher une notification d'erreur à l'utilisateur
-    }
-  };
 
   // Handle Quick Action completion (mock)
   function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
@@ -156,59 +138,50 @@ export function TaskDetailScreen() {
     <Screen scrollable>
       <AppHeader showBackButton onBack={() => navigation.goBack()} />
 
-      {/* Status Selector */}
+      {/* Task Title (display only, no label) */}
+      <View style={styles.taskTitleContainer}>
+        <SuiviText variant="h1" style={styles.taskTitleText}>
+          {task.title}
+        </SuiviText>
+      </View>
+
+      {/* Status Display (read-only) */}
       <View style={styles.statusSection}>
         <SuiviCard padding="md" elevation="card" variant="default" style={styles.statusCard}>
           <SuiviText variant="label" color="secondary" style={styles.statusLabel}>
             {t('taskDetail.status')}
           </SuiviText>
-          <Pressable
-            onPress={() => setIsStatusPickerVisible(true)}
-            disabled={isUpdating}
-            style={({ pressed }) => [
-              styles.statusButton,
+          <View
+            style={[
+              styles.statusBadge,
               {
                 backgroundColor: `${statusColor}14`, // Fond très clair (~8% opacité)
                 borderColor: statusColor,
-                opacity: pressed ? 0.7 : 1,
-                elevation: 2, // Ombre légère
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.12,
-                shadowRadius: 2,
               },
             ]}
           >
-            <View style={styles.statusButtonContent}>
-              <SuiviText variant="body" style={{ color: statusColor, fontWeight: '500' }}>
-                {formatStatus(taskStatus!, t)}
-              </SuiviText>
-              {isUpdating ? (
-                <ActivityIndicator
-                  size="small"
-                  color={statusColor}
-                  style={styles.statusButtonLoader}
-                />
-              ) : (
-                <MaterialCommunityIcons
-                  name="chevron-down"
-                  size={20}
-                  color={statusColor}
-                />
-              )}
-            </View>
-          </Pressable>
+            <SuiviText variant="body" style={{ color: statusColor, fontWeight: '500' }}>
+              {formatStatus(taskStatus!, t)}
+            </SuiviText>
+          </View>
         </SuiviCard>
       </View>
 
       {/* Quick Action Renderer */}
       {task && task.quickAction && (
-        <View style={styles.quickActionSection}>
+        <View style={styles.section}>
+          <SuiviText variant="h1" style={styles.sectionTitle}>
+            {t('taskDetail.quickAction')}
+          </SuiviText>
           <QuickActionRenderer task={task} onActionComplete={handleMockAction} />
         </View>
       )}
 
       {/* Task Details Card */}
+      <View style={styles.section}>
+        <SuiviText variant="h1" style={styles.sectionTitle}>
+          {t('taskDetail.details')}
+        </SuiviText>
       <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
         {/* Description */}
         {task.description ? (
@@ -280,6 +253,7 @@ export function TaskDetailScreen() {
           </View>
         )}
       </SuiviCard>
+      </View>
 
       {/* Activity Timeline Section */}
       <View style={styles.section}>
@@ -320,15 +294,6 @@ export function TaskDetailScreen() {
         )}
       </View>
 
-      {/* Status Picker Modal - Rendu à la fin pour être au-dessus de tout */}
-      {taskStatus && (
-        <SuiviStatusPicker
-          visible={isStatusPickerVisible}
-          onClose={() => setIsStatusPickerVisible(false)}
-          currentStatus={taskStatus}
-          onSelectStatus={handleChangeStatus}
-        />
-      )}
     </Screen>
   );
 }
@@ -489,6 +454,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: tokens.spacing.xs,
   },
+  taskTitleContainer: {
+    marginHorizontal: tokens.spacing.lg,
+    marginTop: tokens.spacing.xl,
+    marginBottom: tokens.spacing.lg,
+  },
+  taskTitleText: {
+    fontSize: 22,
+    fontWeight: '600',
+  },
   statusSection: {
     marginBottom: tokens.spacing.lg,
   },
@@ -498,24 +472,14 @@ const styles = StyleSheet.create({
   statusLabel: {
     marginBottom: tokens.spacing.sm,
   },
-  statusButton: {
-    paddingVertical: 14,
+  statusBadge: {
+    paddingVertical: 12,
     paddingHorizontal: tokens.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 48,
-  },
-  statusButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flex: 1,
-  },
-  statusButtonLoader: {
-    marginLeft: tokens.spacing.xs,
+    justifyContent: 'center',
+    minHeight: 44,
   },
   card: {
     marginBottom: tokens.spacing.lg,
@@ -552,7 +516,11 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.xl,
   },
   sectionTitle: {
-    marginBottom: tokens.spacing.md,
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 24,
+    marginBottom: 12,
+    marginHorizontal: tokens.spacing.lg,
   },
   timelineItem: {
     flexDirection: 'row',

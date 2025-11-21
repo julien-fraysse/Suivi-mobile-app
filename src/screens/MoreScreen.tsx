@@ -275,6 +275,7 @@ export function MoreScreen() {
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View style={styles.themeSelectorContainer}>
               <SegmentedControl
+                variant="fullWidth"
                 options={[
                   { key: 'light', label: t('more.theme.light') },
                   { key: 'dark', label: t('more.theme.dark') },
@@ -553,9 +554,9 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.sm,
   },
   themeSelectorContainer: {
-    alignSelf: 'center',
-    width: '90%',
+    width: '100%', // Largeur pleine avec padding du parent
     marginTop: 12,
+    alignItems: 'center', // Centrer le contenu
   },
   aboutRow: {
     flexDirection: 'row',

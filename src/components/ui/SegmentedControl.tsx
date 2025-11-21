@@ -13,6 +13,11 @@ export interface SegmentedControlProps {
   options: SegmentedControlOption[];
   value: string;
   onChange: (newValue: string) => void;
+  /**
+   * Style variant : 'default' (compact, auto-width) ou 'fullWidth' (style Gemini 3, largeur pleine)
+   * @default 'default'
+   */
+  variant?: 'default' | 'fullWidth';
 }
 
 /**
@@ -42,8 +47,10 @@ export function SegmentedControl({
   options,
   value,
   onChange,
+  variant = 'default',
 }: SegmentedControlProps) {
   const theme = useTheme();
+  const isFullWidth = variant === 'fullWidth';
 
   const renderTab = (option: SegmentedControlOption) => {
     const isSelected = value === option.key;
@@ -75,6 +82,7 @@ export function SegmentedControl({
         onPress={() => onChange(option.key)}
         style={({ pressed }) => [
           styles.filterTab,
+          isFullWidth && styles.filterTabFullWidth,
           {
             backgroundColor,
             opacity: pressed ? 0.8 : 1,
@@ -82,7 +90,15 @@ export function SegmentedControl({
           },
         ]}
       >
-        <SuiviText variant="label" style={{ color: textColor, fontWeight }}>
+        <SuiviText 
+          variant="label" 
+          style={{ 
+            color: textColor, 
+            fontWeight,
+            fontSize: isFullWidth ? 13 : undefined, // Réduire légèrement la taille de police (style Gemini 3)
+            textAlign: 'center', // Textes centrés
+          }}
+        >
           {option.label}
         </SuiviText>
       </Pressable>
@@ -97,23 +113,38 @@ export function SegmentedControl({
     ? tokens.colors.border.darkMode.default 
     : tokens.colors.border.default;
 
-  const containerShadow = theme.dark 
-    ? {} // Pas de shadow en dark mode
-    : Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-        },
-        android: {
-          elevation: 2,
-        },
-      });
+  const containerShadow = isFullWidth
+    ? (theme.dark 
+        ? {} // Pas de shadow en dark mode
+        : Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+            },
+            android: {
+              elevation: 4,
+            },
+          }))
+    : (theme.dark 
+        ? {} // Pas de shadow en dark mode
+        : Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 4,
+            },
+            android: {
+              elevation: 2,
+            },
+          }));
 
   return (
     <View style={[
       styles.segmentedControl,
+      isFullWidth && styles.segmentedControlFullWidth,
       {
         backgroundColor: containerBackgroundColor,
         borderColor: containerBorderColor,
@@ -129,20 +160,34 @@ const styles = StyleSheet.create({
   segmentedControl: {
     flexDirection: 'row',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 14, // Style par défaut (compact)
     padding: 4,
     width: 'auto',
     alignSelf: 'center',
     // backgroundColor et borderColor sont définis dynamiquement selon le thème
   },
+  segmentedControlFullWidth: {
+    borderRadius: 20, // tokens.radius.xl pour style Gemini 3
+    padding: 6, // Augmenté pour plus d'espace
+    width: '100%', // Largeur pleine pour style Gemini 3
+    minHeight: 60, // Height 60-70px pour style Gemini 3
+    alignSelf: 'stretch', // S'étend sur toute la largeur
+  },
   filterTab: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 8, // Style par défaut
     paddingHorizontal: 18,
     borderRadius: 10,
     minWidth: 90,
     backgroundColor: 'transparent',
+  },
+  filterTabFullWidth: {
+    paddingVertical: 12, // Augmenté pour meilleures touch zones (style Gemini 3)
+    paddingHorizontal: 20, // Augmenté pour meilleures touch zones (style Gemini 3)
+    borderRadius: 14, // Arrondi adapté au nouveau conteneur
+    flex: 1, // Taille uniforme pour les boutons (style Gemini 3)
+    minWidth: 0, // Permet au flex: 1 de fonctionner
   },
   filterTabActive: {
     // Shadow est appliquée conditionnellement selon le thème dans le render

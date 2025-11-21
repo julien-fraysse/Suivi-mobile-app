@@ -82,6 +82,8 @@
   },
   "taskDetail": {
     "status": "Statut",
+    "quickAction": "Action rapide",
+    "details": "Détails",
     "projectBoard": "Projet / Board",
     "dueDate": "Échéance",
     "assignee": "Assignée à",

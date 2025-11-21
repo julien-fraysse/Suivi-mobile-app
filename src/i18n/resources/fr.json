@@ -83,13 +83,15 @@
   "taskDetail": {
     "status": "Statut",
     "quickAction": "Action rapide",
+    "quickActionSubtitle": "En lien avec votre notification",
     "details": "Détails",
     "projectBoard": "Projet / Board",
     "dueDate": "Échéance",
     "assignee": "Assignée à",
     "updated": "Mis à jour",
     "activityTimeline": "Historique d'activité",
-    "noActivity": "Aucune activité"
+    "noActivity": "Aucune activité",
+    "noDescription": "Aucune description"
   },
   "notifications": {
     "youHave": "Vous avez",

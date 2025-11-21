@@ -136,10 +136,11 @@ export function TaskDetailScreen() {
 
   return (
     <Screen scrollable>
-      <AppHeader showBackButton onBack={() => navigation.goBack()} />
+      <View style={styles.pagePadding}>
+        <AppHeader showBackButton onBack={() => navigation.goBack()} />
 
-      {/* Task Title (display only, no label) */}
-      <View style={styles.taskTitleContainer}>
+        {/* Task Title (display only, no label) */}
+        <View style={styles.taskTitleContainer}>
         <SuiviText variant="h1" style={styles.taskTitleText}>
           {task.title}
         </SuiviText>
@@ -148,7 +149,7 @@ export function TaskDetailScreen() {
       {/* Status Display (read-only) */}
       <View style={styles.statusSection}>
         <SuiviCard padding="md" elevation="card" variant="default" style={styles.statusCard}>
-          <SuiviText variant="label" color="secondary" style={styles.statusLabel}>
+          <SuiviText variant="label" color="secondary" style={[styles.statusLabel, { opacity: 0.7 }]}>
             {t('taskDetail.status')}
           </SuiviText>
           <View
@@ -173,6 +174,9 @@ export function TaskDetailScreen() {
           <SuiviText variant="h1" style={styles.sectionTitle}>
             {t('taskDetail.quickAction')}
           </SuiviText>
+          <SuiviText variant="caption" color="secondary" style={styles.quickActionSubtitle}>
+            {t('taskDetail.quickActionSubtitle')}
+          </SuiviText>
           <QuickActionRenderer task={task} onActionComplete={handleMockAction} />
         </View>
       )}
@@ -182,7 +186,7 @@ export function TaskDetailScreen() {
         <SuiviText variant="h1" style={styles.sectionTitle}>
           {t('taskDetail.details')}
         </SuiviText>
-      <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
+      <SuiviCard padding="md" elevation="card" variant="default" style={[styles.card, styles.detailsCard]}>
         {/* Description */}
         {task.description ? (
           <View style={styles.descriptionRow}>
@@ -192,8 +196,8 @@ export function TaskDetailScreen() {
           </View>
         ) : (
           <View style={styles.descriptionRow}>
-            <SuiviText variant="body" color="secondary">
-              No description
+            <SuiviText variant="body" color="secondary" style={{ opacity: 0.6 }}>
+              {t('taskDetail.noDescription')}
             </SuiviText>
           </View>
         )}
@@ -257,7 +261,7 @@ export function TaskDetailScreen() {
 
       {/* Activity Timeline Section */}
       <View style={styles.section}>
-        <SuiviText variant="h1" style={styles.sectionTitle}>
+        <SuiviText variant="h1" style={[styles.sectionTitle, styles.activityTimelineTitle]}>
           {t('taskDetail.activityTimeline')}
         </SuiviText>
         {allActivities.length > 0 ? (
@@ -293,7 +297,7 @@ export function TaskDetailScreen() {
           </SuiviCard>
         )}
       </View>
-
+      </View>
     </Screen>
   );
 }
@@ -454,14 +458,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: tokens.spacing.xs,
   },
+  pagePadding: {
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
+  },
   taskTitleContainer: {
-    marginHorizontal: tokens.spacing.lg,
-    marginTop: tokens.spacing.xl,
-    marginBottom: tokens.spacing.lg,
+    marginTop: tokens.spacing.xl + 10, // +10px en haut
+    marginBottom: tokens.spacing.lg + 10, // +10px en bas
   },
   taskTitleText: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   statusSection: {
     marginBottom: tokens.spacing.lg,
@@ -473,13 +480,13 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.sm,
   },
   statusBadge: {
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: tokens.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 40, // Réduit de 4px (44 -> 40)
   },
   card: {
     marginBottom: tokens.spacing.lg,
@@ -520,7 +527,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 24,
     marginBottom: 12,
-    marginHorizontal: tokens.spacing.lg,
+  },
+  quickActionSubtitle: {
+    fontSize: 13,
+    opacity: 0.6,
+    marginTop: -4, // Ajustement pour être juste sous le titre
+    marginBottom: 12,
+  },
+  detailsCard: {
+    marginTop: 10, // 10px de marge au-dessus du bloc blanc
+  },
+  activityTimelineTitle: {
+    marginTop: 14, // Réduit de ~10px (24 -> 14)
   },
   timelineItem: {
     flexDirection: 'row',

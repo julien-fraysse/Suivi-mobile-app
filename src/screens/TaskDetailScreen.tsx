@@ -267,11 +267,11 @@ export function TaskDetailScreen() {
       {/* Quick Action Renderer */}
       {task && task.quickAction && (
         <View style={styles.section}>
-          <View style={styles.quickActionTitleRow}>
-            <Animated.View style={[styles.quickActionDot, animatedOpacityStyle]} />
-            <SuiviText variant="h1" style={styles.sectionTitle}>
+          <View style={styles.quickActionHeader}>
+            <SuiviText variant="h1" style={styles.quickActionTitle}>
               {t('taskDetail.quickAction')}
             </SuiviText>
+            <Animated.View style={[styles.quickActionDot, { backgroundColor: tokens.colors.brand.primary }, animatedOpacityStyle]} />
           </View>
           <SuiviText variant="caption" color="secondary" style={styles.quickActionSubtitle}>
             {t('taskDetail.quickActionSubtitle')}
@@ -697,17 +697,22 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 12,
   },
-  quickActionTitleRow: {
+  quickActionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 6,
+    gap: 10,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  quickActionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
   },
   quickActionDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#7A4BFF', // violet statique dans les deux thèmes
+    marginTop: -1,
   },
   quickActionSubtitle: {
     fontSize: 13,

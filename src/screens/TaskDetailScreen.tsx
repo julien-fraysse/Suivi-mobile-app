@@ -104,7 +104,7 @@ export function TaskDetailScreen() {
     navigation.setOptions({
       headerShown: true,
       headerStyle: {
-        backgroundColor: theme.colors.background,
+        backgroundColor: theme.colors.surface,
       },
       headerShadowVisible: false,
       headerLeft: () => <BackPillButton />,

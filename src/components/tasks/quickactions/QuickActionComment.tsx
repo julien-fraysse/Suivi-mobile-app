@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'react-native-paper';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
 import { SuiviButton } from '../../ui/SuiviButton';
@@ -23,6 +24,8 @@ export interface QuickActionCommentProps {
 export function QuickActionComment({ task, onActionComplete }: QuickActionCommentProps) {
   console.log("QA-TEST: QuickActionComment", task.id);
   const { t } = useTranslation();
+  const theme = useTheme();
+  const isDark = theme.dark;
   const [comment, setComment] = useState('');
 
   const handleSubmit = () => {
@@ -41,13 +44,20 @@ export function QuickActionComment({ task, onActionComplete }: QuickActionCommen
         {t('quickActions.comment.label')}
       </SuiviText>
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            color: theme.colors.onSurface,
+            backgroundColor: theme.colors.surface,
+            borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+          },
+        ]}
         value={comment}
         onChangeText={setComment}
         placeholder={t('quickActions.comment.placeholder')}
         multiline
         numberOfLines={3}
-        placeholderTextColor={tokens.colors.neutral.medium}
+        placeholderTextColor={isDark ? theme.colors.onSurfaceVariant : tokens.colors.neutral.medium}
       />
       <View style={styles.buttonContainer}>
         <SuiviButton
@@ -70,13 +80,11 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: tokens.colors.border.default,
     borderRadius: tokens.radius.md,
     padding: tokens.spacing.sm,
     minHeight: 80,
     fontSize: 14,
     fontFamily: tokens.typography.fontFamily.primary,
-    color: tokens.colors.text.primary,
     marginBottom: tokens.spacing.sm,
   },
   buttonContainer: {

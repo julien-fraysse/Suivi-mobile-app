@@ -34,6 +34,34 @@
       "task": "Tâche",
       "board": "Board",
       "portal": "Portail"
+    },
+    "user_action": "{{actor}} a effectué : {{action}}",
+    "on_task": "Sur la tâche : {{taskTitle}}",
+    "timestamps": {
+      "just_now": "À l'instant",
+      "minutes_ago": "Il y a {{count}} min",
+      "hours_ago": "Il y a {{count}} h",
+      "yesterday": "Hier — {{time}}",
+      "days_ago": "Il y a {{count}} j"
+    },
+    "actions": {
+      "comment_added": "Commentaire ajouté : {{comment}}",
+      "comment": "Commentaire ajouté",
+      "approval_approved": "Demande approuvée",
+      "approval_rejected": "Demande refusée",
+      "rating": "Note de {{rating}} étoiles",
+      "progress": "Progression mise à jour : {{progress}}%",
+      "weather": "Météo définie : {{weather}}",
+      "calendar": "Date définie : {{date}}",
+      "checkbox_checked": "Étape cochée",
+      "checkbox_unchecked": "Étape décochée",
+      "selected_option": "Option sélectionnée : {{option}}",
+      "generic": "Action {{actionType}} effectuée"
+    },
+    "context": {
+      "separator": " · ",
+      "portal": "Portail \"{{name}}\"",
+      "board": "Board \"{{name}}\""
     }
   },
   "tasks": {

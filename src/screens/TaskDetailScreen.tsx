@@ -82,7 +82,7 @@ export function TaskDetailScreen() {
       id: `local-${Date.now()}`,
       source: 'BOARD',
       eventType: getEventTypeFromActionType(result.actionType),
-      title: getActivityTitle(result.actionType, result.details),
+      title: getActivityTitle(result.actionType, result.details, t),
       workspaceName: task.workspaceName || 'Default',
       boardName: task.boardName,
       actor: {
@@ -298,15 +298,15 @@ export function TaskDetailScreen() {
                 style={styles.activityCard}
               >
                 <SuiviText variant="body" color="primary">
-                  {activity.actor.name} a effectué : {activity.title}
+                  {t('activity.user_action', { actor: activity.actor.name, action: activity.title })}
                 </SuiviText>
                 {activity.taskInfo?.taskTitle && (
                   <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
-                    Sur la tâche : {activity.taskInfo.taskTitle}
+                    {t('activity.on_task', { taskTitle: activity.taskInfo.taskTitle })}
                   </SuiviText>
                 )}
                 <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
-                  {formatActivityDate(activity.createdAt)}
+                  {formatActivityDate(activity.createdAt, t)}
                 </SuiviText>
               </SuiviCard>
             </View>
@@ -408,34 +408,46 @@ function getEventTypeFromActionType(actionType: string): SuiviActivityEvent['eve
 
 /**
  * Génère un titre d'activité depuis le résultat d'action
+ * 
+ * Utilise les clés i18n pour toutes les actions standardisées.
+ * 
+ * @see Les mêmes clés i18n seront utilisées pour l'API backend
  */
-function getActivityTitle(actionType: string, details: Record<string, any>): string {
+function getActivityTitle(actionType: string, details: Record<string, any>, t: any): string {
   switch (actionType) {
     case 'COMMENT':
-      return `Commentaire ajouté : ${details.comment || 'Nouveau commentaire'}`;
+      return t('activity.actions.comment_added', { comment: details.comment || t('quickActions.comment.label') });
     case 'APPROVAL':
-      return details.decision === 'approved' ? 'Demande approuvée' : 'Demande refusée';
+      return details.decision === 'approved' 
+        ? t('activity.actions.approval_approved') 
+        : t('activity.actions.approval_rejected');
     case 'RATING':
-      return `Note de ${details.rating || 'N/A'} étoiles`;
+      return t('activity.actions.rating', { rating: details.rating || 'N/A' });
     case 'PROGRESS':
-      return `Progression mise à jour : ${details.progress || 'N/A'}%`;
+      return t('activity.actions.progress', { progress: details.progress || 'N/A' });
     case 'WEATHER':
-      return `Météo définie : ${details.weather || 'N/A'}`;
+      return t('activity.actions.weather', { weather: details.weather || 'N/A' });
     case 'CALENDAR':
-      return `Date définie : ${details.date || 'N/A'}`;
+      return t('activity.actions.calendar', { date: details.date || 'N/A' });
     case 'CHECKBOX':
-      return details.checked ? 'Étape cochée' : 'Étape décochée';
+      return details.checked 
+        ? t('activity.actions.checkbox_checked') 
+        : t('activity.actions.checkbox_unchecked');
     case 'SELECT':
-      return `Option sélectionnée : ${details.selectedOption || 'N/A'}`;
+      return t('activity.actions.selected_option', { option: details.selectedOption || 'N/A' });
     default:
-      return `Action ${actionType} effectuée`;
+      return t('activity.actions.generic', { actionType });
   }
 }
 
 /**
  * Formate une date d'activité pour l'affichage
+ * 
+ * Utilise les clés i18n pour tous les timestamps relatifs.
+ * 
+ * @see Les mêmes clés i18n seront utilisées pour l'API backend
  */
-function formatActivityDate(dateString: string): string {
+function formatActivityDate(dateString: string, t: any): string {
   try {
     const date = new Date(dateString);
     const now = new Date();
@@ -444,10 +456,15 @@ function formatActivityDate(dateString: string): string {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t('activity.timestamps.just_now');
+    if (diffMins < 60) return t('activity.timestamps.minutes_ago', { count: diffMins });
+    if (diffHours < 24) return t('activity.timestamps.hours_ago', { count: diffHours });
+    if (diffDays === 1) {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return t('activity.timestamps.yesterday', { time: `${hours}:${minutes}` });
+    }
+    if (diffDays < 7) return t('activity.timestamps.days_ago', { count: diffDays });
     
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   } catch {

@@ -69,10 +69,10 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
   const iconName = getIconName(event.eventType);
 
   // Formatage du contexte (workspace · board/portail)
-  const contextText = formatContext(event);
+  const contextText = formatContext(event, t);
 
   // Formatage du temps relatif
-  const timeAgo = formatRelativeDate(event.createdAt);
+  const timeAgo = formatRelativeDate(event.createdAt, t);
 
   // Type d'activité pour le badge
   const activityTypeLabel = getActivityTypeLabel(event.eventType, event.source, t);
@@ -319,17 +319,22 @@ function getIconName(eventType: string): keyof typeof MaterialCommunityIcons.gly
 
 /**
  * Formate le contexte (workspace · board/portail)
+ * 
+ * Utilise les clés i18n pour formater le contexte de l'activité.
+ * 
+ * @see Les mêmes clés i18n seront utilisées pour l'API backend
  */
-function formatContext(event: SuiviActivityEvent): string {
+function formatContext(event: SuiviActivityEvent, t: any): string {
   const parts = [event.workspaceName];
+  const separator = t('activity.context.separator');
 
   if (event.source === 'PORTAL' && event.portalName) {
-    parts.push(`Portail "${event.portalName}"`);
+    parts.push(t('activity.context.portal', { name: event.portalName }));
   } else if (event.boardName) {
-    parts.push(`Board "${event.boardName}"`);
+    parts.push(t('activity.context.board', { name: event.boardName }));
   }
 
-  return parts.join(' · ');
+  return parts.join(separator);
 }
 
 /**
@@ -347,8 +352,12 @@ function getActivityTypeLabel(eventType: string, source: 'BOARD' | 'PORTAL', t: 
 
 /**
  * Formate le temps relatif (ex: "Il y a 3 min", "Il y a 2 h", "Hier — 17:23")
+ * 
+ * Utilise les clés i18n pour tous les timestamps relatifs.
+ * 
+ * @see Les mêmes clés i18n seront utilisées pour l'API backend
  */
-function formatRelativeDate(dateString: string): string {
+function formatRelativeDate(dateString: string, t: any): string {
   try {
     const date = new Date(dateString);
     const now = new Date();
@@ -358,23 +367,23 @@ function formatRelativeDate(dateString: string): string {
     const diffDays = Math.floor(diffMs / 86400000);
 
     // À l'instant
-    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 1) return t('activity.timestamps.just_now');
     
     // Il y a X min
-    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffMins < 60) return t('activity.timestamps.minutes_ago', { count: diffMins });
     
     // Il y a X h
-    if (diffHours < 24) return `Il y a ${diffHours} h`;
+    if (diffHours < 24) return t('activity.timestamps.hours_ago', { count: diffHours });
     
     // Hier — HH:mm
     if (diffDays === 1) {
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `Hier — ${hours}:${minutes}`;
+      return t('activity.timestamps.yesterday', { time: `${hours}:${minutes}` });
     }
     
     // Il y a X j (moins de 7 jours)
-    if (diffDays < 7) return `Il y a ${diffDays} j`;
+    if (diffDays < 7) return t('activity.timestamps.days_ago', { count: diffDays });
     
     // Date formatée (mois court + jour)
     return date.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' });

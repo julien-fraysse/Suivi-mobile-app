@@ -12,6 +12,7 @@ export interface QuickActionRatingProps {
 }
 
 export function QuickActionRating({ task, onActionComplete }: QuickActionRatingProps) {
+  console.log("QA-TEST: QuickActionRating", task.id);
   const [rating, setRating] = useState(0);
 
   const handleRatingSelect = (value: number) => {

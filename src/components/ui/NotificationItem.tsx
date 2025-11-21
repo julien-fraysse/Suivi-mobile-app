@@ -1,11 +1,16 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, Pressable, Platform } from 'react-native';
+import { View, StyleSheet, ViewStyle, Pressable, Platform, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SuiviText } from './SuiviText';
 import { UserAvatar } from './UserAvatar';
+import { useTasksContext } from '../../tasks/TasksContext';
+import { useNotificationsStore } from '../../features/notifications/notificationsStore';
 import { tokens } from '../../theme';
+import type { AppStackParamList } from '../../navigation/types';
 
 export interface Notification {
   id: string;
@@ -38,6 +43,8 @@ export interface NotificationItemProps {
   style?: ViewStyle;
 }
 
+type NotificationItemNavigationProp = NativeStackNavigationProp<AppStackParamList>;
+
 /**
  * NotificationItem
  * 
@@ -55,7 +62,58 @@ export interface NotificationItemProps {
 export function NotificationItem({ notification, onPress, style }: NotificationItemProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const navigation = useNavigation<NotificationItemNavigationProp>();
+  const { getTaskByIdStrict } = useTasksContext();
+  const { markAsRead } = useNotificationsStore();
   const notificationTitle = getNotificationTypeLabel(notification.type, t);
+  
+  /**
+   * Handler centralisé pour le clic sur une notification
+   * 
+   * 1. Marque la notification comme lue immédiatement
+   * 2. Vérifie si la tâche existe avant de naviguer
+   * 3. Navigue vers TaskDetailScreen si la tâche existe
+   * 4. Affiche une alerte si la tâche n'existe pas ou n'est pas liée
+   */
+  const handleNotificationClick = () => {
+    if (onPress) {
+      // Si un onPress custom est fourni, l'utiliser
+      onPress();
+      return;
+    }
+    
+    // 1. Marquer la notification comme lue immédiatement
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+    
+    // 2. Vérifier si la notification est liée à une tâche
+    const taskId = notification.relatedTaskId;
+    if (!taskId) {
+      // Fallback si pas de tâche associée
+      Alert.alert(
+        t('notifications.taskNotFound') || 'Tâche introuvable',
+        t('notifications.taskNotFoundMessage') || 'Cette notification n\'est pas liée à une tâche.',
+        [{ text: t('common.ok') || 'OK' }]
+      );
+      return;
+    }
+    
+    // 3. Vérifier que la tâche existe AVANT de naviguer
+    const task = getTaskByIdStrict(taskId);
+    if (!task) {
+      // Tâche introuvable - afficher une alerte
+      Alert.alert(
+        t('notifications.taskNotFound') || 'Tâche introuvable',
+        t('notifications.taskNotFoundMessage') || 'Cette tâche n\'existe plus ou a été supprimée.',
+        [{ text: t('common.ok') || 'OK' }]
+      );
+      return;
+    }
+    
+    // 4. Navigation directe vers TaskDetailScreen (la tâche existe)
+    navigation.navigate('TaskDetail', { taskId });
+  };
   
   // Map des icônes MaterialIcons par type de notification (pour événements système uniquement)
   const iconMap: Record<string, keyof typeof MaterialIcons.glyphMap> = {
@@ -182,7 +240,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handleNotificationClick}
       style={({ pressed }) => [
         styles.card,
         {

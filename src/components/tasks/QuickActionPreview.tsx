@@ -14,6 +14,8 @@ export interface QuickActionPreviewProps {
  * Prévisualisation minimale pour la liste des tâches.
  */
 export function QuickActionPreview({ actionType }: QuickActionPreviewProps) {
+  console.log("QA-DIAG: QuickActionPreview actionType =", actionType);
+
   if (!actionType) {
     return null;
   }

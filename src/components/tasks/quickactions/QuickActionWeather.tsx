@@ -13,6 +13,7 @@ export interface QuickActionWeatherProps {
 }
 
 export function QuickActionWeather({ task, payload, onActionComplete }: QuickActionWeatherProps) {
+  console.log("QA-TEST: QuickActionWeather", task.id);
   const options = payload?.options ?? ['sunny', 'cloudy', 'storm'];
   const [selected, setSelected] = useState<string | null>(null);
 

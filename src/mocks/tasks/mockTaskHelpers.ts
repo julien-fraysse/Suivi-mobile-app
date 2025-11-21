@@ -8,7 +8,7 @@
  */
 
 import type { Task, TaskStatus, TaskUpdatePayload } from '../../tasks/tasks.types';
-import { MOCK_TASKS } from './mockTasks';
+import { loadTasks, TASKS as MOCK_TASKS } from '../suiviData';
 
 /**
  * Simule un délai réseau
@@ -23,9 +23,10 @@ function delay(ms: number = 200): Promise<void> {
  * TODO: Remplacer par GET /api/tasks
  */
 export async function loadMockTasks(): Promise<Task[]> {
-  await delay(300);
-  // Simuler une copie des données (comme si elles venaient d'une API)
-  return [...MOCK_TASKS];
+  // Utilise loadTasks() depuis suiviData.ts (source unique de vérité)
+  const tasks = await loadTasks();
+  console.log("QA-DIAG: loadMockTasks() returning", tasks);
+  return tasks;
 }
 
 /**

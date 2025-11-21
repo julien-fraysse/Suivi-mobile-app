@@ -144,6 +144,14 @@ export function TaskDetailScreen() {
 
   const statusColor = getStatusColor(taskStatus!);
 
+  // Diagnostic log for Quick Actions
+  console.log(
+    "QA-DIAG: TaskDetailScreen rendering for",
+    task?.id,
+    "quickAction =",
+    task?.quickAction
+  );
+
   return (
     <Screen scrollable>
       <AppHeader showBackButton onBack={() => navigation.goBack()} />

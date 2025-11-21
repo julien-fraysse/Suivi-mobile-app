@@ -14,6 +14,7 @@ export interface QuickActionSelectProps {
 }
 
 export function QuickActionSelect({ task, payload, onActionComplete }: QuickActionSelectProps) {
+  console.log("QA-TEST: QuickActionSelect", task.id);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
@@ -86,12 +87,10 @@ export function QuickActionSelect({ task, payload, onActionComplete }: QuickActi
       {selectedOption && (
         <View style={styles.buttonContainer}>
           <SuiviButton
+            title="Confirmer"
             variant="primary"
-            size="small"
             onPress={handleSubmit}
-          >
-            Confirmer
-          </SuiviButton>
+          />
         </View>
       )}
     </SuiviCard>

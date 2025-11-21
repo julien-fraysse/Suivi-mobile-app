@@ -33,6 +33,8 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
   const statusColor = getStatusColor(task.status);
   const breadcrumb = "WORKSPACE > BOARD";
 
+  console.log("QA-DIAG: TaskItem", task.id, "quickAction =", task.quickAction);
+
   return (
     <SuiviCard
       padding="md"

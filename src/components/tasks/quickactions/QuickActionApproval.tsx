@@ -13,6 +13,7 @@ export interface QuickActionApprovalProps {
 }
 
 export function QuickActionApproval({ task, payload, onActionComplete }: QuickActionApprovalProps) {
+  console.log("QA-TEST: QuickActionApproval", task.id);
   const handleApprove = () => {
     onActionComplete({
       actionType: 'APPROVAL',
@@ -34,14 +35,10 @@ export function QuickActionApproval({ task, payload, onActionComplete }: QuickAc
       </SuiviText>
       <View style={styles.buttonRow}>
         <View style={styles.buttonWrapper}>
-          <SuiviButton variant="primary" size="small" onPress={handleApprove}>
-            Approuver
-          </SuiviButton>
+          <SuiviButton title="Approuver" variant="primary" onPress={handleApprove} />
         </View>
         <View style={styles.buttonWrapper}>
-          <SuiviButton variant="outlined" size="small" onPress={handleReject}>
-            Refuser
-          </SuiviButton>
+          <SuiviButton title="Refuser" variant="ghost" onPress={handleReject} />
         </View>
       </View>
     </SuiviCard>

@@ -59,11 +59,26 @@ export interface Task {
   /** Initiales de l'assigné (optionnel) */
   assigneeInitials?: string;
   
-  /** Date de création (format ISO 8601) */
-  createdAt: string;
+  /** Date de création (format ISO 8601, optionnelle) */
+  createdAt?: string;
   
   /** Date de dernière mise à jour (format ISO 8601) */
   updatedAt: string;
+  
+  /** Quick Action associée à la tâche (optionnelle) */
+  quickAction?: {
+    actionType:
+      | "COMMENT"
+      | "APPROVAL"
+      | "RATING"
+      | "PROGRESS"
+      | "WEATHER"
+      | "CALENDAR"
+      | "CHECKBOX"
+      | "SELECT";
+    uiHint: string;
+    payload?: Record<string, any>;
+  };
 }
 
 /**
@@ -98,6 +113,9 @@ export interface TasksContextValue {
   
   /** Récupérer une tâche par son ID */
   getTaskById: (id: string) => Task | undefined;
+  
+  /** Récupérer une tâche par son ID (strict - retourne undefined si non trouvé) */
+  getTaskByIdStrict: (id: string) => Task | undefined;
   
   /** Récupérer les tâches filtrées par statut */
   getTasksByStatus: (status: TaskStatus | 'all' | 'active' | 'completed') => Task[];

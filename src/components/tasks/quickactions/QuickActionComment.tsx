@@ -12,6 +12,7 @@ export interface QuickActionCommentProps {
 }
 
 export function QuickActionComment({ task, onActionComplete }: QuickActionCommentProps) {
+  console.log("QA-TEST: QuickActionComment", task.id);
   const [comment, setComment] = useState('');
 
   const handleSubmit = () => {
@@ -40,13 +41,11 @@ export function QuickActionComment({ task, onActionComplete }: QuickActionCommen
       />
       <View style={styles.buttonContainer}>
         <SuiviButton
+          title="Envoyer"
           variant="primary"
-          size="small"
           onPress={handleSubmit}
           disabled={!comment.trim()}
-        >
-          Envoyer
-        </SuiviButton>
+        />
       </View>
     </SuiviCard>
   );

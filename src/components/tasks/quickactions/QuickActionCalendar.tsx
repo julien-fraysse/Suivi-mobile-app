@@ -12,6 +12,7 @@ export interface QuickActionCalendarProps {
 }
 
 export function QuickActionCalendar({ task, onActionComplete }: QuickActionCalendarProps) {
+  console.log("QA-TEST: QuickActionCalendar", task.id);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handleDateSelect = () => {
@@ -37,9 +38,7 @@ export function QuickActionCalendar({ task, onActionComplete }: QuickActionCalen
           </SuiviText>
         )}
         <View style={styles.buttonContainer}>
-          <SuiviButton variant="primary" size="small" onPress={handleDateSelect}>
-            Choisir une date
-          </SuiviButton>
+          <SuiviButton title="Choisir une date" variant="primary" onPress={handleDateSelect} />
         </View>
       </View>
     </SuiviCard>

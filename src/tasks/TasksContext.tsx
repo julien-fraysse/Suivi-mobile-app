@@ -79,6 +79,11 @@ export function TasksProvider({ children }: TasksProviderProps) {
       // const response = await api.get('/api/tasks', { headers: { Authorization: `Bearer ${token}` } });
       // setTasks(response.data);
       const mockTasks = await loadMockTasks();
+      console.log("QA-DIAG: Tasks loaded from mockTasks.ts →", mockTasks);
+      console.log("TEST-TASKS", mockTasks);
+      if (mockTasks.length > 0) {
+        console.log("TEST-FIRST-TASK quickAction =", mockTasks[0].quickAction);
+      }
       setTasks(mockTasks);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load tasks');
@@ -103,6 +108,20 @@ export function TasksProvider({ children }: TasksProviderProps) {
    */
   const getTaskById = useCallback(
     (id: string): Task | undefined => {
+      return tasks.find((task) => task.id === id);
+    },
+    [tasks]
+  );
+
+  /**
+   * Récupérer une tâche par son ID (strict - retourne undefined si non trouvé)
+   * 
+   * Version stricte de getTaskById pour vérification avant navigation.
+   * Ne modifie pas le comportement existant.
+   */
+  const getTaskByIdStrict = useCallback(
+    (id: string): Task | undefined => {
+      if (!id) return undefined;
       return tasks.find((task) => task.id === id);
     },
     [tasks]
@@ -186,6 +205,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
     isLoading,
     error,
     getTaskById,
+    getTaskByIdStrict,
     getTasksByStatus,
     updateTaskStatus,
     refreshTasks,

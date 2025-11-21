@@ -63,18 +63,6 @@ export function NotificationsScreen() {
     return notifications;
   }, [notifications, filter]);
   
-  // Naviguer vers NotificationDetailScreen
-  // 
-  // IMPORTANT: Navigation vers NotificationDetailScreen au lieu de TaskDetail directement.
-  // NotificationDetailScreen permet de voir les détails de la notification et d'accéder
-  // à la tâche liée via les quick actions.
-  // 
-  // TODO: When Suivi backend API is ready, NotificationDetailScreen utilisera les données
-  // du backend pour afficher les informations complètes de la notification.
-  const handleNotificationPress = (notification: any) => {
-    navigation.navigate('NotificationDetail', { id: notification.id });
-  };
-
   // Marquer toutes comme lues
   const handleMarkAllAsRead = () => {
     markAllAsRead();
@@ -87,7 +75,7 @@ export function NotificationsScreen() {
       <NotificationItem
         key={item.id}
         notification={item}
-        onPress={() => handleNotificationPress(item)}
+        // NotificationItem gère maintenant la navigation directement vers TaskDetail
       />
     );
   };

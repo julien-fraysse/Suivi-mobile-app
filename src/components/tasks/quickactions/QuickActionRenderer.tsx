@@ -21,6 +21,12 @@ export interface QuickActionRendererProps {
  * Affiche le composant approprié pour chaque type d'action.
  */
 export function QuickActionRenderer({ task, onActionComplete }: QuickActionRendererProps) {
+  console.log("QA-DIAG: QuickActionRenderer", {
+    taskId: task.id,
+    hasQuickAction: !!task.quickAction,
+    uiHint: task.quickAction?.uiHint
+  });
+
   if (!task.quickAction) {
     return null;
   }

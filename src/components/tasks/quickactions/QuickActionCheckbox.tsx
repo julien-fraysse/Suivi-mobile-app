@@ -12,6 +12,7 @@ export interface QuickActionCheckboxProps {
 }
 
 export function QuickActionCheckbox({ task, onActionComplete }: QuickActionCheckboxProps) {
+  console.log("QA-TEST: QuickActionCheckbox", task.id);
   const [isChecked, setIsChecked] = useState(false);
 
   const handleToggle = () => {

@@ -64,7 +64,7 @@ export type MyTasksPage = {
 // MOCK DATA
 // ============================================================================
 
-const MOCK_TASKS: Task[] = [
+export const tasks: Task[] = [
   {
     id: '1',
     title: 'Répondre à un commentaire sur le design system',
@@ -302,7 +302,7 @@ export async function getTasks(
   await delay(200);
 
   const { page = 1, pageSize = 20, filters } = params;
-  const filteredTasks = filterTasks(MOCK_TASKS, filters);
+  const filteredTasks = filterTasks(tasks, filters);
   const total = filteredTasks.length;
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -322,7 +322,7 @@ export async function getTasks(
 export async function getTaskById(taskId: string): Promise<Task> {
   await delay(150);
 
-  const task = MOCK_TASKS.find((t) => t.id === taskId);
+  const task = tasks.find((t) => t.id === taskId);
   if (!task) {
     throw new Error(`Task with id ${taskId} not found`);
   }
@@ -359,16 +359,16 @@ export async function getUser(): Promise<User> {
 export async function getQuickStats(): Promise<QuickStats> {
   await delay(150);
 
-  const activeTasks = MOCK_TASKS.filter(
+  const activeTasks = tasks.filter(
     (t) => t.status === 'todo' || t.status === 'in_progress',
   ).length;
-  const completedToday = MOCK_TASKS.filter(
+  const completedToday = tasks.filter(
     (t) => t.status === 'done' && t.updatedAt?.startsWith(new Date().toISOString().split('T')[0]),
   ).length;
-  const dueToday = MOCK_TASKS.filter(
+  const dueToday = tasks.filter(
     (t) => t.dueDate === new Date().toISOString().split('T')[0],
   ).length;
-  const overdue = MOCK_TASKS.filter((t) => {
+  const overdue = tasks.filter((t) => {
     if (!t.dueDate || t.status === 'done') return false;
     return new Date(t.dueDate) < new Date();
   }).length;

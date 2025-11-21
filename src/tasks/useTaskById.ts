@@ -32,6 +32,8 @@ export function useTaskById(taskId: string) {
     return getTaskById(taskId);
   }, [getTaskById, taskId]);
 
+  console.log("QA-DIAG: useTaskById() → taskId =", taskId, "result =", task);
+
   return {
     task,
     isLoading,

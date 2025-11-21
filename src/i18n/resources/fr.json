@@ -82,6 +82,7 @@
   },
   "taskDetail": {
     "status": "Statut",
+    "overview": "Aperçu de la tâche",
     "quickAction": "Action rapide",
     "quickActionSubtitle": "En lien avec votre notification",
     "details": "Détails",

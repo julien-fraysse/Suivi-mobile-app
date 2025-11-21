@@ -139,6 +139,11 @@ export function TaskDetailScreen() {
       <View style={styles.pagePadding}>
         <AppHeader showBackButton onBack={() => navigation.goBack()} />
 
+        {/* Task Overview Title */}
+        <SuiviText variant="label" color="secondary" style={styles.overviewTitle}>
+          {t('taskDetail.overview')}
+        </SuiviText>
+
         {/* Task Title (display only, no label) */}
         <View style={styles.taskTitleContainer}>
         <SuiviText variant="h1" style={styles.taskTitleText}>
@@ -186,7 +191,7 @@ export function TaskDetailScreen() {
         <SuiviText variant="h1" style={styles.sectionTitle}>
           {t('taskDetail.details')}
         </SuiviText>
-      <SuiviCard padding="md" elevation="card" variant="default" style={[styles.card, styles.detailsCard]}>
+        <SuiviCard padding="md" elevation="card" variant="default" style={[styles.card, styles.detailsCard]}>
         {/* Description */}
         {task.description ? (
           <View style={styles.descriptionRow}>
@@ -462,8 +467,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.lg,
     paddingTop: tokens.spacing.md,
   },
+  overviewTitle: {
+    marginTop: tokens.spacing.xl,
+    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   taskTitleContainer: {
-    marginTop: tokens.spacing.xl + 10, // +10px en haut
+    marginTop: 4,
     marginBottom: tokens.spacing.lg + 10, // +10px en bas
   },
   taskTitleText: {

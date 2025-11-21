@@ -7,6 +7,7 @@ import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviButton } from '../components/ui/SuiviButton';
 import { SuiviText } from '../components/ui/SuiviText';
+import { GradientActionButton } from '../components/ui/GradientActionButton';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { EditProfileModal, type Profile as EditProfile } from '../components/ui/EditProfileModal';
@@ -273,7 +274,7 @@ export function MoreScreen() {
             {t('more.themeSettings')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
-            <View style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+            <View style={styles.themeSelectorContainer}>
               <SegmentedControl
                 options={[
                   { key: 'light', label: t('more.theme.light') },
@@ -377,19 +378,15 @@ export function MoreScreen() {
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
             <View style={styles.securityActions}>
-              <SuiviButton
-                title={t('more.resetPassword')}
+              <GradientActionButton
+                icon="key-variant"
+                label={t('more.resetPassword')}
                 onPress={handleResetPassword}
-                variant="ghost"
-                fullWidth
-                style={styles.securityButton}
               />
-              <SuiviButton
-                title={t('more.manageSessions')}
+              <GradientActionButton
+                icon="shield-account"
+                label={t('more.manageSessions')}
                 onPress={handleManageSessions}
-                variant="ghost"
-                fullWidth
-                style={styles.securityButton}
               />
             </View>
           </SuiviCard>
@@ -559,8 +556,10 @@ const styles = StyleSheet.create({
   securityActions: {
     gap: tokens.spacing.sm,
   },
-  securityButton: {
-    width: '100%',
+  themeSelectorContainer: {
+    alignSelf: 'center',
+    width: '90%',
+    marginTop: 12,
   },
   aboutRow: {
     flexDirection: 'row',

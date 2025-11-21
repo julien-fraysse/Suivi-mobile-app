@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
@@ -11,8 +12,17 @@ export interface QuickActionCheckboxProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionCheckbox
+ * 
+ * Composant Quick Action permettant à l'utilisateur de cocher/décocher une tâche.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionCheckbox({ task, onActionComplete }: QuickActionCheckboxProps) {
   console.log("QA-TEST: QuickActionCheckbox", task.id);
+  const { t } = useTranslation();
   const [isChecked, setIsChecked] = useState(false);
 
   const handleToggle = () => {
@@ -27,7 +37,7 @@ export function QuickActionCheckbox({ task, onActionComplete }: QuickActionCheck
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Cocher les étapes
+        {t('quickActions.checkbox.label')}
       </SuiviText>
       <Pressable onPress={handleToggle} style={styles.checkboxContainer}>
         <MaterialCommunityIcons
@@ -36,7 +46,7 @@ export function QuickActionCheckbox({ task, onActionComplete }: QuickActionCheck
           color={isChecked ? tokens.colors.semantic.success : tokens.colors.neutral.medium}
         />
         <SuiviText variant="body" color={isChecked ? 'primary' : 'secondary'} style={styles.checkboxLabel}>
-          Tâche complétée
+          {t('quickActions.checkbox.completed')}
         </SuiviText>
       </Pressable>
     </SuiviCard>

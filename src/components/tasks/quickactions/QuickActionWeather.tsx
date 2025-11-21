@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
@@ -12,8 +13,17 @@ export interface QuickActionWeatherProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionWeather
+ * 
+ * Composant Quick Action permettant à l'utilisateur d'indiquer la météo.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionWeather({ task, payload, onActionComplete }: QuickActionWeatherProps) {
   console.log("QA-TEST: QuickActionWeather", task.id);
+  const { t } = useTranslation();
   const options = payload?.options ?? ['sunny', 'cloudy', 'storm'];
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -41,11 +51,11 @@ export function QuickActionWeather({ task, payload, onActionComplete }: QuickAct
   const getWeatherLabel = (option: string): string => {
     switch (option) {
       case 'sunny':
-        return 'Ensoleillé';
+        return t('quickActions.weather.sunny');
       case 'cloudy':
-        return 'Nuageux';
+        return t('quickActions.weather.cloudy');
       case 'storm':
-        return 'Orageux';
+        return t('quickActions.weather.storm');
       default:
         return option;
     }
@@ -54,7 +64,7 @@ export function QuickActionWeather({ task, payload, onActionComplete }: QuickAct
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Indiquer la météo
+        {t('quickActions.weather.label')}
       </SuiviText>
       <View style={styles.optionsContainer}>
         {options.map((option) => (

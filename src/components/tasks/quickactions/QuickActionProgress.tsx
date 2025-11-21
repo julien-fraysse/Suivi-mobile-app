@@ -5,6 +5,7 @@ import {
   PanResponder,
   LayoutChangeEvent,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
 import { SuiviButton } from '../../ui/SuiviButton';
@@ -17,11 +18,20 @@ export interface QuickActionProgressProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionProgress
+ * 
+ * Composant Quick Action permettant à l'utilisateur de marquer une progression via un slider.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionProgress({
   task,
   payload,
   onActionComplete,
 }: QuickActionProgressProps) {
+  const { t } = useTranslation();
   const min = payload?.min ?? 0;
   const max = payload?.max ?? 100;
 
@@ -66,7 +76,7 @@ export function QuickActionProgress({
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Marquer une progression ({min}% - {max}%)
+        {t('quickActions.progress.label', { min, max })}
       </SuiviText>
       
       <View
@@ -84,7 +94,7 @@ export function QuickActionProgress({
 
       <View style={styles.buttonContainer}>
         <SuiviButton
-          title="Enregistrer"
+          title={t('quickActions.progress.save')}
           onPress={handleSubmit}
           variant="primary"
         />

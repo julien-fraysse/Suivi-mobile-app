@@ -19,6 +19,16 @@
     "viewMore": "View more activities",
     "searchPlaceholder": "Search tasks, notifications..."
   },
+  "ai_pulse": {
+    "title": "AI Daily Pulse",
+    "summary_one": "{{count}} important update",
+    "summary_other": "{{count}} important updates",
+    "overdue_one": "{{count}} task overdue",
+    "overdue_other": "{{count}} tasks overdue",
+    "due_today_one": "{{count}} due today",
+    "due_today_other": "{{count}} due today",
+    "focus": "Today's focus: {{topic}}"
+  },
   "activity": {
     "types": {
       "task": "Task",
@@ -118,6 +128,56 @@
     "emailLocked": "Email cannot be changed from the mobile app",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "quickActions": {
+    "comment": {
+      "title": "Comment",
+      "label": "Reply to a comment",
+      "placeholder": "Type your comment...",
+      "send": "Send"
+    },
+    "approval": {
+      "title": "Approve / Refuse",
+      "label": "Approve or refuse",
+      "approve": "Approve",
+      "reject": "Refuse"
+    },
+    "rating": {
+      "title": "Rate this task",
+      "label": "Rate (1 to 5 stars)"
+    },
+    "progress": {
+      "title": "Progress",
+      "label": "Mark progress ({{min}}% - {{max}}%)",
+      "save": "Save"
+    },
+    "status": {
+      "title": "Status"
+    },
+    "weather": {
+      "title": "Weather",
+      "label": "Indicate weather",
+      "sunny": "Sunny",
+      "cloudy": "Cloudy",
+      "storm": "Stormy"
+    },
+    "checkbox": {
+      "title": "Mark as done",
+      "label": "Check steps",
+      "completed": "Task completed"
+    },
+    "calendar": {
+      "title": "Choose due date",
+      "label": "Set due date",
+      "selectedDate": "Selected date: {{date}}",
+      "chooseDate": "Choose a date"
+    },
+    "select": {
+      "title": "Select",
+      "label": "Select an option",
+      "placeholder": "Select...",
+      "confirm": "Confirm"
+    }
   }
 }
 

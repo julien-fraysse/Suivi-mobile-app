@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
@@ -11,8 +12,17 @@ export interface QuickActionRatingProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionRating
+ * 
+ * Composant Quick Action permettant à l'utilisateur de noter une tâche de 1 à 5 étoiles.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionRating({ task, onActionComplete }: QuickActionRatingProps) {
   console.log("QA-TEST: QuickActionRating", task.id);
+  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
 
   const handleRatingSelect = (value: number) => {
@@ -26,7 +36,7 @@ export function QuickActionRating({ task, onActionComplete }: QuickActionRatingP
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Noter (1 à 5 étoiles)
+        {t('quickActions.rating.label')}
       </SuiviText>
       <View style={styles.starsContainer}>
         {[1, 2, 3, 4, 5].map((value) => (

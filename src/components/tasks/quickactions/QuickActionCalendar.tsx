@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
 import { SuiviButton } from '../../ui/SuiviButton';
@@ -11,8 +12,17 @@ export interface QuickActionCalendarProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionCalendar
+ * 
+ * Composant Quick Action permettant à l'utilisateur de définir une échéance via un calendrier.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionCalendar({ task, onActionComplete }: QuickActionCalendarProps) {
   console.log("QA-TEST: QuickActionCalendar", task.id);
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handleDateSelect = () => {
@@ -29,16 +39,16 @@ export function QuickActionCalendar({ task, onActionComplete }: QuickActionCalen
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Définir l'échéance
+        {t('quickActions.calendar.label')}
       </SuiviText>
       <View style={styles.contentContainer}>
         {selectedDate && (
           <SuiviText variant="body" color="primary" style={styles.dateText}>
-            Date sélectionnée : {selectedDate}
+            {t('quickActions.calendar.selectedDate', { date: selectedDate })}
           </SuiviText>
         )}
         <View style={styles.buttonContainer}>
-          <SuiviButton title="Choisir une date" variant="primary" onPress={handleDateSelect} />
+          <SuiviButton title={t('quickActions.calendar.chooseDate')} variant="primary" onPress={handleDateSelect} />
         </View>
       </View>
     </SuiviCard>

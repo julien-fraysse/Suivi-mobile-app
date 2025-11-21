@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
 import { SuiviButton } from '../../ui/SuiviButton';
@@ -13,8 +14,17 @@ export interface QuickActionSelectProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionSelect
+ * 
+ * Composant Quick Action permettant à l'utilisateur de sélectionner une option parmi une liste déroulante.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionSelect({ task, payload, onActionComplete }: QuickActionSelectProps) {
   console.log("QA-TEST: QuickActionSelect", task.id);
+  const { t } = useTranslation();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
@@ -38,7 +48,7 @@ export function QuickActionSelect({ task, payload, onActionComplete }: QuickActi
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Sélectionner une option
+        {t('quickActions.select.label')}
       </SuiviText>
       
       <Pressable
@@ -46,7 +56,7 @@ export function QuickActionSelect({ task, payload, onActionComplete }: QuickActi
         onPress={() => setIsDropdownOpen(!isDropdownOpen)}
       >
         <SuiviText variant="body" color={selectedOption ? "primary" : "secondary"}>
-          {selectedOption || 'Sélectionner...'}
+          {selectedOption || t('quickActions.select.placeholder')}
         </SuiviText>
         <MaterialCommunityIcons
           name={isDropdownOpen ? "chevron-up" : "chevron-down"}
@@ -87,7 +97,7 @@ export function QuickActionSelect({ task, payload, onActionComplete }: QuickActi
       {selectedOption && (
         <View style={styles.buttonContainer}>
           <SuiviButton
-            title="Confirmer"
+            title={t('quickActions.select.confirm')}
             variant="primary"
             onPress={handleSubmit}
           />

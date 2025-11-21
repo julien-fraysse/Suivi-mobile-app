@@ -11,10 +11,8 @@ import { SuiviText } from '../components/ui/SuiviText';
 import { ActivityCard } from '../components/activity/ActivityCard';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { AIDailyPulseCard } from '../components/home/AIDailyPulseCard';
-import { DailyKPIs } from '../components/home/DailyKPIs';
 import { SeeMoreActivitiesButton } from '../components/ui/SeeMoreActivitiesButton';
 import { useActivityFeed } from '../hooks/useActivity';
-import { useTasks } from '../tasks/useTasks';
 import { tokens } from '../theme';
 import type { SuiviActivityEvent } from '../types/activity';
 
@@ -30,7 +28,7 @@ const ACTIVITY_CARD_SPACING = 4;
  * HomeScreen
  * 
  * Écran d'accueil avec :
- * - Quick Actions : Statistiques rapides (calculées depuis useTasks avec helpers de filtre)
+ * - AI Daily Pulse Card : Résumé intelligent de la journée
  * - Activity Feed : Fil d'activité récent (useActivityFeed)
  * 
  * Note : Les filtres de tâches sont disponibles sur l'écran Tasks, pas sur Home.
@@ -45,10 +43,6 @@ export function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'board' | 'portal'>('all');
   const [limit, setLimit] = useState(5);
   
-  // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
-  // Note: Les KPIs sont maintenant gérés par DailyKPIs component avec mock data
-  // TODO: When Suivi API is ready, pass real data to DailyKPIs component
-
   // Données activité depuis api.ts via hooks
   const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities } = useActivityFeed(50);
 
@@ -113,17 +107,8 @@ export function HomeScreen() {
           <AIDailyPulseCard />
         </View>
 
-        {/* Spacer */}
-        <View style={{ height: 16 }} />
-
-        {/* Daily KPIs */}
-        <View style={styles.kpisContainer}>
-          <DailyKPIs />
-        </View>
-
-        {/* Spacer */}
-        <View style={{ height: 24 }} />
-
+        {/* KPI mock removed (placeholder until real API metrics) */}
+        
         {/* Activités récentes */}
         <View style={styles.section}>
           {/**
@@ -289,9 +274,7 @@ const styles = StyleSheet.create({
   },
   pulseContainer: {
     marginTop: tokens.spacing.md,
-  },
-  kpisContainer: {
-    width: '100%',
+    marginBottom: tokens.spacing.lg,
   },
   card: {
     marginBottom: tokens.spacing.md,

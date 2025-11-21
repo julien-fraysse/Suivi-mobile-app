@@ -19,6 +19,16 @@
     },
     "errorLoading": "Erreur lors du chargement"
   },
+  "ai_pulse": {
+    "title": "AI Daily Pulse",
+    "summary_one": "{{count}} mise à jour importante",
+    "summary_other": "{{count}} mises à jour importantes",
+    "overdue_one": "{{count}} tâche en retard",
+    "overdue_other": "{{count}} tâches en retard",
+    "due_today_one": "{{count}} tâche due aujourd'hui",
+    "due_today_other": "{{count}} tâches dues aujourd'hui",
+    "focus": "Focus du jour : {{topic}}"
+  },
   "activity": {
     "types": {
       "task": "Tâche",
@@ -118,6 +128,56 @@
     "emailLocked": "L'email ne peut pas être modifié depuis l'application mobile",
     "save": "Enregistrer",
     "cancel": "Annuler"
+  },
+  "quickActions": {
+    "comment": {
+      "title": "Commenter",
+      "label": "Répondre à un commentaire",
+      "placeholder": "Tapez votre commentaire...",
+      "send": "Envoyer"
+    },
+    "approval": {
+      "title": "Approuver / Refuser",
+      "label": "Approuver ou refuser",
+      "approve": "Approuver",
+      "reject": "Refuser"
+    },
+    "rating": {
+      "title": "Noter la tâche",
+      "label": "Noter (1 à 5 étoiles)"
+    },
+    "progress": {
+      "title": "Progression",
+      "label": "Marquer une progression ({{min}}% - {{max}}%)",
+      "save": "Enregistrer"
+    },
+    "status": {
+      "title": "Statut"
+    },
+    "weather": {
+      "title": "Météo",
+      "label": "Indiquer la météo",
+      "sunny": "Ensoleillé",
+      "cloudy": "Nuageux",
+      "storm": "Orageux"
+    },
+    "checkbox": {
+      "title": "Cocher la tâche",
+      "label": "Cocher les étapes",
+      "completed": "Tâche complétée"
+    },
+    "calendar": {
+      "title": "Choisir une date",
+      "label": "Définir l'échéance",
+      "selectedDate": "Date sélectionnée : {{date}}",
+      "chooseDate": "Choisir une date"
+    },
+    "select": {
+      "title": "Sélectionner",
+      "label": "Sélectionner une option",
+      "placeholder": "Sélectionner...",
+      "confirm": "Confirmer"
+    }
   }
 }
 

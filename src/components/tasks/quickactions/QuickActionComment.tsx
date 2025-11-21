@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '../../ui/SuiviCard';
 import { SuiviText } from '../../ui/SuiviText';
 import { SuiviButton } from '../../ui/SuiviButton';
@@ -11,8 +12,17 @@ export interface QuickActionCommentProps {
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
+/**
+ * QuickActionComment
+ * 
+ * Composant Quick Action permettant à l'utilisateur de commenter une tâche.
+ * 
+ * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
+ * Les mêmes clés i18n seront utilisées pour l'API backend.
+ */
 export function QuickActionComment({ task, onActionComplete }: QuickActionCommentProps) {
   console.log("QA-TEST: QuickActionComment", task.id);
+  const { t } = useTranslation();
   const [comment, setComment] = useState('');
 
   const handleSubmit = () => {
@@ -28,20 +38,20 @@ export function QuickActionComment({ task, onActionComplete }: QuickActionCommen
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
-        Répondre à un commentaire
+        {t('quickActions.comment.label')}
       </SuiviText>
       <TextInput
         style={styles.input}
         value={comment}
         onChangeText={setComment}
-        placeholder="Tapez votre commentaire..."
+        placeholder={t('quickActions.comment.placeholder')}
         multiline
         numberOfLines={3}
         placeholderTextColor={tokens.colors.neutral.medium}
       />
       <View style={styles.buttonContainer}>
         <SuiviButton
-          title="Envoyer"
+          title={t('quickActions.comment.send')}
           variant="primary"
           onPress={handleSubmit}
           disabled={!comment.trim()}

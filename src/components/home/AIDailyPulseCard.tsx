@@ -37,6 +37,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { SuiviText } from '../ui/SuiviText';
 import { tokens } from '../../theme';
 
@@ -74,6 +75,7 @@ const mockAIPulse: AIDailyPulseData = {
  * Carte full-width avec gradient violet/bleu affichant les insights AI du jour.
  */
 export function AIDailyPulseCard({ data = mockAIPulse, style }: AIDailyPulseCardProps) {
+  const { t } = useTranslation();
   const pulseData = data || mockAIPulse;
 
   return (
@@ -105,13 +107,13 @@ export function AIDailyPulseCard({ data = mockAIPulse, style }: AIDailyPulseCard
                 variant="h3"
                 style={styles.title}
               >
-                AI Daily Pulse
+                {t('ai_pulse.title')}
               </SuiviText>
               <SuiviText
                 variant="body2"
                 style={styles.subtitle}
               >
-                {pulseData.importantUpdates} {pulseData.importantUpdates === 1 ? 'mise à jour importante' : 'mises à jour importantes'}
+                {t('ai_pulse.summary', { count: pulseData.importantUpdates })}
               </SuiviText>
             </View>
 
@@ -119,25 +121,25 @@ export function AIDailyPulseCard({ data = mockAIPulse, style }: AIDailyPulseCard
             <View style={styles.insightsBlock}>
               {pulseData.overdue > 0 && (
                 <View style={styles.insightRow}>
-                  <View style={styles.insightDot} />
+                  <View style={styles.insightDotRed} />
                   <SuiviText variant="body2" style={styles.insightText}>
-                    {pulseData.overdue} {pulseData.overdue === 1 ? 'tâche en retard' : 'tâches en retard'}
+                    {t('ai_pulse.overdue', { count: pulseData.overdue })}
                   </SuiviText>
                 </View>
               )}
               {pulseData.dueToday > 0 && (
                 <View style={styles.insightRow}>
-                  <View style={styles.insightDot} />
+                  <View style={styles.insightDotOrange} />
                   <SuiviText variant="body2" style={styles.insightText}>
-                    {pulseData.dueToday} {pulseData.dueToday === 1 ? 'due today' : 'dues today'}
+                    {t('ai_pulse.due_today', { count: pulseData.dueToday })}
                   </SuiviText>
                 </View>
               )}
               {pulseData.focus && (
                 <View style={styles.insightRow}>
-                  <View style={styles.insightDot} />
+                  <View style={styles.insightDotGreen} />
                   <SuiviText variant="body2" style={styles.insightText}>
-                    Focus du jour : {pulseData.focus}
+                    {t('ai_pulse.focus', { topic: pulseData.focus })}
                   </SuiviText>
                 </View>
               )}
@@ -205,6 +207,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     marginRight: 10,
     opacity: 0.8,
+  },
+  insightDotRed: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF4D4F',
+    marginRight: 10,
+  },
+  insightDotOrange: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FA8C16',
+    marginRight: 10,
+  },
+  insightDotGreen: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#52C41A',
+    marginRight: 10,
   },
   insightText: {
     color: 'rgba(255,255,255,0.90)',

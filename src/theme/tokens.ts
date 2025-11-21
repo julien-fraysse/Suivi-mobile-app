@@ -152,6 +152,11 @@ export const elevation = {
 
 // Typography - Basé sur Inter (interface) et IBM Plex Mono (technique)
 export const typography = {
+  // Font family mappings for direct access
+  fontFamily: {
+    primary: fonts.interRegular,
+    secondary: fonts.plexMonoRegular,
+  },
   // Display - Titres principaux
   display: {
     fontFamily: fonts.interBold,

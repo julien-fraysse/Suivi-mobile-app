@@ -13,6 +13,7 @@
     "@expo-google-fonts/inter": "^0.2.3",
     "@expo/metro-runtime": "~6.1.2",
     "@gorhom/bottom-sheet": "^5.2.6",
+    "@miblanchard/react-native-slider": "^2.6.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.8.4",

@@ -22,6 +22,8 @@ import { useTaskActivity } from '../hooks/useActivity';
 import { useUser } from '../hooks/useUser';
 import { tokens } from '../theme';
 import type { AppStackParamList } from '../navigation/types';
+import { QuickActionRenderer } from '../components/tasks/quickactions/QuickActionRenderer';
+import type { SuiviActivityEvent } from '../types/activity';
 
 type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
 
@@ -56,6 +58,9 @@ export function TaskDetailScreen() {
   // State for status picker visibility
   const [isStatusPickerVisible, setIsStatusPickerVisible] = useState(false);
 
+  // Local activity history for Quick Actions (mock)
+  const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
+
   // Handle status change from picker
   // TODO: When Suivi API is ready, add error handling for failed API calls
   const handleChangeStatus = async (newStatus: TaskStatus) => {
@@ -67,6 +72,42 @@ export function TaskDetailScreen() {
       // TODO: Afficher une notification d'erreur à l'utilisateur
     }
   };
+
+  // Handle Quick Action completion (mock)
+  function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
+    if (!task || !user) return;
+
+    // Create a local activity entry
+    const activityEntry: SuiviActivityEvent = {
+      id: `local-${Date.now()}`,
+      source: 'BOARD',
+      eventType: getEventTypeFromActionType(result.actionType),
+      title: getActivityTitle(result.actionType, result.details),
+      workspaceName: task.workspaceName || 'Default',
+      boardName: task.boardName,
+      actor: {
+        name: `${user.firstName} ${user.lastName}`,
+        avatarUrl: user.avatarUrl,
+        userId: user.id,
+      },
+      createdAt: new Date().toISOString(),
+      severity: 'INFO',
+      taskInfo: {
+        taskId: task.id,
+        taskTitle: task.title,
+      },
+    };
+
+    // Add to local activities state
+    setLocalActivities((prev) => [activityEntry, ...prev]);
+  }
+
+  // Merge API activities with local activities, sorted by createdAt DESC
+  const allActivities = [...localActivities, ...taskActivities].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateB - dateA; // DESC
+  });
 
   // Loading state
   if (isLoadingTask) {
@@ -152,6 +193,13 @@ export function TaskDetailScreen() {
         </SuiviCard>
       </View>
 
+      {/* Quick Action Renderer */}
+      {task && task.quickAction && (
+        <View style={styles.quickActionSection}>
+          <QuickActionRenderer task={task} onActionComplete={handleMockAction} />
+        </View>
+      )}
+
       {/* Task Details Card */}
       <SuiviCard padding="md" elevation="card" variant="default" style={styles.card}>
         {/* Description */}
@@ -230,10 +278,10 @@ export function TaskDetailScreen() {
         <SuiviText variant="h1" style={styles.sectionTitle}>
           {t('taskDetail.activityTimeline')}
         </SuiviText>
-        {taskActivities.length > 0 ? (
-          taskActivities.map((activity, index) => (
+        {allActivities.length > 0 ? (
+          allActivities.map((activity, index) => (
             <View key={activity.id} style={styles.timelineItem}>
-              {index < taskActivities.length - 1 && <View style={styles.timelineLine} />}
+              {index < allActivities.length - 1 && <View style={styles.timelineLine} />}
               <View style={styles.timelineDot} />
               <SuiviCard
                 padding="md"
@@ -242,8 +290,13 @@ export function TaskDetailScreen() {
                 style={styles.activityCard}
               >
                 <SuiviText variant="body" color="primary">
-                  {activity.actor.name} {activity.message} "{activity.target.name}"
+                  {activity.actor.name} a effectué : {activity.title}
                 </SuiviText>
+                {activity.taskInfo?.taskTitle && (
+                  <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
+                    Sur la tâche : {activity.taskInfo.taskTitle}
+                  </SuiviText>
+                )}
                 <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
                   {formatActivityDate(activity.createdAt)}
                 </SuiviText>
@@ -321,6 +374,53 @@ function formatDate(dateString: string): string {
     });
   } catch {
     return dateString;
+  }
+}
+
+/**
+ * Convertit un actionType en SuiviActivityEventType
+ */
+function getEventTypeFromActionType(actionType: string): SuiviActivityEvent['eventType'] {
+  switch (actionType) {
+    case 'COMMENT':
+      return 'TASK_CREATED'; // Approximation pour commentaire
+    case 'APPROVAL':
+      return 'TASK_COMPLETED'; // Approximation pour approbation
+    case 'RATING':
+    case 'PROGRESS':
+    case 'WEATHER':
+    case 'CALENDAR':
+    case 'CHECKBOX':
+    case 'SELECT':
+      return 'TASK_REPLANNED'; // Approximation pour autres actions
+    default:
+      return 'TASK_CREATED';
+  }
+}
+
+/**
+ * Génère un titre d'activité depuis le résultat d'action
+ */
+function getActivityTitle(actionType: string, details: Record<string, any>): string {
+  switch (actionType) {
+    case 'COMMENT':
+      return `Commentaire ajouté : ${details.comment || 'Nouveau commentaire'}`;
+    case 'APPROVAL':
+      return details.decision === 'approved' ? 'Demande approuvée' : 'Demande refusée';
+    case 'RATING':
+      return `Note de ${details.rating || 'N/A'} étoiles`;
+    case 'PROGRESS':
+      return `Progression mise à jour : ${details.progress || 'N/A'}%`;
+    case 'WEATHER':
+      return `Météo définie : ${details.weather || 'N/A'}`;
+    case 'CALENDAR':
+      return `Date définie : ${details.date || 'N/A'}`;
+    case 'CHECKBOX':
+      return details.checked ? 'Étape cochée' : 'Étape décochée';
+    case 'SELECT':
+      return `Option sélectionnée : ${details.selectedOption || 'N/A'}`;
+    default:
+      return `Action ${actionType} effectuée`;
   }
 }
 
@@ -458,5 +558,8 @@ const styles = StyleSheet.create({
   },
   activityMeta: {
     marginTop: tokens.spacing.xs,
+  },
+  quickActionSection: {
+    marginBottom: tokens.spacing.lg,
   },
 });

@@ -6,6 +6,7 @@ import { SuiviCard } from './SuiviCard';
 import { SuiviText } from './SuiviText';
 import { Task, TaskStatus } from '../../api/tasks';
 import { tokens } from '../../theme';
+import { QuickActionPreview } from '../tasks/QuickActionPreview';
 
 export interface TaskItemProps {
   task: Task;
@@ -79,6 +80,9 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
           </SuiviText>
         </View>
       )}
+
+      {/* Quick Action Preview */}
+      <QuickActionPreview actionType={task.quickAction?.actionType} />
     </SuiviCard>
   );
 }

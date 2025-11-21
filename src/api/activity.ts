@@ -115,4 +115,59 @@ export async function getRecentActivity(
   throw new Error('Real API implementation not yet available. Please use USE_MOCK_API = true.');
 }
 
+/**
+ * Récupère les activités d'une tâche spécifique
+ * 
+ * @param {string} taskId - ID de la tâche
+ * @param {string | null} accessToken - Token d'authentification (requis pour API réelle)
+ * @returns {Promise<SuiviActivityEvent[]>} Liste des événements d'activité pour la tâche
+ * 
+ * @example
+ * ```typescript
+ * const activities = await getTaskActivity('task-101', accessToken);
+ * ```
+ */
+export async function getTaskActivity(
+  taskId: string,
+  accessToken?: string | null,
+): Promise<SuiviActivityEvent[]> {
+  // Mode mock : retourner les données mockées filtrées par taskId
+  if (USE_MOCK_API) {
+    // Simuler un délai réseau
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    
+    // Récupérer toutes les activités mockées
+    let activities = getMockRecentActivity();
+    
+    // Filtrer les événements où taskInfo.taskId correspond à taskId
+    const taskActivities = activities.filter(
+      (activity) => activity.taskInfo?.taskId === taskId,
+    );
+    
+    // Trier par createdAt DESC (plus récent en premier)
+    const sortedActivities = taskActivities.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // DESC
+    });
+    
+    return sortedActivities;
+  }
+
+  // Mode production : appeler l'API Suivi réelle
+  // TODO: Implémenter l'appel HTTP réel quand le backend sera prêt
+  // 
+  // Exemple d'implémentation future :
+  // const path = `/api/v1/tasks/${encodeURIComponent(taskId)}/activity`;
+  // if (!accessToken) throw new Error('Access token required');
+  // 
+  // return apiFetch<SuiviActivityEvent[]>(path, {
+  //   method: 'GET',
+  // }, accessToken);
+
+  // Pour l'instant, retourner un tableau vide si USE_MOCK_API = false
+  // (sera remplacé par l'implémentation ci-dessus)
+  throw new Error('Real API implementation not yet available. Please use USE_MOCK_API = true.');
+}
+
 

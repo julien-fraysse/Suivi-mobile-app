@@ -15,6 +15,19 @@ export type Task = {
   description?: string | null;
   workspaceName?: string | null;
   boardName?: string | null;
+  quickAction?: {
+    actionType:
+      | "COMMENT"
+      | "APPROVAL"
+      | "RATING"
+      | "PROGRESS"
+      | "WEATHER"
+      | "CALENDAR"
+      | "CHECKBOX"
+      | "SELECT";
+    uiHint: string;
+    payload?: Record<string, any>;
+  };
 };
 
 export type MyTasksFilters = {

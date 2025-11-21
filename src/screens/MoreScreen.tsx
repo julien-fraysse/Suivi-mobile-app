@@ -251,11 +251,10 @@ export function MoreScreen() {
                 </View>
               </View>
               <View style={styles.editButtonContainer}>
-                <SuiviButton
-                  title={t('more.editProfile')}
+                <GradientActionButton
+                  icon="account-edit"
+                  label={t('profile.edit')}
                   onPress={() => setIsEditModalVisible(true)}
-                  variant="ghost"
-                  style={styles.editButton}
                 />
               </View>
             </SuiviCard>
@@ -520,9 +519,6 @@ const styles = StyleSheet.create({
   },
   editButtonContainer: {
     marginTop: tokens.spacing.sm,
-  },
-  editButton: {
-    width: '100%',
   },
   skeletonAvatar: {
     width: 64,

@@ -157,6 +157,9 @@
     "save": "Enregistrer",
     "cancel": "Annuler"
   },
+  "profile": {
+    "edit": "Modifier le profil"
+  },
   "quickActions": {
     "comment": {
       "title": "Commenter",

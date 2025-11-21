@@ -157,6 +157,9 @@
     "save": "Save",
     "cancel": "Cancel"
   },
+  "profile": {
+    "edit": "Edit Profile"
+  },
   "quickActions": {
     "comment": {
       "title": "Comment",

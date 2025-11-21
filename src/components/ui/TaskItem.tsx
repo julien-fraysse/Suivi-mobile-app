@@ -52,8 +52,8 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
           style={[
             styles.statusPill,
             {
-              backgroundColor: `${statusColor}20`, // Fond très clair (12% opacité)
-              borderColor: statusColor,
+              backgroundColor: task.status === 'in_progress' ? '#E271280D' : `${statusColor}20`, // Fond très clair (4% pour in_progress, 12% pour autres)
+              borderColor: task.status === 'in_progress' ? '#E2712820' : statusColor, // Border 12% pour in_progress
             },
           ]}
         >
@@ -97,7 +97,7 @@ function getStatusColor(status: TaskStatus): string {
     case 'todo':
       return tokens.colors.brand.primary; // #4F5DFF
     case 'in_progress':
-      return tokens.colors.accent.maize; // #FDD447
+      return '#E27128'; // Orange pour in_progress
     case 'blocked':
       return tokens.colors.semantic.error; // #D32F2F
     case 'done':

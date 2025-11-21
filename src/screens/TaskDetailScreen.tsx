@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
   ActivityIndicator,
   Pressable,
   Text,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -94,17 +96,44 @@ export function TaskDetailScreen() {
   // Local activity history for Quick Actions (mock)
   const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
 
+  // Animation pour le point violet du titre Quick action
+  const pulse = useRef(new Animated.Value(1)).current;
+
   // Configure header avec bouton pill custom
   useEffect(() => {
     navigation.setOptions({
       headerShown: true,
       headerStyle: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.colors.background,
       },
+      headerShadowVisible: false,
       headerLeft: () => <BackPillButton />,
       headerTitle: () => null,
     });
   }, [navigation, theme]);
+
+  // Animation en boucle pour le point violet
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 0.2,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  // Style animé pour l'opacité du point
+  const animatedOpacityStyle = { opacity: pulse };
 
   // Handle Quick Action completion (mock)
   function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
@@ -173,7 +202,8 @@ export function TaskDetailScreen() {
     );
   }
 
-  const statusColor = getStatusColor(taskStatus!);
+  const isDark = theme.dark;
+  const statusColors = getStatusColors(taskStatus!, isDark);
 
   // Diagnostic log for Quick Actions
   console.log(
@@ -200,7 +230,22 @@ export function TaskDetailScreen() {
 
       {/* Status Display (read-only) */}
       <View style={styles.statusSection}>
-        <SuiviCard padding="md" elevation="card" variant="default" style={styles.statusCard}>
+        <SuiviCard 
+          padding="md" 
+          elevation="card" 
+          variant="default" 
+          style={[
+            styles.statusCard,
+            {
+              borderWidth: 1.5,
+              borderColor: statusColors.border,
+              borderLeftWidth: 6,
+              borderLeftColor: statusColors.border,
+              borderRadius: 10,
+              backgroundColor: theme.colors.surface,
+            },
+          ]}
+        >
           <SuiviText variant="label" color="secondary" style={[styles.statusLabel, { opacity: 0.7 }]}>
             {t('taskDetail.status')}
           </SuiviText>
@@ -208,12 +253,11 @@ export function TaskDetailScreen() {
             style={[
               styles.statusBadge,
               {
-                backgroundColor: `${statusColor}14`, // Fond très clair (~8% opacité)
-                borderColor: statusColor,
+                backgroundColor: statusColors.bg,
               },
             ]}
           >
-            <SuiviText variant="body" style={{ color: statusColor, fontWeight: '500' }}>
+            <SuiviText variant="body" style={{ color: statusColors.text, fontWeight: '600', fontSize: 13 }}>
               {formatStatus(taskStatus!, t)}
             </SuiviText>
           </View>
@@ -223,9 +267,12 @@ export function TaskDetailScreen() {
       {/* Quick Action Renderer */}
       {task && task.quickAction && (
         <View style={styles.section}>
-          <SuiviText variant="h1" style={styles.sectionTitle}>
-            {t('taskDetail.quickAction')}
-          </SuiviText>
+          <View style={styles.quickActionTitleRow}>
+            <Animated.View style={[styles.quickActionDot, animatedOpacityStyle]} />
+            <SuiviText variant="h1" style={styles.sectionTitle}>
+              {t('taskDetail.quickAction')}
+            </SuiviText>
+          </View>
           <SuiviText variant="caption" color="secondary" style={styles.quickActionSubtitle}>
             {t('taskDetail.quickActionSubtitle')}
           </SuiviText>
@@ -352,6 +399,73 @@ export function TaskDetailScreen() {
       </View>
     </Screen>
   );
+}
+
+/**
+ * Convertit une couleur hex en rgba avec opacité
+ */
+function addOpacityToColor(color: string, opacity: number): string {
+  // Supprimer le # si présent
+  const hex = color.replace('#', '');
+  
+  // Convertir en RGB
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  // Retourner rgba
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+/**
+ * Retourne les couleurs spécifiques pour un statut (pour TaskDetailScreen)
+ * Supporte le dark mode avec des couleurs adaptées
+ */
+function getStatusColors(status: TaskStatus, isDark: boolean): { border: string; text: string; bg: string } {
+  const opacity = isDark ? 0.15 : 0.12; // 15% en dark mode, 12% en light mode
+  
+  switch (status) {
+    case 'in_progress': {
+      const color = '#F38F20';
+      return {
+        border: color,
+        text: color,
+        bg: addOpacityToColor(color, opacity),
+      };
+    }
+    case 'todo': {
+      const color = '#4F46E5';
+      return {
+        border: color,
+        text: color,
+        bg: addOpacityToColor(color, opacity),
+      };
+    }
+    case 'done': {
+      const color = '#10B981';
+      return {
+        border: color,
+        text: color,
+        bg: addOpacityToColor(color, opacity),
+      };
+    }
+    case 'blocked': {
+      const color = '#EF4444';
+      return {
+        border: color,
+        text: color,
+        bg: addOpacityToColor(color, opacity),
+      };
+    }
+    default: {
+      const color = isDark ? '#E5E7EB' : '#6B7280';
+      return {
+        border: color,
+        text: color,
+        bg: addOpacityToColor(color, opacity),
+      };
+    }
+  }
 }
 
 /**
@@ -538,13 +652,10 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.sm,
   },
   statusBadge: {
-    paddingVertical: 10,
-    paddingHorizontal: tokens.spacing.lg,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 40, // Réduit de 4px (44 -> 40)
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   card: {
     marginBottom: tokens.spacing.lg,
@@ -585,6 +696,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 24,
     marginBottom: 12,
+  },
+  quickActionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  quickActionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#7A4BFF', // violet statique dans les deux thèmes
   },
   quickActionSubtitle: {
     fontSize: 13,

@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ActivityIndicator,
+  Pressable,
+  Text,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Screen } from '../components/Screen';
-import { AppHeader } from '../components/AppHeader';
 import { SuiviCard } from '../components/ui/SuiviCard';
 import { SuiviText } from '../components/ui/SuiviText';
 import { UserAvatar } from '../components/ui/UserAvatar';
@@ -22,6 +24,43 @@ import { QuickActionRenderer } from '../components/tasks/quickactions/QuickActio
 import type { SuiviActivityEvent } from '../types/activity';
 
 type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
+
+/**
+ * BackPillButton
+ * 
+ * Bouton retour custom de type pill pour le header de TaskDetailScreen
+ */
+function BackPillButton() {
+  const navigation = useNavigation();
+  const { t } = useTranslation();
+
+  return (
+    <Pressable
+      onPress={() => navigation.goBack()}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 24,
+        marginLeft: 16,
+      }}
+    >
+      <MaterialIcons name="arrow-back" size={18} color="#333" />
+      <Text
+        style={{
+          marginLeft: 6,
+          fontSize: 14,
+          fontWeight: '500',
+          color: '#333',
+        }}
+      >
+        {t('common.back')}
+      </Text>
+    </Pressable>
+  );
+}
 
 /**
  * TaskDetailScreen
@@ -54,6 +93,18 @@ export function TaskDetailScreen() {
 
   // Local activity history for Quick Actions (mock)
   const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
+
+  // Configure header avec bouton pill custom
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerStyle: {
+        backgroundColor: '#FFFFFF',
+      },
+      headerLeft: () => <BackPillButton />,
+      headerTitle: () => null,
+    });
+  }, [navigation, theme]);
 
   // Handle Quick Action completion (mock)
   function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
@@ -95,7 +146,6 @@ export function TaskDetailScreen() {
   if (isLoadingTask) {
     return (
       <Screen>
-        <AppHeader showBackButton onBack={() => navigation.goBack()} />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={tokens.colors.brand.primary} />
           <SuiviText variant="body" color="secondary" style={styles.loadingText}>
@@ -110,7 +160,6 @@ export function TaskDetailScreen() {
   if (taskError || !task) {
     return (
       <Screen>
-        <AppHeader showBackButton onBack={() => navigation.goBack()} />
         <View style={styles.centerContainer}>
           <SuiviText variant="body" color="primary" style={styles.errorText}>
             {taskError?.message || 'Task not found'}
@@ -137,8 +186,6 @@ export function TaskDetailScreen() {
   return (
     <Screen scrollable>
       <View style={styles.pagePadding}>
-        <AppHeader showBackButton onBack={() => navigation.goBack()} />
-
         {/* Task Overview Title */}
         <SuiviText variant="label" color="secondary" style={styles.overviewTitle}>
           {t('taskDetail.overview')}
@@ -468,7 +515,7 @@ const styles = StyleSheet.create({
     paddingTop: tokens.spacing.md,
   },
   overviewTitle: {
-    marginTop: tokens.spacing.xl,
+    marginTop: tokens.spacing.lg + 14,
     marginBottom: 12,
     fontSize: 16,
     fontWeight: '600',

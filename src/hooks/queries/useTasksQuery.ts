@@ -1,26 +1,20 @@
 /**
  * Tasks Query Hook
  * 
- * Hook React Query pour les tâches (désactivé volontairement).
- * Ne s'exécute jamais car enabled = false.
+ * Hook React Query pour les tâches.
+ * S'active uniquement en mode API (API_MODE === 'api').
+ * En mode mock, le hook est désactivé car les mocks sont utilisés directement.
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchTasks, fetchTasksMock } from '../../services/tasksService';
+import { API_MODE } from '../../config/apiMode';
+import { fetchTasks } from '../../services/tasksService';
 
 export function useTasksQuery() {
   return useQuery({
     queryKey: ['tasks'],
     queryFn: fetchTasks,
-    enabled: false, // INACTIF volontairement
-  });
-}
-
-export function useTasksMockQuery() {
-  return useQuery({
-    queryKey: ['tasksMock'],
-    queryFn: fetchTasksMock,
-    enabled: false, // INACTIF volontairement
+    enabled: API_MODE === 'api', // Actif uniquement en mode API
   });
 }
 

@@ -1,26 +1,20 @@
 /**
  * Activity Query Hook
  * 
- * Hook React Query pour les activités (désactivé volontairement).
- * Ne s'exécute jamais car enabled = false.
+ * Hook React Query pour les activités.
+ * S'active uniquement en mode API (API_MODE === 'api').
+ * En mode mock, le hook est désactivé car les mocks sont utilisés directement.
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchRecentActivity, fetchRecentActivityMock } from '../../services/activityService';
+import { API_MODE } from '../../config/apiMode';
+import { fetchRecentActivity } from '../../services/activityService';
 
 export function useActivityQuery() {
   return useQuery({
     queryKey: ['activity', 'recent'],
     queryFn: fetchRecentActivity,
-    enabled: false, // INACTIF volontairement
-  });
-}
-
-export function useActivityMockQuery() {
-  return useQuery({
-    queryKey: ['activityMock', 'recent'],
-    queryFn: fetchRecentActivityMock,
-    enabled: false, // INACTIF volontairement
+    enabled: API_MODE === 'api', // Actif uniquement en mode API
   });
 }
 

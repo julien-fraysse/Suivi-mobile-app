@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useColorScheme } from 'react-native';
 import { PaperProvider, MD3Theme } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
-import { suiviLightTheme, suiviDarkTheme } from '../../theme/paper-theme';
+import { suiviLightTheme, suiviDarkTheme } from './paper-theme';
 import { useSettings } from '../context/SettingsContext';
 
 /**

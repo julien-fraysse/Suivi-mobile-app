@@ -1,5 +1,5 @@
 import { MD3LightTheme, MD3DarkTheme, configureFonts } from 'react-native-paper';
-import { colors, radius } from '../src/theme/tokens';
+import { colors, radius } from './tokens';
 
 /**
  * Suivi Mobile Paper Theme
@@ -196,3 +196,4 @@ export const suiviFonts = configureFonts({ config: fontConfig });
 // Apply custom fonts to themes - IMPORTANT: doit être fait APRÈS la création du thème
 suiviLightTheme.fonts = suiviFonts;
 suiviDarkTheme.fonts = suiviFonts;
+

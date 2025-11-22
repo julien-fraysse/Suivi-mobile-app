@@ -5,10 +5,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SuiviLogo } from '../../components/ui/SuiviLogo';
+import { SuiviLogo } from './ui/SuiviLogo';
 import { UserAvatar } from './ui/UserAvatar';
 import { useUserProfile } from '../hooks/useUserProfile';
-import { tokens } from '../theme';
+import { tokens } from '../../theme';
 
 export interface AppHeaderProps {
   /**

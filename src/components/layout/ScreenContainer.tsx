@@ -11,6 +11,7 @@ export interface ScreenContainerProps {
   safeAreaEdges?: ('top' | 'bottom' | 'left' | 'right')[];
   scrollable?: boolean;
   contentContainerStyle?: ViewStyle;
+  noTopBackground?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   safeAreaEdges = ['top'], // Par défaut : seulement top (le bottom est géré par la TabBar dans les tabs)
   scrollable = false,
   contentContainerStyle,
+  noTopBackground = false,
 }) => {
   const theme = useTheme();
   const isDark = theme.dark;
@@ -38,14 +40,19 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
   const containerStyle = [
     styles.container,
-    {
-      backgroundColor,
-    },
+    noTopBackground
+      ? { backgroundColor: 'transparent' }
+      : { backgroundColor },
     !scrollable && {
       padding: tokens.spacing[padding],
     },
     style,
   ];
+
+  // Si noTopBackground est true, retirer 'top' des safeAreaEdges pour éviter le paddingTop
+  const finalSafeAreaEdges = noTopBackground
+    ? safeAreaEdges.filter((edge) => edge !== 'top')
+    : safeAreaEdges;
 
   const content = scrollable ? (
     <ScrollView
@@ -66,7 +73,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   );
 
   return (
-    <SafeAreaView edges={safeAreaEdges} style={containerStyle}>
+    <SafeAreaView edges={finalSafeAreaEdges} style={containerStyle}>
       {content}
     </SafeAreaView>
   );

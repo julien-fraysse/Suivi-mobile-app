@@ -8,6 +8,6 @@ export { fonts, interFontFamily, plexMonoFontFamily } from './fonts';
 export { ThemeProvider, useThemeMode } from './ThemeProvider';
 export type { ThemeMode, ThemeContextValue, ThemeProviderProps } from './ThemeProvider';
 
-// Re-export from root theme for React Native Paper integration
-export { suiviLightTheme, suiviDarkTheme, suiviTheme, suiviFonts } from '../../theme/paper-theme';
+// Re-export from local theme for React Native Paper integration
+export { suiviLightTheme, suiviDarkTheme, suiviTheme, suiviFonts } from './paper-theme';
 export type { MD3Theme } from 'react-native-paper';

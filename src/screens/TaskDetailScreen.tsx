@@ -30,24 +30,27 @@ type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
 /**
  * BackPillButton
  * 
- * Bouton retour custom de type pill pour le header de TaskDetailScreen
+ * Bouton retour custom de type pill pour TaskDetailScreen
  */
-function BackPillButton() {
+function BackPillButton({ style }: { style?: any }) {
   const navigation = useNavigation();
   const { t } = useTranslation();
 
   return (
     <Pressable
       onPress={() => navigation.goBack()}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 24,
-        marginLeft: 16,
-      }}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#F3F4F6',
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderRadius: 24,
+          alignSelf: 'flex-start',
+        },
+        style,
+      ]}
     >
       <MaterialIcons name="arrow-back" size={18} color="#333" />
       <Text
@@ -99,16 +102,12 @@ export function TaskDetailScreen() {
   // Animation pour le point violet du titre Quick action
   const pulse = useRef(new Animated.Value(1)).current;
 
-  // Configure header avec bouton pill custom
+  // Configure header - désactivé pour avoir un bouton retour custom dans l'écran
+  // Configure contentStyle transparent pour supprimer le fond gris du NavigationContainer
   useEffect(() => {
     navigation.setOptions({
-      headerShown: true,
-      headerStyle: {
-        backgroundColor: theme.colors.surface,
-      },
-      headerShadowVisible: false,
-      headerLeft: () => <BackPillButton />,
-      headerTitle: () => null,
+      headerShown: false,
+      contentStyle: { backgroundColor: 'transparent' },
     });
   }, [navigation, theme]);
 
@@ -214,8 +213,11 @@ export function TaskDetailScreen() {
   );
 
   return (
-    <Screen scrollable>
+    <Screen scrollable noTopBackground>
       <View style={styles.pagePadding}>
+        {/* Back Button */}
+        <BackPillButton style={{ marginBottom: tokens.spacing.lg }} />
+
         {/* Task Overview Title */}
         <SuiviText variant="label" color="secondary" style={styles.overviewTitle}>
           {t('taskDetail.overview')}
@@ -273,7 +275,7 @@ export function TaskDetailScreen() {
             </SuiviText>
             <Animated.View style={[styles.quickActionDot, { backgroundColor: tokens.colors.brand.primary }, animatedOpacityStyle]} />
           </View>
-          <SuiviText variant="caption" color="secondary" style={styles.quickActionSubtitle}>
+          <SuiviText variant="label" color="secondary" style={styles.quickActionSubtitle}>
             {t('taskDetail.quickActionSubtitle')}
           </SuiviText>
           <QuickActionRenderer task={task} onActionComplete={handleMockAction} />

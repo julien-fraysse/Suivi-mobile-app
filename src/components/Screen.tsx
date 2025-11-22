@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScreenContainer } from '../../components/layout/ScreenContainer';
+import { ScreenContainer } from './layout/ScreenContainer';
 import { ViewStyle } from 'react-native';
 
 export interface ScreenProps {
@@ -8,6 +8,7 @@ export interface ScreenProps {
   style?: ViewStyle;
   scrollable?: boolean;
   contentContainerStyle?: ViewStyle;
+  noTopBackground?: boolean;
 }
 
 /**
@@ -22,6 +23,7 @@ export const Screen: React.FC<ScreenProps> = ({
   style,
   scrollable = false,
   contentContainerStyle,
+  noTopBackground = false,
 }) => {
   return (
     <ScreenContainer
@@ -29,6 +31,7 @@ export const Screen: React.FC<ScreenProps> = ({
       style={style}
       scrollable={scrollable}
       contentContainerStyle={contentContainerStyle}
+      noTopBackground={noTopBackground}
     >
       {children}
     </ScreenContainer>

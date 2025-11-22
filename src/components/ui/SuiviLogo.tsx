@@ -28,18 +28,16 @@ export const SuiviLogo: React.FC<SuiviLogoProps> = ({
   };
   
   const source = assetMap[variant];
-  
-  // Calculate dimensions
-  const imageWidth = width || size || 200;
-  const imageHeight = height || size || (variant.includes('icon') ? 200 : 60);
-  
+  const finalWidth = width || size || 160;
+  const finalHeight = height || size || 40;
+
   return (
     <Image
       source={source}
       style={[
         {
-          width: imageWidth,
-          height: imageHeight,
+          width: finalWidth,
+          height: finalHeight,
           resizeMode: 'contain',
         },
         style,

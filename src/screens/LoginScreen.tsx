@@ -18,8 +18,8 @@ export function LoginScreen() {
 
   // Sélectionner le logo selon le thème
   const logoSource = isDark
-    ? require('../../assets/suivi/logo-full-light.png')
-    : require('../../assets/suivi/logo-full-dark.png');
+    ? require('../assets/suivi/logo-full-light.png')
+    : require('../assets/suivi/logo-full-dark.png');
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, View, StyleSheet, Text } from 'react-native';
-import { SuiviLogo } from '../components/ui/SuiviLogo';
+import { SuiviLogo } from '../src/components/ui/SuiviLogo';
 
 const Stack = createNativeStackNavigator();
 

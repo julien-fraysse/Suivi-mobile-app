@@ -1,0 +1,2 @@
+// Shared TypeScript types and interfaces will be placed here
+

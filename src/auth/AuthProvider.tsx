@@ -6,7 +6,10 @@ import { useAuthStore, type AuthUser } from '@store/authStore';
 const ACCESS_TOKEN_KEY = 'access_token';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, setUser, setLoading } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setLoading = useAuthStore((s) => s.setLoading);
 
   useEffect(() => {
     // Load token from secure storage on mount

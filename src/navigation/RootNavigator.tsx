@@ -70,7 +70,7 @@ function AppNavigator() {
  * Note: Le chargement initial est géré dans App.tsx
  */
 export default function RootNavigator() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>

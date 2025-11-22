@@ -76,7 +76,7 @@ function createNavigationTheme(paperTheme: MD3Theme): NavigationTheme {
  */
 function AppContent() {
   const { isDark, currentTheme } = useThemeMode();
-  const { isLoading } = useAuthStore();
+  const isLoading = useAuthStore((s) => s.isLoading);
   
   // Convertir le thème Paper en thème Navigation (inclut fonts)
   const navigationTheme = createNavigationTheme(currentTheme);

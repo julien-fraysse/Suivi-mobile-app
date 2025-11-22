@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { tokens } from '../../../theme';
+import { tokens } from '@theme';
 
 export interface ScreenHeaderProps {
   title: string;

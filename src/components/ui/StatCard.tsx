@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { SuiviText } from './SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface StatCardProps {
   title: string;

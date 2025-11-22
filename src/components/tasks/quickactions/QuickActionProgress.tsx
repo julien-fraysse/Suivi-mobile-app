@@ -6,11 +6,11 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { SuiviCard } from '../../ui/SuiviCard';
-import { SuiviText } from '../../ui/SuiviText';
-import { SuiviButton } from '../../ui/SuiviButton';
+import { SuiviCard } from '@components/ui/SuiviCard';
+import { SuiviText } from '@components/ui/SuiviText';
+import { SuiviButton } from '@components/ui/SuiviButton';
 import { Task } from '../../../api/tasks';
-import { tokens } from '../../../theme';
+import { tokens } from '@theme';
 
 export interface QuickActionProgressProps {
   task: Task;

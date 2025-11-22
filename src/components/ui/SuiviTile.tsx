@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface SuiviTileProps {
   children: React.ReactNode;

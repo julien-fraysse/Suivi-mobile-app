@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useTheme, TextInput as PaperTextInput, Button } from 'react-native-paper';
-import { AuthBackground } from '../components/AuthBackground';
-import { SuiviText } from '../components/ui/SuiviText';
+import { AuthBackground } from '@components/AuthBackground';
+import { SuiviText } from '@components/ui/SuiviText';
 import { useAuth } from '../auth';
-import { useThemeMode } from '../theme/ThemeProvider';
-import { tokens } from '../../theme';
+import { useThemeMode } from '@theme/ThemeProvider';
+import { tokens } from '@theme';
 
 export function LoginScreen() {
   const theme = useTheme();
@@ -18,8 +18,8 @@ export function LoginScreen() {
 
   // Sélectionner le logo selon le thème
   const logoSource = isDark
-    ? require('../assets/suivi/logo-full-light.png')
-    : require('../assets/suivi/logo-full-dark.png');
+    ? require('@assets/suivi/logo-full-light.png')
+    : require('@assets/suivi/logo-full-dark.png');
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {

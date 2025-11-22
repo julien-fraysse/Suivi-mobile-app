@@ -9,7 +9,7 @@ import { SuiviText } from './SuiviText';
 import { UserAvatar } from './UserAvatar';
 import { useTasksContext } from '../../tasks/TasksContext';
 import { useNotificationsStore } from '../../features/notifications/notificationsStore';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import type { AppStackParamList } from '../../navigation/types';
 
 export interface Notification {

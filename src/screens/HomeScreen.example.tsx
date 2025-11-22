@@ -13,8 +13,8 @@
  */
 
 import React, { useState } from 'react';
-import { RecentActivityModal } from '../components/activity/RecentActivityModal';
-import { ActivityDetailModal } from '../components/activity/ActivityDetailModal';
+import { RecentActivityModal } from '@components/activity/RecentActivityModal';
+import { ActivityDetailModal } from '@components/activity/ActivityDetailModal';
 import type { SuiviActivityEvent } from '../types/activity';
 
 // Dans le composant HomeScreen :

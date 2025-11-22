@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { Screen } from '../components/Screen';
-import { tokens } from '../../theme';
+import { Screen } from '@components/Screen';
+import { tokens } from '@theme';
 
 /**
  * AppLoadingScreen

@@ -3,15 +3,15 @@ import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } fro
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
-import { Screen } from '../components/Screen';
-import { AppHeader } from '../components/AppHeader';
-import { SuiviCard } from '../components/ui/SuiviCard';
-import { SuiviButton } from '../components/ui/SuiviButton';
-import { SuiviText } from '../components/ui/SuiviText';
-import { TaskItem } from '../components/ui/TaskItem';
-import { FilterChip } from '../components/ui/FilterChip';
-import { useMyPriorities, useDueSoon, useRecentlyUpdated, useLate } from '../hooks/useTasks';
-import { tokens } from '../theme';
+import { Screen } from '@components/Screen';
+import { AppHeader } from '@components/AppHeader';
+import { SuiviCard } from '@components/ui/SuiviCard';
+import { SuiviButton } from '@components/ui/SuiviButton';
+import { SuiviText } from '@components/ui/SuiviText';
+import { TaskItem } from '@components/ui/TaskItem';
+import { FilterChip } from '@components/ui/FilterChip';
+import { useMyPriorities, useDueSoon, useRecentlyUpdated, useLate } from '@hooks/useTasks';
+import { tokens } from '@theme';
 
 type TasksNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 

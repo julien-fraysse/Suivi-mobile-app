@@ -10,15 +10,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
-import { Screen } from '../components/Screen';
-import { AppHeader } from '../components/AppHeader';
-import { TasksFilterControl } from '../components/ui/TasksFilterControl';
-import { SuiviText } from '../components/ui/SuiviText';
-import { TaskItem } from '../components/ui/TaskItem';
-import { AiBriefingButton } from '../components/ui/AiBriefingButton';
+import { Screen } from '@components/Screen';
+import { AppHeader } from '@components/AppHeader';
+import { TasksFilterControl } from '@components/ui/TasksFilterControl';
+import { SuiviText } from '@components/ui/SuiviText';
+import { TaskItem } from '@components/ui/TaskItem';
+import { AiBriefingButton } from '@components/ui/AiBriefingButton';
 import { useTasks } from '../tasks/useTasks';
 import type { Task, TaskFilter } from '../tasks/tasks.types';
-import { tokens } from '../theme';
+import { tokens } from '@theme';
 
 type FilterOption = 'all' | 'active' | 'completed';
 

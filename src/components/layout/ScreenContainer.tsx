@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, ViewStyle, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface ScreenContainerProps {
   children: React.ReactNode;

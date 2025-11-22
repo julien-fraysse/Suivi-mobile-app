@@ -1,11 +1,11 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../auth';
-import { AppLoadingScreen } from '../screens/AppLoadingScreen';
-import { LoginScreen } from '../screens/LoginScreen';
+import { AppLoadingScreen } from '@screens/AppLoadingScreen';
+import { LoginScreen } from '@screens/LoginScreen';
 import { MainTabNavigator } from './MainTabNavigator';
-import { TaskDetailScreen } from '../screens/TaskDetailScreen';
-import { ActivityDetailScreen } from '../screens/ActivityDetailScreen';
+import { TaskDetailScreen } from '@screens/TaskDetailScreen';
+import { ActivityDetailScreen } from '@screens/ActivityDetailScreen';
 import type { RootStackParamList, AuthStackParamList, AppStackParamList } from './types';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();

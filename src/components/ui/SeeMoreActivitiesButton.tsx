@@ -40,7 +40,7 @@ import { View, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SuiviText } from './SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface SeeMoreActivitiesButtonProps {
   /**

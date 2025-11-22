@@ -7,8 +7,8 @@ import type { AppStackParamList } from '../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviLogo } from './ui/SuiviLogo';
 import { UserAvatar } from './ui/UserAvatar';
-import { useUserProfile } from '../hooks/useUserProfile';
-import { tokens } from '../../theme';
+import { useUserProfile } from '@hooks/useUserProfile';
+import { tokens } from '@theme';
 
 export interface AppHeaderProps {
   /**

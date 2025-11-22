@@ -16,13 +16,13 @@ import {
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SuiviText } from '../components/ui/SuiviText';
-import { SuiviButton } from '../components/ui/SuiviButton';
-import { UserAvatar } from '../components/ui/UserAvatar';
-import { Screen } from '../components/Screen';
-import { tokens } from '../theme';
+import { SuiviText } from '@components/ui/SuiviText';
+import { SuiviButton } from '@components/ui/SuiviButton';
+import { UserAvatar } from '@components/ui/UserAvatar';
+import { Screen } from '@components/Screen';
+import { tokens } from '@theme';
 import { getRecentActivity } from '../api/activity';
-import { useActivityFeed } from '../hooks/useActivity';
+import { useActivityFeed } from '@hooks/useActivity';
 import type { AppStackParamList } from '../navigation/types';
 import type { SuiviActivityEvent } from '../types/activity';
 

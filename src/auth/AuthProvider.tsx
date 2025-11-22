@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { save, load, remove } from '../utils/storage';
+import { save, load, remove } from '@utils/storage';
 import { AuthContext, AuthContextValue } from './AuthContext';
 
 const ACCESS_TOKEN_KEY = 'access_token';

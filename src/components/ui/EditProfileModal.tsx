@@ -14,7 +14,7 @@ import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { SuiviButton } from './SuiviButton';
 import { SuiviText } from './SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 /**
  * Profile interface for EditProfileModal

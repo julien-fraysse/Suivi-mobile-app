@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, Text, ImageSourcePropType, ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface UserAvatarProps {
   /**

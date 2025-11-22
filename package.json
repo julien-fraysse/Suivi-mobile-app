@@ -54,6 +54,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~19.1.10",
+    "babel-plugin-module-resolver": "^5.0.2",
     "eas-cli": "^16.27.0",
     "typescript": "^5.1.3"
   },

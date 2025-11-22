@@ -3,12 +3,12 @@ import { View, StyleSheet, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
-import { HomeScreen } from '../screens/HomeScreen';
-import { MyTasksScreen } from '../screens/MyTasksScreen';
-import { NotificationsScreen } from '../screens/NotificationsScreen';
-import { MoreScreen } from '../screens/MoreScreen';
+import { HomeScreen } from '@screens/HomeScreen';
+import { MyTasksScreen } from '@screens/MyTasksScreen';
+import { NotificationsScreen } from '@screens/NotificationsScreen';
+import { MoreScreen } from '@screens/MoreScreen';
 import { useNotificationsStore } from '../features/notifications/notificationsStore';
-import { tokens } from '../theme';
+import { tokens } from '@theme';
 import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();

@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Modal, SafeAreaView } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { SuiviText } from './SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import type { TaskStatus } from '../../tasks/tasks.types';
 
 export interface SuiviStatusPickerProps {

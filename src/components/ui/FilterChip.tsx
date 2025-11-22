@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, Platform } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface FilterChipProps {
   label: string;

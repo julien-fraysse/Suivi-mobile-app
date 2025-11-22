@@ -37,7 +37,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from '../ui/SuiviCard';
 import { SuiviText } from '../ui/SuiviText';
 import { UserAvatar } from '../ui/UserAvatar';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import type { SuiviActivityEvent } from '../../types/activity';
 
 export interface ActivityCardProps {

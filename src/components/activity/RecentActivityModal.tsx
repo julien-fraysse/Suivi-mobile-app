@@ -54,7 +54,7 @@ import { SuiviText } from '../ui/SuiviText';
 import { FilterChip } from '../ui/FilterChip';
 import { ActivityCard } from './ActivityCard';
 import { getRecentActivity } from '../../api/activity';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import type { SuiviActivityEvent } from '../../types/activity';
 
 export interface RecentActivityModalProps {

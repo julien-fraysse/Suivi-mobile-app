@@ -11,13 +11,13 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../navigation/types';
-import { Screen } from '../components/Screen';
-import { AppHeader } from '../components/AppHeader';
-import { SuiviText } from '../components/ui/SuiviText';
-import { SegmentedControl } from '../components/ui/SegmentedControl';
-import { NotificationItem } from '../components/ui/NotificationItem';
+import { Screen } from '@components/Screen';
+import { AppHeader } from '@components/AppHeader';
+import { SuiviText } from '@components/ui/SuiviText';
+import { SegmentedControl } from '@components/ui/SegmentedControl';
+import { NotificationItem } from '@components/ui/NotificationItem';
 import { useNotificationsStore } from '../features/notifications/notificationsStore';
-import { tokens } from '../theme';
+import { tokens } from '@theme';
 
 type NotificationsNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 

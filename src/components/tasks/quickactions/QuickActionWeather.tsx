@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SuiviCard } from '../../ui/SuiviCard';
-import { SuiviText } from '../../ui/SuiviText';
+import { SuiviCard } from '@components/ui/SuiviCard';
+import { SuiviText } from '@components/ui/SuiviText';
 import { Task } from '../../../api/tasks';
-import { tokens } from '../../../theme';
+import { tokens } from '@theme';
 
 export interface QuickActionWeatherProps {
   task: Task;

@@ -39,7 +39,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SuiviText } from '../ui/SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface AIDailyPulseData {
   importantUpdates: number;

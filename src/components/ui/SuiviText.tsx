@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface SuiviTextProps extends TextProps {
   variant?: 'display' | 'h1' | 'h2' | 'body' | 'label' | 'mono';

@@ -21,7 +21,7 @@ import { View, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviText } from '../ui/SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 
 export interface DailyKPIsData {
   openTasks: number;

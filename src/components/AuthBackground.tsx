@@ -1,6 +1,6 @@
 import React from 'react';
 import { ImageBackground, StyleSheet, ViewStyle } from 'react-native';
-import { useThemeMode } from '../theme/ThemeProvider';
+import { useThemeMode } from '@theme/ThemeProvider';
 
 /**
  * AuthBackground
@@ -20,8 +20,8 @@ export interface AuthBackgroundProps {
 }
 
 // Import statique des deux images
-const backgroundLight = require('../assets/backgrounds/background-auth-light.png');
-const backgroundDark = require('../assets/backgrounds/background-auth-dark.png');
+const backgroundLight = require('@assets/backgrounds/background-auth-light.png');
+const backgroundDark = require('@assets/backgrounds/background-auth-dark.png');
 
 export function AuthBackground({
   children,

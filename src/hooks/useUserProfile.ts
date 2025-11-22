@@ -19,6 +19,6 @@ export const useUserProfile = () => {
   return {
     fullName: 'Julien Fraysse',
     email: 'julien@suivi.app',
-    avatar: require('../assets/images/julien.jpg') as ImageSourcePropType,
+    avatar: require('@assets/images/julien.jpg') as ImageSourcePropType,
   };
 };

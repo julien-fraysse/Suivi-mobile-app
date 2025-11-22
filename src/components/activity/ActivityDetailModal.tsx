@@ -50,7 +50,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviText } from '../ui/SuiviText';
 import { SuiviButton } from '../ui/SuiviButton';
 import { UserAvatar } from '../ui/UserAvatar';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import type { SuiviActivityEvent } from '../../types/activity';
 
 export interface ActivityDetailModalProps {

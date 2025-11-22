@@ -15,7 +15,7 @@ import { useTheme } from 'react-native-paper';
 import { SuiviButton } from './SuiviButton';
 import { SuiviText } from './SuiviText';
 import { quickCapture } from '../../api/tasksApi.mock';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import { useTasksContext } from '../../tasks/TasksContext';
 
 export interface QuickCaptureModalProps {

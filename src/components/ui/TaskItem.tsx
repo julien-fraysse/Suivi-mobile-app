@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from './SuiviCard';
 import { SuiviText } from './SuiviText';
 import { Task, TaskStatus } from '../../api/tasks';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import { QuickActionPreview } from '../tasks/QuickActionPreview';
 
 export interface TaskItemProps {

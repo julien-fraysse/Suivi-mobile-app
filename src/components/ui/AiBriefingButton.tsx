@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
 import { SuiviText } from './SuiviText';
-import { tokens } from '../../theme';
+import { tokens } from '@theme';
 import { useTranslation } from 'react-i18next';
 
 export interface AiBriefingButtonProps {

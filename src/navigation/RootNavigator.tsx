@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth } from '../auth';
+import { useAuthStore } from '@store/authStore';
 import { AppLoadingScreen } from '@screens/AppLoadingScreen';
 import { LoginScreen } from '@screens/LoginScreen';
 import { MainTabNavigator } from './MainTabNavigator';
@@ -64,22 +64,17 @@ function AppNavigator() {
  * 
  * Navigateur racine de l'application.
  * Gère la logique globale :
- * 1. AppLoading : Écran de chargement initial (restauration de session)
- * 2. Auth : Stack d'authentification (si non connecté)
- * 3. App : Stack principale de l'app (si connecté)
+ * 1. Auth : Stack d'authentification (si non connecté)
+ * 2. App : Stack principale de l'app (si connecté)
+ * 
+ * Note: Le chargement initial est géré dans App.tsx
  */
 export default function RootNavigator() {
-  const { accessToken, isLoading } = useAuth();
+  const { user } = useAuthStore();
 
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
-      {isLoading ? (
-        // Écran de chargement initial
-        <RootStack.Screen
-          name="AppLoading"
-          component={AppLoadingScreen}
-        />
-      ) : !accessToken ? (
+      {!user ? (
         // Stack d'authentification
         <RootStack.Screen
           name="Auth"

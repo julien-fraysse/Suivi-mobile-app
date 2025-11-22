@@ -32,6 +32,7 @@ export function LoginScreen() {
 
     try {
       await signIn(email.trim(), password);
+      // User is already set in Zustand store by AuthProvider.signIn()
     } catch (err) {
       setError(String(err) || 'Failed to sign in');
     } finally {

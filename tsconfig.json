@@ -10,7 +10,8 @@
       "@theme": ["theme"],
       "@theme/*": ["theme/*"],
       "@hooks/*": ["hooks/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@store/*": ["store/*"]
     }
   },
   "include": [

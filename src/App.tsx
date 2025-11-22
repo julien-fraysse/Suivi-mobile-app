@@ -29,6 +29,8 @@ import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider, useThemeMode } from './theme/ThemeProvider';
 import { NotificationsProvider } from './features/notifications/notificationsStore';
 import { SuiviQueryProvider } from './services/QueryProvider';
+import { useAuthStore } from '@store/authStore';
+import { AppLoadingScreen } from '@screens/AppLoadingScreen';
 import { tokens } from './theme';
 
 // Navigation root
@@ -70,12 +72,19 @@ function createNavigationTheme(paperTheme: MD3Theme): NavigationTheme {
  * AppContent
  * 
  * Contenu de l'app avec accès au thème pour la StatusBar.
+ * Gère l'affichage conditionnel selon l'état d'authentification.
  */
 function AppContent() {
   const { isDark, currentTheme } = useThemeMode();
+  const { isLoading } = useAuthStore();
   
   // Convertir le thème Paper en thème Navigation (inclut fonts)
   const navigationTheme = createNavigationTheme(currentTheme);
+
+  // Afficher l'écran de chargement si l'authentification est en cours
+  if (isLoading) {
+    return <AppLoadingScreen />;
+  }
 
   return (
     <>

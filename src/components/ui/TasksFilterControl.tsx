@@ -5,6 +5,7 @@ import { SegmentedControl, type SegmentedControlOption } from './SegmentedContro
 export interface TasksFilterControlProps {
   value: string;
   onChange: (newValue: string) => void;
+  variant?: 'default' | 'fullWidth';
 }
 
 /**
@@ -25,6 +26,7 @@ export interface TasksFilterControlProps {
 export function TasksFilterControl({
   value,
   onChange,
+  variant = 'fullWidth',
 }: TasksFilterControlProps) {
   const { t } = useTranslation();
 
@@ -36,6 +38,7 @@ export function TasksFilterControl({
 
   return (
     <SegmentedControl
+      variant={variant}
       options={options}
       value={value}
       onChange={onChange}

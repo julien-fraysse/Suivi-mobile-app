@@ -116,12 +116,11 @@ export function MyTasksScreen() {
       
       {/* Filters */}
       <View style={styles.filterBar}>
-        <View style={{ alignSelf: 'flex-start', marginTop: 12 }}>
-          <TasksFilterControl
-            value={filter}
-            onChange={(newValue) => setFilter(newValue as FilterOption)}
-          />
-        </View>
+        <TasksFilterControl
+          variant="fullWidth"
+          value={filter}
+          onChange={(newValue) => setFilter(newValue as FilterOption)}
+        />
       </View>
 
       {/* Task list or empty state */}
@@ -154,6 +153,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.lg,
   },
   filterBar: {
+    width: '100%',
     paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
   },

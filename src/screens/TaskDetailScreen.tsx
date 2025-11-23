@@ -9,6 +9,7 @@ import {
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@components/Screen';
 import { ScreenHeader } from '@components/layout/ScreenHeader';
 import { SuiviCard } from '@components/ui/SuiviCard';
@@ -43,6 +44,7 @@ export function TaskDetailScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { taskId } = route.params;
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
@@ -163,7 +165,7 @@ export function TaskDetailScreen() {
 
   return (
     <Screen scrollable noTopBackground>
-      <View style={styles.pagePadding}>
+      <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
         {/* Screen Header avec bouton retour */}
         <ScreenHeader 
           title={t('taskDetail.overview')} 
@@ -576,7 +578,6 @@ const styles = StyleSheet.create({
   },
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
-    paddingTop: tokens.spacing.md,
   },
   taskTitleContainer: {
     marginTop: 4,

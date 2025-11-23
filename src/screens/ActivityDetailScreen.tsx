@@ -15,6 +15,7 @@ import {
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviButton } from '@components/ui/SuiviButton';
@@ -161,6 +162,7 @@ export function ActivityDetailScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const isDark = theme.dark;
   const { eventId } = route.params;
 
@@ -254,7 +256,7 @@ export function ActivityDetailScreen() {
 
   return (
     <Screen scrollable noTopBackground>
-      <View style={styles.pagePadding}>
+      <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
         {/* Screen Header avec bouton retour */}
         <ScreenHeader 
           title={t('activityDetail.overview')} 
@@ -475,7 +477,6 @@ export function ActivityDetailScreen() {
 const styles = StyleSheet.create({
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
-    paddingTop: tokens.spacing.md,
   },
   loadingContainer: {
     flex: 1,

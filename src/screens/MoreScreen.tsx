@@ -411,9 +411,11 @@ export function MoreScreen() {
               <SuiviText variant="label" color="secondary">
                 {t('more.appVersion')}
               </SuiviText>
-              <SuiviText variant="body" color="primary">
-                {appVersion}
-              </SuiviText>
+              <View style={styles.aboutRowValue}>
+                <SuiviText variant="body" color="primary">
+                  {appVersion}
+                </SuiviText>
+              </View>
             </View>
             <View
               style={[
@@ -428,9 +430,11 @@ export function MoreScreen() {
               <SuiviText variant="label" color="secondary">
                 {t('more.designSystem')}
               </SuiviText>
-              <SuiviText variant="body" color="primary">
-                Suivi v1.0
-              </SuiviText>
+              <View style={styles.aboutRowValue}>
+                <SuiviText variant="body" color="primary">
+                  Suivi v1.0
+                </SuiviText>
+              </View>
             </View>
             <View
               style={[
@@ -441,9 +445,11 @@ export function MoreScreen() {
               <SuiviText variant="label" color="secondary">
                 {t('more.apiStatus')}
               </SuiviText>
-              <SuiviText variant="body" color="secondary">
-                Mock mode (not connected to Suivi backend yet)
-              </SuiviText>
+              <View style={styles.aboutRowValue}>
+                <SuiviText variant="body" color="secondary">
+                  Mock mode (not connected to Suivi backend yet)
+                </SuiviText>
+              </View>
             </View>
           </SuiviCard>
         </View>
@@ -560,9 +566,15 @@ const styles = StyleSheet.create({
   },
   aboutRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
     paddingVertical: tokens.spacing.sm,
     borderBottomWidth: 1,
+  },
+  aboutRowValue: {
+    flexShrink: 1,
+    flex: 1,
+    marginLeft: tokens.spacing.sm,
   },
   aboutRowLast: {
     borderBottomWidth: 0,

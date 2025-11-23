@@ -121,16 +121,16 @@ export function HomeScreen() {
            * - tokens.typography.h1 (Inter_600SemiBold, 22px)
            * - Couleur gérée automatiquement par SuiviText selon le thème
            * 
-           * Header Row: Titre et filtres sur la même ligne
+           * Layout vertical: Titre sur sa propre ligne, filtres en dessous
            * 
-           * Pourquoi ce layout est meilleur:
-           * - Gain d'espace vertical (titre et filtres sur une seule ligne)
-           * - Meilleure utilisation de l'espace horizontal sur les grands écrans
-           * - Alignement moderne et clean, conforme aux standards iOS/Android
-           * - Filtres toujours visibles sans scroll
+           * Pourquoi ce layout est meilleur pour mobile:
+           * - Meilleure lisibilité sur petits écrans (titre et filtres séparés)
+           * - Filtres full-width pour meilleure accessibilité tactile
+           * - Alignement moderne et clean, conforme aux standards mobile
+           * - Padding vertical augmenté pour meilleure ergonomie
            * 
-           * Composant utilisé: SegmentedControl (même composant que MyTasksScreen)
-           * - Rendu visuel identique à "Mes Tâches" (Tous / Actives / Terminées)
+           * Composant utilisé: SegmentedControl avec variant="fullWidth"
+           * - Style Gemini 3 avec largeur pleine et padding vertical augmenté
            * - Design unifié dans toute l'application
            * 
            * Comment brancher les filtres réels demain via API:
@@ -140,24 +140,28 @@ export function HomeScreen() {
            * - Les filtres backend seront: ?type=board, ?type=portal, ou sans param pour "all"
            * - Le state filter reste identique, seul le fetch change
            */}
-          <View style={styles.headerRow}>
-            <SuiviText variant="h1" style={styles.titleText}>
+          {/* Titre de section */}
+          <View style={styles.titleContainer}>
+            <SuiviText variant="h1">
               {t('home.recentActivities')}
             </SuiviText>
-            <View style={styles.filtersRow}>
-              <SegmentedControl
-                options={[
-                  { key: 'all', label: t('home.filters.all') },
-                  { key: 'board', label: t('home.filters.boards') },
-                  { key: 'portal', label: t('home.filters.portals') },
-                ]}
-                value={filter}
-                onChange={(key) => {
-                  setFilter(key as 'all' | 'board' | 'portal');
-                  setLimit(5);
-                }}
-              />
-            </View>
+          </View>
+
+          {/* Barre de filtres */}
+          <View style={styles.filterBar}>
+            <SegmentedControl
+              variant="fullWidth"
+              options={[
+                { key: 'all', label: t('home.filters.all') },
+                { key: 'board', label: t('home.filters.boards') },
+                { key: 'portal', label: t('home.filters.portals') },
+              ]}
+              value={filter}
+              onChange={(key) => {
+                setFilter(key as 'all' | 'board' | 'portal');
+                setLimit(5);
+              }}
+            />
           </View>
 
           {isLoadingActivities ? (
@@ -213,22 +217,12 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: tokens.spacing.xl,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingHorizontal: 0,
+  titleContainer: {
+    marginBottom: tokens.spacing.md,
+  },
+  filterBar: {
+    marginBottom: tokens.spacing.lg,
     width: '100%',
-  },
-  titleText: {
-    // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
-    // fontSize, fontFamily, color sont également gérés par SuiviText selon le variant et le thème
-    flexShrink: 1, // Permet au titre de se rétrécir si nécessaire dans le layout horizontal
-  },
-  filtersRow: {
-    flexShrink: 0,
-    alignItems: 'center',
   },
   loadingContainer: {
     paddingVertical: tokens.spacing.lg,

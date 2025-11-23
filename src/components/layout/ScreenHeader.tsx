@@ -30,7 +30,6 @@ export function ScreenHeader({
 
   return (
     <View style={styles.container}>
-      <Text style={{color: 'red', fontSize: 24}}>### DEBUG HEADER ###</Text>
       <View style={styles.headerRow}>
         {showBackButton && onBack && (
           <TouchableOpacity

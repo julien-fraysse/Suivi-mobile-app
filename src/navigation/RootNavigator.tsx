@@ -49,11 +49,6 @@ function AppNavigator() {
       <AppStack.Screen
         name="ActivityDetail"
         component={ActivityDetailScreen}
-        options={{
-          headerShown: true,
-          title: '',
-          headerBackTitle: '',
-        }}
       />
     </AppStack.Navigator>
   );

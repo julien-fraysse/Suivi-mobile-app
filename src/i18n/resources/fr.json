@@ -95,6 +95,12 @@
     "noActivity": "Aucune activité",
     "noDescription": "Aucune description"
   },
+  "activityDetail": {
+    "overview": "Aperçu de l'activité",
+    "notFound": "Activité introuvable",
+    "loadError": "L'activité demandée n'a pas pu être chargée.",
+    "openInSuivi": "Ouvrir dans Suivi (web)"
+  },
   "notifications": {
     "youHave": "Vous avez",
     "notifications": "notifications",

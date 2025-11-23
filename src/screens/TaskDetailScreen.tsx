@@ -3,16 +3,14 @@ import {
   View,
   StyleSheet,
   ActivityIndicator,
-  Pressable,
-  Text,
   Animated,
   Easing,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
-import { MaterialIcons } from '@expo/vector-icons';
 import { Screen } from '@components/Screen';
+import { ScreenHeader } from '@components/layout/ScreenHeader';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
 import { UserAvatar } from '@components/ui/UserAvatar';
@@ -26,46 +24,6 @@ import { QuickActionRenderer } from '@components/tasks/quickactions/QuickActionR
 import type { SuiviActivityEvent } from '../types/activity';
 
 type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
-
-/**
- * BackPillButton
- * 
- * Bouton retour custom de type pill pour TaskDetailScreen
- */
-function BackPillButton({ style }: { style?: any }) {
-  const navigation = useNavigation();
-  const { t } = useTranslation();
-
-  return (
-    <Pressable
-      onPress={() => navigation.goBack()}
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#F3F4F6',
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          borderRadius: 24,
-          alignSelf: 'flex-start',
-        },
-        style,
-      ]}
-    >
-      <MaterialIcons name="arrow-back" size={18} color="#333" />
-      <Text
-        style={{
-          marginLeft: 6,
-          fontSize: 14,
-          fontWeight: '500',
-          color: '#333',
-        }}
-      >
-        {t('common.back')}
-      </Text>
-    </Pressable>
-  );
-}
 
 /**
  * TaskDetailScreen
@@ -101,15 +59,6 @@ export function TaskDetailScreen() {
 
   // Animation pour le point violet du titre Quick action
   const pulse = useRef(new Animated.Value(1)).current;
-
-  // Configure header - désactivé pour avoir un bouton retour custom dans l'écran
-  // Configure contentStyle transparent pour supprimer le fond gris du NavigationContainer
-  useEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-      contentStyle: { backgroundColor: 'transparent' },
-    });
-  }, [navigation, theme]);
 
   // Animation en boucle pour le point violet
   useEffect(() => {
@@ -215,13 +164,12 @@ export function TaskDetailScreen() {
   return (
     <Screen scrollable noTopBackground>
       <View style={styles.pagePadding}>
-        {/* Back Button */}
-        <BackPillButton style={{ marginBottom: tokens.spacing.lg }} />
-
-        {/* Task Overview Title */}
-        <SuiviText variant="label" color="secondary" style={styles.overviewTitle}>
-          {t('taskDetail.overview')}
-        </SuiviText>
+        {/* Screen Header avec bouton retour */}
+        <ScreenHeader 
+          title={t('taskDetail.overview')} 
+          showBackButton 
+          onBack={() => navigation.goBack()} 
+        />
 
         {/* Task Title (display only, no label) */}
         <View style={styles.taskTitleContainer}>
@@ -629,12 +577,6 @@ const styles = StyleSheet.create({
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
     paddingTop: tokens.spacing.md,
-  },
-  overviewTitle: {
-    marginTop: tokens.spacing.lg + 14,
-    marginBottom: 12,
-    fontSize: 16,
-    fontWeight: '600',
   },
   taskTitleContainer: {
     marginTop: 4,

@@ -9,17 +9,18 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Linking,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviButton } from '@components/ui/SuiviButton';
 import { UserAvatar } from '@components/ui/UserAvatar';
 import { Screen } from '@components/Screen';
+import { ScreenHeader } from '@components/layout/ScreenHeader';
 import { tokens } from '@theme';
 import { getRecentActivity } from '../api/activity';
 import { useActivityFeed } from '@hooks/useActivity';
@@ -158,6 +159,7 @@ function formatContext(event: SuiviActivityEvent): string {
 export function ActivityDetailScreen() {
   const route = useRoute<ActivityDetailRoute>();
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.dark;
   const { eventId } = route.params;
@@ -190,7 +192,7 @@ export function ActivityDetailScreen() {
       <Screen>
         <View style={styles.loadingContainer}>
           <SuiviText variant="body" color="secondary">
-            Chargement...
+            {t('common.loading')}
           </SuiviText>
         </View>
       </Screen>
@@ -201,12 +203,12 @@ export function ActivityDetailScreen() {
     return (
       <Screen>
         <View style={styles.errorContainer}>
-          <SuiviText variant="h2">Activité introuvable</SuiviText>
+          <SuiviText variant="h2">{t('activityDetail.notFound')}</SuiviText>
           <SuiviText variant="body" color="secondary" style={styles.errorText}>
-            L'activité demandée n'a pas pu être chargée.
+            {t('activityDetail.loadError')}
           </SuiviText>
           <SuiviButton
-            title="Retour"
+            title={t('common.back')}
             onPress={() => navigation.goBack()}
             variant="primary"
             style={styles.backButton}
@@ -251,12 +253,14 @@ export function ActivityDetailScreen() {
   };
 
   return (
-    <Screen>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <Screen scrollable noTopBackground>
+      <View style={styles.pagePadding}>
+        {/* Screen Header avec bouton retour */}
+        <ScreenHeader 
+          title={t('activityDetail.overview')} 
+          showBackButton 
+          onBack={() => navigation.goBack()} 
+        />
         {/* Icône */}
         <View style={styles.iconSection}>
           <View
@@ -457,23 +461,21 @@ export function ActivityDetailScreen() {
         {/* Bouton Ouvrir dans Suivi */}
         <View style={styles.buttonSection}>
           <SuiviButton
-            title="Ouvrir dans Suivi (web)"
+            title={t('activityDetail.openInSuivi')}
             onPress={handleOpenInSuivi}
             variant="primary"
             fullWidth
           />
         </View>
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: tokens.spacing.lg,
+  pagePadding: {
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
   },
   loadingContainer: {
     flex: 1,

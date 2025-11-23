@@ -95,6 +95,12 @@
     "noActivity": "No activity yet",
     "noDescription": "No description"
   },
+  "activityDetail": {
+    "overview": "Activity overview",
+    "notFound": "Activity not found",
+    "loadError": "The requested activity could not be loaded.",
+    "openInSuivi": "Open in Suivi (web)"
+  },
   "notifications": {
     "youHave": "You have",
     "notifications": "notifications",

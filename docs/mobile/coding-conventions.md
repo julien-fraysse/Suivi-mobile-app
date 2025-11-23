@@ -4,6 +4,183 @@
 
 Ce document définit les conventions de code pour l'application mobile Suivi. Ces conventions garantissent la cohérence du code et facilitent la collaboration entre développeurs.
 
+---
+
+## Table des matières
+
+1. [Introduction](#introduction)
+2. [Architecture Suivi mobile](#architecture-suivi-mobile)
+3. [Mode opératoire obligatoire](#mode-opératoire-obligatoire)
+4. [Conventions de nommage](#conventions-de-nommage)
+5. [Structure des fichiers](#structure-des-fichiers)
+6. [Types TypeScript](#types-typescript)
+7. [Composants React](#composants-react)
+8. [Quick Actions](#quick-actions)
+9. [Hooks personnalisés](#hooks-personnalisés)
+10. [Internationalisation (i18n)](#internationalisation-i18n)
+11. [React Query](#react-query)
+12. [API Mode](#api-mode)
+13. [Gestion d'état (Zustand)](#gestion-détat-zustand)
+14. [Imports](#imports)
+15. [Styles](#styles)
+16. [Commentaires et documentation](#commentaires-et-documentation)
+17. [Gestion des erreurs](#gestion-des-erreurs)
+18. [Bonnes pratiques](#bonnes-pratiques)
+19. [Résumé des conventions](#résumé-des-conventions)
+20. [Outils recommandés](#outils-recommandés)
+
+---
+
+## Architecture Suivi mobile
+
+### Règles strictes de modification
+
+**Règle absolue** : Ne jamais créer, déplacer, renommer ou dupliquer un fichier sans demande explicite.
+
+### Dossiers modifiables
+
+Tu peux uniquement modifier les dossiers suivants :
+
+- ✅ `src/components/**` : Composants UI réutilisables
+- ✅ `src/screens/**` : Écrans de l'application
+- ✅ `src/services/**` : Services API avec sélection Mock/API
+- ✅ `src/store/**` : Stores Zustand (état global)
+- ✅ `src/providers/**` : Providers React
+
+### Fichiers et dossiers interdits
+
+**Interdiction totale de modifier** :
+
+- ❌ `App.tsx` : Point d'entrée de l'application
+- ❌ `RootNavigator.tsx` : Navigation racine (gère Auth vs App)
+- ❌ `ThemeProvider.tsx` : Gestion du thème
+- ❌ `authStore.ts` / flow d'authentification : Sans exception, sauf ajout de données strictement utiles avec validation
+- ❌ Ordre des providers dans `App.tsx` : Ordre strict à respecter
+
+**Interdictions générales** :
+
+- ❌ Créer un dossier supplémentaire sans validation
+- ❌ Dupliquer un composant déjà existant
+- ❌ Renommer un dossier sans raison
+- ❌ Déplacer un fichier vers un nouvel endroit
+- ❌ Créer des composants "helpers" inutiles
+- ❌ Recréer une version alternative d'un composant déjà existant
+
+### Principe de réutilisation
+
+Si un fichier existe déjà, tu dois le réutiliser.  
+Si un style existe déjà, tu dois utiliser les tokens.  
+Si un composant existe déjà, tu dois l'utiliser tel quel ou l'étendre de manière compatible.
+
+---
+
+## Mode opératoire obligatoire
+
+### Workflow standard
+
+Toute modification doit suivre ce workflow strict :
+
+**Analyse → Plan → Validation → Patch → Audit → Test**
+
+### Étape 1 : Analyse
+
+Avant toute modification, tu dois :
+
+1. **Scanner l'arborescence `src/`** : Identifier tous les fichiers concernés
+2. **Analyser les composants existants** : Comprendre la structure actuelle
+3. **Identifier les fichiers concernés** : Lister précisément chaque fichier à modifier
+4. **Fournir un plan de route clair et numéroté** : Expliquer chaque modification
+
+**Le plan doit expliquer** :
+
+- Les fichiers concernés
+- Les changements exacts à effectuer
+- L'impact potentiel sur :
+  - Le layout (faible / moyen / élevé)
+  - Les stores Zustand
+  - La navigation
+  - Les providers
+  - Les autres composants
+
+**Aucune ligne de code ne doit être modifiée sans ce plan préalable.**
+
+### Étape 2 : Validation
+
+**Attendre la validation humaine avant d'agir.**
+
+Le plan doit être clair, détaillé et justifié avant toute exécution.
+
+### Étape 3 : Patch
+
+Après validation, produire le code :
+
+- Ciblé : Seulement ce qui est nécessaire
+- Minimal : Pas de refactoring inutile
+- Stable : Pas de régression
+- Conforme aux conventions : Respecter ce document
+
+### Étape 4 : Audit
+
+Après toute modification, effectuer un audit systématique :
+
+1. **Audit architecture** :
+   - ✅ Aucun dossier créé/modifié sans raison
+   - ✅ Aucun fichier déplacé
+   - ✅ Respect de la structure existante
+
+2. **Audit UI** :
+   - ✅ Layout : Aucun débordement
+   - ✅ Spacing : Utilisation exclusive de `tokens.spacing`
+   - ✅ Tokens : Tous les styles via `tokens.*`
+   - ✅ Responsive : Composants adaptatifs
+
+3. **Audit i18n** :
+   - ✅ Aucune string en dur
+   - ✅ Toutes les clés ajoutées dans `fr.json` et `en.json`
+   - ✅ Utilisation de `t('...')` partout
+
+4. **Audit TypeScript** :
+   - ✅ Pas de `any`
+   - ✅ Types stricts
+   - ✅ Imports de types corrects
+
+5. **Audit Zustand / React Query** :
+   - ✅ Sélecteurs Zustand utilisés
+   - ✅ Pas d'accès direct aux stores
+   - ✅ React Query conforme (si utilisé)
+
+6. **Audit régressions** :
+   - ✅ Pas de layout cassé
+   - ✅ Pas de navigation cassée
+   - ✅ Pas de fonctionnalité perdue
+
+**Format de l'audit** :
+
+```
+Audit architecture : OK / À corriger : ...
+Audit UI : OK / À corriger : ...
+Audit i18n : OK / À corriger : ...
+Audit TypeScript : OK / À corriger : ...
+Audit Zustand/React Query : OK / À corriger : ...
+Audit régressions : OK / À corriger : ...
+```
+
+### Étape 5 : Test
+
+Décrire :
+
+- Comment vérifier la modification
+- Les scénarios de régression éventuels
+- Comment revenir en arrière si nécessaire
+
+### Annoncer l'impact layout
+
+Avant toute modification de layout, annoncer :
+
+**"Impact layout : faible / moyen / élevé"**
+
+---
+
 ## Conventions de nommage
 
 ### Fichiers
@@ -155,6 +332,8 @@ export function useMyTasks(options: UseMyTasksOptions = {}) {
 - ✅ `updateTask(accessToken, taskId, updates)`
 - ✅ `deleteTask(accessToken, taskId)`
 
+---
+
 ## Structure des fichiers
 
 ### Composants React
@@ -258,6 +437,8 @@ export async function getMyTasks(
 }
 ```
 
+---
+
 ## Types TypeScript
 
 ### Types vs Interfaces
@@ -302,6 +483,21 @@ function formatDate(dateString) {
 }
 ```
 
+**Règle stricte** : Pas de `any`. Utiliser des types appropriés ou `unknown` si nécessaire.
+
+**Exemples** :
+```typescript
+// ✅ Typé correctement
+function processData(data: Task): void {
+  // ...
+}
+
+// ❌ Interdit
+function processData(data: any): void {
+  // ...
+}
+```
+
 ### Types optionnels
 
 **Règle** : Utiliser `?` pour les propriétés optionnelles, `| null` pour les valeurs nullable.
@@ -315,6 +511,8 @@ type Task = {
   projectName?: string | null;
 };
 ```
+
+---
 
 ## Composants React
 
@@ -393,6 +591,60 @@ export function MyScreen() {
 </Screen>
 ```
 
+---
+
+## Quick Actions
+
+### Règles strictes
+
+**Règle 1** : Toujours respecter `quickAction.uiHint`.
+
+Les Quick Actions sont identifiés par leur `uiHint`. Tu dois utiliser le composant correspondant à ce hint, jamais réinventer un composant.
+
+**Règle 2** : Ne jamais réinventer un composant qui existe déjà.
+
+Si un composant Quick Action existe déjà dans `src/components/tasks/quickactions/`, tu dois l'utiliser tel quel ou l'étendre de manière compatible.
+
+**Règle 3** : Ne jamais créer un nouveau type de Quick Action sans spec formelle.
+
+Tout nouveau type de Quick Action doit être spécifié formellement avant implémentation.
+
+### Composants Quick Actions disponibles
+
+Les composants suivants sont disponibles dans `src/components/tasks/quickactions/` :
+
+- ✅ **`approval_dual_button`** : `QuickActionApproval.tsx` - Boutons d'approbation (Approuver/Refuser)
+- ✅ **`status_chip`** : Utilisé dans le renderer principal - Chips de statut
+- ✅ **`comment_text_input`** : `QuickActionComment.tsx` - Zone de texte pour commentaires
+- ✅ **`stars_1_to_5`** : `QuickActionRating.tsx` - Système de notation par étoiles (1 à 5)
+- ✅ **`progress_slider`** : `QuickActionProgress.tsx` - Slider de progression (0-100%)
+- ✅ **`weather_picker`** : `QuickActionWeather.tsx` - Sélecteur de conditions météo
+- ✅ **`calendar_date_picker`** : `QuickActionCalendar.tsx` - Sélecteur de date
+- ✅ **`checkbox_toggle`** : `QuickActionCheckbox.tsx` - Case à cocher
+- ✅ **`select_dropdown`** : `QuickActionSelect.tsx` - Liste déroulante
+
+**Structure d'une Quick Action** :
+
+```typescript
+interface QuickAction {
+  actionType: "COMMENT" | "APPROVAL" | "RATING" | "PROGRESS" | "WEATHER" | "CALENDAR" | "CHECKBOX" | "SELECT";
+  uiHint: string; // Identifie le composant à utiliser
+  payload?: Record<string, any>; // Données additionnelles
+}
+```
+
+**Utilisation** :
+
+```typescript
+import { QuickActionRenderer } from '../components/tasks/quickactions/QuickActionRenderer';
+
+<QuickActionRenderer quickAction={task.quickAction} />
+```
+
+Le `QuickActionRenderer` se charge de router vers le bon composant selon `quickAction.uiHint`.
+
+---
+
 ## Hooks personnalisés
 
 ### Nommage
@@ -427,6 +679,94 @@ export function useAuth() {
   return context;
 }
 ```
+
+---
+
+## Internationalisation (i18n)
+
+### Règles strictes
+
+**Règle absolue** : TOUTES les strings visibles par l'utilisateur doivent obligatoirement passer par `t('...')`.
+
+**Interdictions** :
+- ❌ Aucun texte en dur dans les écrans ou composants
+- ❌ Aucune string hardcodée
+- ❌ Aucun placeholder texte sans i18n
+
+### Structure des fichiers i18n
+
+Les clés i18n sont définies dans :
+
+- `/src/i18n/resources/fr.json` : Traductions françaises
+- `/src/i18n/resources/en.json` : Traductions anglaises
+
+**Respecter la structure existante** : Utiliser les namespaces existants (`common`, `screens.*`, etc.).
+
+### Ajout de nouvelles clés
+
+**Processus obligatoire** :
+
+1. Identifier la string à traduire
+2. Choisir un namespace approprié (ex: `screens.taskDetail.headerTitle`)
+3. Ajouter la clé dans `fr.json` ET `en.json`
+4. Utiliser `t('namespace.key')` dans le composant
+
+**Exemple** :
+
+```typescript
+// ❌ Interdit
+<Text>Ma tâche</Text>
+
+// ✅ Correct
+import { useTranslation } from 'react-i18next';
+
+function MyComponent() {
+  const { t } = useTranslation();
+  return <Text>{t('screens.myTasks.title')}</Text>;
+}
+```
+
+**Dans `fr.json`** :
+```json
+{
+  "screens": {
+    "myTasks": {
+      "title": "Ma tâche"
+    }
+  }
+}
+```
+
+**Dans `en.json`** :
+```json
+{
+  "screens": {
+    "myTasks": {
+      "title": "My task"
+    }
+  }
+}
+```
+
+### Namespaces
+
+**Règle** : Ne jamais créer un namespace i18n sans validation.
+
+Utiliser les namespaces existants :
+- `common.*` : Chaînes communes (boutons, labels, etc.)
+- `screens.*` : Titres et labels spécifiques aux écrans
+- `components.*` : Labels de composants réutilisables
+
+### Conversion automatique
+
+Lors des patches, convertir automatiquement toutes les strings en dur en clés i18n.
+
+**Checklist i18n après chaque modification** :
+- ✅ Aucune string en dur restante
+- ✅ Toutes les clés ajoutées dans `fr.json` et `en.json`
+- ✅ Namespace cohérent avec l'existant
+
+---
 
 ## React Query
 
@@ -477,6 +817,164 @@ const mutation = useMutation({
   },
 });
 ```
+
+---
+
+## API Mode
+
+### Configuration
+
+**Fichier** : `/src/config/apiMode.ts`
+
+Ce fichier contrôle le mode de fonctionnement de l'application (mock ou API réelle).
+
+```typescript
+export type ApiMode = 'mock' | 'api';
+export const API_MODE: ApiMode = 'mock'; // Par défaut : mode mock
+```
+
+### Mode Mock (par défaut)
+
+**Règle** : Mode mock obligatoire tant que le backend Suivi n'est pas connecté.
+
+**Comportement en mode mock** :
+
+- ✅ Aucun hook React Query n'est actif (`enabled: false` dans les hooks)
+- ✅ Toutes les données viennent de `/src/mocks/`
+- ✅ Les services retournent directement les mocks
+- ✅ Aucun appel réseau n'est effectué
+
+**Exemple de service en mode mock** :
+
+```typescript
+import { API_MODE } from '../config/apiMode';
+import { mockTasks } from '../mocks/tasksMock';
+
+export async function fetchTasks() {
+  if (API_MODE === 'mock') {
+    return mockTasks; // Retourne les mocks directement
+  }
+  return apiGet('/tasks'); // Ne s'exécute jamais en mode mock
+}
+```
+
+### Mode API (futur)
+
+**Comportement en mode API** :
+
+- ✅ Les hooks React Query s'activent (`enabled: true`)
+- ✅ Les services appellent les vrais endpoints
+- ✅ Les données viennent du backend Suivi Desktop
+- ✅ Cache et retry gérés par React Query
+
+**Activation du mode API** :
+
+```typescript
+// Dans /src/config/apiMode.ts
+export const API_MODE: ApiMode = 'api'; // Basculer en mode API
+```
+
+### Hooks React Query conditionnels
+
+Les hooks React Query sont conditionnels selon le mode :
+
+```typescript
+export function useTasksQuery() {
+  return useQuery({
+    queryKey: ['tasks'],
+    queryFn: fetchTasks,
+    enabled: API_MODE === 'api', // Actif uniquement en mode API
+  });
+}
+```
+
+**En mode mock** : `enabled: false` → Le hook ne s'exécute jamais  
+**En mode API** : `enabled: true` → Le hook s'exécute et appelle les endpoints
+
+---
+
+## Gestion d'état (Zustand)
+
+### Règles strictes
+
+**Règle 1** : Utiliser des sélecteurs pour éviter les re-renders inutiles.
+
+**Règle 2** : Interdiction totale d'utiliser `useAuthStore()` sans sélecteur.
+
+**Règle 3** : Interdiction totale d'accès direct aux stores dans des composants profonds.
+
+### Stores autorisés
+
+Les stores suivants sont autorisés dans `src/store/` :
+
+- ✅ `authStore.ts` : État d'authentification (user, isLoading)
+- ✅ `preferencesStore.ts` : Préférences utilisateur (themeMode)
+- ✅ `uiStore.ts` : État UI (quickCaptureOpen)
+
+**Interdiction totale** : Créer un store supplémentaire sans spec validée.
+
+### Utilisation avec sélecteurs
+
+**❌ Mauvais** : Re-render sur tout changement de store
+
+```typescript
+// ❌ Interdit : accès direct au store
+const { user, isLoading } = useAuthStore();
+```
+
+**✅ Bon** : Re-render uniquement si la valeur sélectionnée change
+
+```typescript
+// ✅ Correct : sélecteur spécifique
+const user = useAuthStore((s) => s.user);
+const isLoading = useAuthStore((s) => s.isLoading);
+```
+
+**Exemple complet** :
+
+```typescript
+import { useAuthStore } from '@store/authStore';
+
+function MyComponent() {
+  // ✅ Sélecteur pour user
+  const user = useAuthStore((s) => s.user);
+  
+  // ✅ Sélecteur pour isLoading
+  const isLoading = useAuthStore((s) => s.isLoading);
+  
+  // ✅ Sélecteur pour une action
+  const setUser = useAuthStore((s) => s.setUser);
+  
+  // Le composant ne se re-rend que si user ou isLoading change
+  // Pas si d'autres propriétés du store changent
+}
+```
+
+### Modification des stores
+
+**Règle** : Utiliser les actions définies dans le store, jamais modifier directement.
+
+```typescript
+// ✅ Correct : utiliser l'action
+const setUser = useAuthStore((s) => s.setUser);
+setUser(newUser);
+
+// ❌ Interdit : modification directe
+useAuthStore.getState().user = newUser; // ❌
+```
+
+### Sélecteurs complexes
+
+Pour des sélecteurs complexes (combinaisons, calculs), utiliser `useMemo` ou créer un hook personnalisé :
+
+```typescript
+// ✅ Correct : sélecteur avec calcul
+const isAuthenticated = useAuthStore(
+  (s) => useMemo(() => s.user !== null, [s.user])
+);
+```
+
+---
 
 ## Imports
 
@@ -539,6 +1037,8 @@ import type { Task, TaskStatus } from '../api/tasks';
 import { getMyTasks } from '../api/tasks';
 ```
 
+---
+
 ## Styles
 
 ### StyleSheet.create
@@ -568,6 +1068,8 @@ const styles = StyleSheet.create({
 - Typography : **EXCLUSIVEMENT** `tokens.typography`
 - Shadows : **EXCLUSIVEMENT** `tokens.shadows`
 
+**Padding/margin** : Exclusivement via `tokens.spacing`. Aucun padding/margin hardcodé n'est autorisé.
+
 **Exemples** :
 ```typescript
 // ✅ Utiliser les tokens
@@ -576,6 +1078,7 @@ import { tokens } from '../theme';
 const styles = StyleSheet.create({
   container: {
     padding: tokens.spacing.md,        // 16px
+    margin: tokens.spacing.sm,         // 8px
     borderRadius: tokens.radius.md,     // 20px
     backgroundColor: tokens.colors.brand.primary, // #0066FF
   },
@@ -589,6 +1092,7 @@ const styles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     padding: 16,                    // ❌ Utiliser tokens.spacing.md
+    margin: 8,                      // ❌ Utiliser tokens.spacing.sm
     borderRadius: 20,               // ❌ Utiliser tokens.radius.md
     backgroundColor: '#0066FF',     // ❌ Utiliser tokens.colors.brand.primary
   },
@@ -617,6 +1121,69 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     fontSize: 16,
+  },
+});
+```
+
+### Aucune couleur hardcodée
+
+**Règle absolue** : Aucune couleur hardcodée n'est autorisée.
+
+Toutes les couleurs doivent venir de `tokens.colors.*` ou `theme.colors` (pour les écrans uniquement, pas pour les composants UI Suivi).
+
+### Headers des écrans
+
+**Règle stricte** : Toujours utiliser `ScreenHeader` pour les headers d'écran.
+
+**Interdiction totale** : Créer un header custom.
+
+**Exemple** :
+```typescript
+// ✅ Correct
+import { ScreenHeader } from '../components/layout/ScreenHeader';
+
+<Screen>
+  <ScreenHeader title={t('screens.taskDetail.title')} />
+  {/* Contenu */}
+</Screen>
+
+// ❌ Interdit : header custom
+<Screen>
+  <View style={styles.header}>
+    <Text>Mon titre</Text>
+  </View>
+  {/* Contenu */}
+</Screen>
+```
+
+### Wrappers et layout
+
+**Règle** : Interdiction des wrappers inutiles.
+
+Ne pas créer de `View` supplémentaires si ce n'est pas nécessaire pour le layout.
+
+**Règle responsive** : Tous les composants doivent être responsive sans déborder.
+
+Aucun composant ne doit dépasser les limites de l'écran. Utiliser `flex`, `flexShrink`, `flexWrap` appropriés.
+
+**Exemple** :
+```typescript
+// ✅ Responsive
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: tokens.spacing.md,
+  },
+  text: {
+    flexShrink: 1, // Permet au texte de se rétrécir si nécessaire
+  },
+});
+
+// ❌ Peut déborder
+const styles = StyleSheet.create({
+  container: {
+    width: 500, // ❌ Largeur fixe peut déborder sur petits écrans
+    padding: tokens.spacing.md,
   },
 });
 ```
@@ -678,6 +1245,8 @@ const SettingsScreen = () => {
 };
 ```
 
+---
+
 ## Commentaires et documentation
 
 ### JSDoc pour les fonctions importantes
@@ -719,6 +1288,8 @@ await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
 await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
 ```
 
+---
+
 ## Gestion des erreurs
 
 ### Try-Catch
@@ -750,6 +1321,8 @@ if (isError) {
   return <ErrorView error={error} />;
 }
 ```
+
+---
 
 ## Bonnes pratiques
 
@@ -823,7 +1396,11 @@ export const MyComponent: React.FC<MyComponentProps> = (props) => {
 </React.Fragment>
 ```
 
+---
+
 ## Résumé des conventions
+
+### Tableau récapitulatif
 
 | Élément | Convention | Exemple |
 |---------|-----------|---------|
@@ -836,6 +1413,53 @@ export const MyComponent: React.FC<MyComponentProps> = (props) => {
 | **Constantes globales** | UPPER_SNAKE_CASE | `API_BASE_URL` |
 | **Types/Interfaces** | PascalCase | `Task`, `MyComponentProps` |
 | **Query Keys** | Tableaux descriptifs | `['myTasks', filters]` |
+
+### Règles architecturales
+
+| Règle | Détails |
+|-------|---------|
+| **Dossiers modifiables** | `src/components/**`, `src/screens/**`, `src/services/**`, `src/store/**`, `src/providers/**` |
+| **Fichiers interdits** | `App.tsx`, `RootNavigator.tsx`, `ThemeProvider.tsx`, `authStore.ts` (sans validation) |
+| **Création de fichiers** | Interdite sans demande explicite |
+| **Duplication** | Interdite : réutiliser l'existant |
+
+### Règles i18n
+
+| Règle | Détails |
+|-------|---------|
+| **Strings visibles** | Obligatoirement via `t('...')` |
+| **Fichiers** | `src/i18n/resources/fr.json`, `src/i18n/resources/en.json` |
+| **Namespaces** | Respecter la structure existante |
+| **Conversion** | Automatique lors des patches |
+
+### Règles Zustand
+
+| Règle | Détails |
+|-------|---------|
+| **Sélecteurs** | Obligatoires : `useAuthStore((s) => s.user)` |
+| **Stores autorisés** | `authStore.ts`, `preferencesStore.ts`, `uiStore.ts` |
+| **Création de stores** | Interdite sans spec validée |
+| **Accès direct** | Interdit sans sélecteur |
+
+### Règles API Mode
+
+| Mode | Comportement |
+|------|--------------|
+| **Mock (défaut)** | Mocks depuis `src/mocks/`, hooks React Query désactivés |
+| **API** | Endpoints réels, hooks React Query actifs |
+
+### Règles Styles
+
+| Règle | Détails |
+|-------|---------|
+| **Tokens** | Exclusivement `tokens.*` pour tous les styles |
+| **Padding/Margin** | Exclusivement `tokens.spacing` |
+| **Couleurs** | `tokens.colors.*` (UI Suivi) ou `theme.colors` (écrans) |
+| **Header** | Exclusivement `ScreenHeader`, pas de header custom |
+| **Wrappers** | Interdits si inutiles |
+| **Responsive** | Composants adaptatifs sans déborder |
+
+---
 
 ## Outils recommandés
 
@@ -865,4 +1489,3 @@ npm run format
 ```bash
 npx tsc --noEmit
 ```
-

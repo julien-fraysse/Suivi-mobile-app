@@ -57,7 +57,8 @@
       "checkbox_checked": "Step checked",
       "checkbox_unchecked": "Step unchecked",
       "selected_option": "Option selected: {{option}}",
-      "generic": "Action {{actionType}} performed"
+      "generic": "Action {{actionType}} performed",
+      "task_updated": "{{field}} updated: {{value}}"
     },
     "context": {
       "separator": " · ",
@@ -79,11 +80,20 @@
       "blocked": "Blocked",
       "done": "Done"
     },
-    "due": "Due: "
+    "due": "Due: ",
+    "sections": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "thisWeek": "This Week",
+      "nextWeek": "Next Week",
+      "later": "Later",
+      "noDate": "No Date"
+    }
   },
   "taskDetail": {
     "status": "Status",
     "overview": "Task overview",
+    "overviewTitle": "Task Overview",
     "quickAction": "Quick action",
     "quickActionSubtitle": "Related to your notification",
     "details": "Details",
@@ -93,7 +103,26 @@
     "updated": "Updated",
     "activityTimeline": "Activity Timeline",
     "noActivity": "No activity yet",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "breadcrumb": "{{workspace}} > {{board}}",
+    "metadata": "Metadata",
+    "information": "Information",
+    "editableFields": "Editable Fields",
+    "quickActions": "Quick Actions",
+    "priority": "Priority",
+    "priority.normal": "Normal",
+    "priority.high": "High",
+    "priority.low": "Low",
+    "comments": "Comments / Activity",
+    "activity": "Activity",
+    "activitySubtitle": "History of actions and comments",
+    "editStatus": "Edit status",
+    "editDueDate": "Edit due date",
+    "editAssignee": "Edit assignee",
+    "editDescription": "Edit description",
+    "description": "Description",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "activityDetail": {
     "overview": "Activity overview",

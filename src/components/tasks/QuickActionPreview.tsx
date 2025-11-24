@@ -4,7 +4,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { tokens } from '@theme';
 
 export interface QuickActionPreviewProps {
-  actionType?: "COMMENT" | "APPROVAL" | "RATING" | "PROGRESS" | "WEATHER" | "CALENDAR" | "CHECKBOX" | "SELECT";
+  /** Type d'action (utilise 'type' du type Task normalisé, compatible avec 'actionType' pour rétrocompatibilité) */
+  actionType?: "COMMENT" | "APPROVAL" | "RATING" | "PROGRESS" | "WEATHER" | "CALENDAR" | "CHECKBOX" | "SELECT" | string;
 }
 
 /**
@@ -12,6 +13,8 @@ export interface QuickActionPreviewProps {
  * 
  * Affiche une icône discrète indiquant le type de Quick Action disponible.
  * Prévisualisation minimale pour la liste des tâches.
+ * 
+ * Compatible avec le type Task normalisé (quickAction.type) et l'ancien format (quickAction.actionType).
  */
 export function QuickActionPreview({ actionType }: QuickActionPreviewProps) {
   console.log("QA-DIAG: QuickActionPreview actionType =", actionType);
@@ -65,8 +68,7 @@ function getIconForActionType(actionType: string): { name: keyof typeof Material
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: 'flex-end',
-    marginTop: tokens.spacing.xs,
+    marginLeft: tokens.spacing.xs, // Espacement entre le badge de statut et l'icône QuickAction
   },
 });
 

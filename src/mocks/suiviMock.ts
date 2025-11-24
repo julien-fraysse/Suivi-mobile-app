@@ -11,7 +11,25 @@
  * @see /src/services/api.ts pour la migration vers les vraies API
  */
 
-import { Task, TaskStatus } from '../api/tasks';
+import type { Task, TaskStatus } from '../types/task';
+import { normalizeTask } from '../types/task';
+
+/**
+ * Type intermédiaire pour les mocks (accepte les deux formats : ancien et nouveau)
+ * Les mocks peuvent utiliser assigneeName/workspaceName/boardName directement,
+ * et seront normalisés via normalizeTask() avant utilisation.
+ */
+type RawTaskMock = Omit<Task, 'assignee' | 'location' | 'quickActions'> & {
+  assigneeName?: string;
+  workspaceName?: string;
+  boardName?: string;
+  quickActions?: Array<{
+    actionType?: string;
+    type?: string;
+    uiHint?: string;
+    payload?: Record<string, any>;
+  }>;
+};
 
 // ============================================================================
 // TYPES
@@ -64,7 +82,8 @@ export type MyTasksPage = {
 // MOCK DATA
 // ============================================================================
 
-export const tasks: Task[] = [
+// Les tâches sont définies avec l'ancien format et seront normalisées lors de l'utilisation
+const rawTasks: RawTaskMock[] = [
   {
     id: '1',
     title: 'Répondre à un commentaire sur le design system',
@@ -73,10 +92,10 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T10:00:00Z',
-    quickAction: {
-      actionType: "COMMENT",
-      uiHint: "comment_input",
-    },
+    quickActions: [
+      { type: "RATING", uiHint: "stars_1_to_5" },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
   {
     id: '2',
@@ -86,11 +105,11 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-15T16:30:00Z',
-    quickAction: {
-      actionType: "APPROVAL",
-      uiHint: "approval_dual_button",
-      payload: { requestId: "req_1" },
-    },
+    quickActions: [
+      { type: "APPROVAL", uiHint: "approval_dual_button", payload: { requestId: "req_1" } },
+      { type: "COMMENT", uiHint: "comment_input" },
+      { type: "CALENDAR", uiHint: "calendar_picker" },
+    ],
   },
   {
     id: '3',
@@ -100,10 +119,10 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-14T14:20:00Z',
-    quickAction: {
-      actionType: "RATING",
-      uiHint: "stars_1_to_5",
-    },
+    quickActions: [
+      { type: "RATING", uiHint: "stars_1_to_5" },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
   {
     id: '4',
@@ -113,11 +132,11 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T08:00:00Z',
-    quickAction: {
-      actionType: "PROGRESS",
-      uiHint: "stars_1_to_5",
-      payload: { min: 0, max: 100 },
-    },
+    quickActions: [
+      { type: "PROGRESS", uiHint: "progress_slider", payload: { min: 0, max: 100 } },
+      { type: "CHECKBOX", uiHint: "simple_checkbox" },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
   {
     id: '5',
@@ -127,11 +146,10 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:00:00Z',
-    quickAction: {
-      actionType: "WEATHER",
-      uiHint: "weather_picker",
-      payload: { options: ["sunny", "cloudy", "storm"] },
-    },
+    quickActions: [
+      { type: "WEATHER", uiHint: "weather_picker", payload: { options: ["sunny", "cloudy", "storm"] } },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
   {
     id: '6',
@@ -141,10 +159,10 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T11:00:00Z',
-    quickAction: {
-      actionType: "CALENDAR",
-      uiHint: "calendar_picker",
-    },
+    quickActions: [
+      { type: "CALENDAR", uiHint: "calendar_picker" },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
   {
     id: '7',
@@ -154,10 +172,10 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:15:00Z',
-    quickAction: {
-      actionType: "CHECKBOX",
-      uiHint: "simple_checkbox",
-    },
+    quickActions: [
+      { type: "CHECKBOX", uiHint: "simple_checkbox" },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
   {
     id: '8',
@@ -167,13 +185,15 @@ export const tasks: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T10:30:00Z',
-    quickAction: {
-      actionType: "SELECT",
-      uiHint: "dropdown_select",
-      payload: { options: ["Option A", "Option B", "Option C"] },
-    },
+    quickActions: [
+      { type: "SELECT", uiHint: "dropdown_select", payload: { options: ["Option A", "Option B", "Option C"] } },
+      { type: "COMMENT", uiHint: "comment_input" },
+    ],
   },
 ];
+
+// Normaliser toutes les tâches vers le type Task central
+export const tasks: Task[] = rawTasks.map((rawTask) => normalizeTask(rawTask));
 
 const MOCK_PROJECTS: Project[] = [
   {

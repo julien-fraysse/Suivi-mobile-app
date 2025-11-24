@@ -25,6 +25,8 @@ import { useState, useCallback, useMemo } from 'react';
  * Task Status
  * 
  * Possible statuses for a task in the Suivi system.
+ * 
+ * TODO: align this with central Task type from src/types/task.ts
  */
 export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
 

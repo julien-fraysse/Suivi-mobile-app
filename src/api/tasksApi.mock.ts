@@ -9,10 +9,30 @@
  */
 
 import type { Task, TaskStatus, MyTasksFilters, MyTasksPage } from './tasks';
+import { normalizeTask } from '../types/task';
 
 const delay = (ms: number = 200) => new Promise((resolve) => setTimeout(resolve, ms));
 
-let MOCK_TASKS: Task[] = [
+/**
+ * Type intermédiaire pour les mocks (accepte les deux formats : ancien et nouveau)
+ * Les mocks peuvent utiliser assigneeName/workspaceName/boardName directement,
+ * et seront normalisés via normalizeTask() avant utilisation.
+ */
+type RawTaskMock = Omit<Task, 'assignee' | 'location' | 'quickActions'> & {
+  assigneeName?: string;
+  workspaceName?: string;
+  boardName?: string;
+  quickActions?: Array<{
+    actionType?: string;
+    type?: string;
+    uiHint?: string;
+    payload?: Record<string, any>;
+  }>;
+};
+
+// Export MOCK_TASKS pour permettre l'import dans suiviData.ts (source unique de vérité)
+// Les tâches sont définies avec l'ancien format et seront normalisées lors de l'utilisation
+export let MOCK_TASKS: RawTaskMock[] = [
   {
     id: '1',
     title: 'Implémenter le design system Suivi',
@@ -22,6 +42,9 @@ let MOCK_TASKS: Task[] = [
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T10:00:00Z',
     description: 'Créer un design system complet avec tokens, composants réutilisables et documentation. Inclure les polices Inter et IBM Plex Mono, les couleurs Suivi (violet, jaune, gris, sand), et les composants de base (buttons, cards, inputs, etc.).',
+    quickActions: [
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '2',
@@ -31,6 +54,10 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-15T16:30:00Z',
+    quickActions: [
+      { actionType: 'RATING', uiHint: 'stars_1_to_5' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '3',
@@ -40,6 +67,10 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-14T14:20:00Z',
+    quickActions: [
+      { actionType: 'RATING', uiHint: 'stars_1_to_5' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '4',
@@ -49,6 +80,11 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T08:00:00Z',
+    quickActions: [
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 25 } },
+      { actionType: 'CHECKBOX', uiHint: 'simple_checkbox' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '5',
@@ -58,6 +94,10 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:00:00Z',
+    quickActions: [
+      { actionType: 'CALENDAR', uiHint: 'calendar_picker' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '6',
@@ -67,6 +107,9 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T11:00:00Z',
+    quickActions: [
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '7',
@@ -76,6 +119,10 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:15:00Z',
+    quickActions: [
+      { actionType: 'CHECKBOX', uiHint: 'simple_checkbox' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '8',
@@ -85,6 +132,11 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Mobile App',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T10:30:00Z',
+    quickActions: [
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 65 } },
+      { actionType: 'CHECKBOX', uiHint: 'simple_checkbox' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '9',
@@ -94,6 +146,10 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Design System',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T11:00:00Z',
+    quickActions: [
+      { actionType: 'APPROVAL', uiHint: 'approval_dual_button', payload: { requestId: 'design-review-001' } },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
   {
     id: '10',
@@ -103,6 +159,104 @@ let MOCK_TASKS: Task[] = [
     projectName: 'Backend API',
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:30:00Z',
+    quickActions: [
+      { actionType: 'SELECT', uiHint: 'dropdown_select', payload: { options: ['GitHub Actions', 'GitLab CI', 'Jenkins', 'CircleCI'] } },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+  },
+  // Tâches pour couvrir toutes les sections chronologiques
+  {
+    id: '11',
+    title: 'Valider les spécifications API avec le backend',
+    status: 'todo',
+    dueDate: (() => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return yesterday.toISOString().split('T')[0];
+    })(),
+    projectName: 'Backend API',
+    assigneeName: 'Julien',
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    quickActions: [
+      { actionType: 'APPROVAL', uiHint: 'approval_dual_button', payload: { requestId: 'api-spec-001' } },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+      { actionType: 'CALENDAR', uiHint: 'calendar_picker' },
+    ],
+  },
+  {
+    id: '12',
+    title: 'Finaliser la documentation technique',
+    status: 'in_progress',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectName: 'Mobile App',
+    assigneeName: 'Julien',
+    updatedAt: new Date().toISOString(),
+    quickActions: [
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+  },
+  {
+    id: '13',
+    title: 'Préparer la présentation client pour la revue de sprint',
+    status: 'todo',
+    dueDate: (() => {
+      const in3Days = new Date();
+      in3Days.setDate(in3Days.getDate() + 3);
+      return in3Days.toISOString().split('T')[0];
+    })(),
+    projectName: 'Mobile App',
+    assigneeName: 'Julien',
+    updatedAt: new Date().toISOString(),
+    quickActions: [
+      { actionType: 'CALENDAR', uiHint: 'calendar_picker' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+  },
+  {
+    id: '14',
+    title: 'Planifier la migration vers la nouvelle architecture',
+    status: 'todo',
+    dueDate: (() => {
+      const in10Days = new Date();
+      in10Days.setDate(in10Days.getDate() + 10);
+      return in10Days.toISOString().split('T')[0];
+    })(),
+    projectName: 'Backend API',
+    assigneeName: 'Julien',
+    updatedAt: new Date().toISOString(),
+    quickActions: [
+      { actionType: 'SELECT', uiHint: 'dropdown_select', payload: { options: ['Migration progressive', 'Big bang', 'Par module', 'Par fonctionnalité'] } },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+  },
+  {
+    id: '15',
+    title: 'Audit de sécurité de l\'application mobile',
+    status: 'todo',
+    dueDate: (() => {
+      const in25Days = new Date();
+      in25Days.setDate(in25Days.getDate() + 25);
+      return in25Days.toISOString().split('T')[0];
+    })(),
+    projectName: 'Mobile App',
+    assigneeName: 'Julien',
+    updatedAt: new Date().toISOString(),
+    quickActions: [
+      { actionType: 'WEATHER', uiHint: 'weather_picker', payload: { options: ['sunny', 'cloudy', 'storm'] } },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+  },
+  {
+    id: '16',
+    title: 'Explorer les nouvelles fonctionnalités React Native',
+    status: 'todo',
+    projectName: 'Mobile App',
+    assigneeName: 'Julien',
+    updatedAt: new Date().toISOString(),
+    quickActions: [
+      { actionType: 'CHECKBOX', uiHint: 'simple_checkbox' },
+      { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
   },
 ];
 
@@ -133,7 +287,8 @@ export async function getMyTasks(
     filteredTasks = MOCK_TASKS.filter((t) => t.status === 'done');
   }
   
-  return [...filteredTasks];
+  // Normaliser toutes les tâches vers le type Task central
+  return filteredTasks.map((rawTask) => normalizeTask(rawTask));
 }
 
 /**
@@ -144,7 +299,12 @@ export async function getMyTasks(
  */
 export async function getTaskById(id: string): Promise<Task | undefined> {
   await delay();
-  return MOCK_TASKS.find((t) => t.id === id);
+  const rawTask = MOCK_TASKS.find((t) => t.id === id);
+  if (!rawTask) {
+    return undefined;
+  }
+  // Normaliser la tâche vers le type Task central
+  return normalizeTask(rawTask);
 }
 
 /**
@@ -156,13 +316,14 @@ export async function getTaskById(id: string): Promise<Task | undefined> {
  */
 export async function updateTaskStatus(id: string, status: TaskStatus): Promise<Task> {
   await delay();
-  const task = MOCK_TASKS.find((t) => t.id === id);
-  if (!task) {
+  const rawTask = MOCK_TASKS.find((t) => t.id === id);
+  if (!rawTask) {
     throw new Error(`Task with id ${id} not found`);
   }
-  task.status = status;
-  task.updatedAt = new Date().toISOString();
-  return { ...task };
+  rawTask.status = status;
+  rawTask.updatedAt = new Date().toISOString();
+  // Normaliser la tâche vers le type Task central
+  return normalizeTask(rawTask);
 }
 
 /**
@@ -172,7 +333,9 @@ export async function updateTaskStatus(id: string, status: TaskStatus): Promise<
  */
 export async function getMyPriorities(): Promise<Task[]> {
   await delay();
-  return MOCK_TASKS.filter((t) => t.status === 'todo' || t.status === 'in_progress').slice(0, 5);
+  const rawTasks = MOCK_TASKS.filter((t) => t.status === 'todo' || t.status === 'in_progress').slice(0, 5);
+  // Normaliser toutes les tâches vers le type Task central
+  return rawTasks.map((rawTask) => normalizeTask(rawTask));
 }
 
 /**
@@ -184,9 +347,11 @@ export async function getDueSoon(): Promise<Task[]> {
   await delay();
   const today = new Date().toISOString().split('T')[0];
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  return MOCK_TASKS.filter(
+  const rawTasks = MOCK_TASKS.filter(
     (t) => t.dueDate && t.dueDate >= today && t.dueDate <= nextWeek && t.status !== 'done',
   ).slice(0, 5);
+  // Normaliser toutes les tâches vers le type Task central
+  return rawTasks.map((rawTask) => normalizeTask(rawTask));
 }
 
 /**
@@ -196,13 +361,15 @@ export async function getDueSoon(): Promise<Task[]> {
  */
 export async function getRecentlyUpdated(): Promise<Task[]> {
   await delay();
-  return [...MOCK_TASKS]
+  const rawTasks = [...MOCK_TASKS]
     .sort((a, b) => {
       const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       return dateB - dateA;
     })
     .slice(0, 5);
+  // Normaliser toutes les tâches vers le type Task central
+  return rawTasks.map((rawTask) => normalizeTask(rawTask));
 }
 
 /**
@@ -213,9 +380,11 @@ export async function getRecentlyUpdated(): Promise<Task[]> {
 export async function getLate(): Promise<Task[]> {
   await delay();
   const today = new Date().toISOString().split('T')[0];
-  return MOCK_TASKS.filter(
+  const rawTasks = MOCK_TASKS.filter(
     (t) => t.dueDate && new Date(t.dueDate) < new Date(today) && t.status !== 'done',
   );
+  // Normaliser toutes les tâches vers le type Task central
+  return rawTasks.map((rawTask) => normalizeTask(rawTask));
 }
 
 /**
@@ -226,14 +395,15 @@ export async function getLate(): Promise<Task[]> {
  */
 export async function quickCapture(text: string): Promise<Task> {
   await delay();
-  const newTask: Task = {
+  const newRawTask: RawTaskMock = {
     id: `qc-${Date.now()}`,
     title: text,
     status: 'todo',
     projectName: 'Inbox',
     updatedAt: new Date().toISOString(),
   };
-  MOCK_TASKS.push(newTask);
-  return newTask;
+  MOCK_TASKS.push(newRawTask);
+  // Normaliser la tâche vers le type Task central
+  return normalizeTask(newRawTask);
 }
 

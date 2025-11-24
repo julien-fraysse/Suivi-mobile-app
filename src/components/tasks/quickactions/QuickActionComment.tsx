@@ -5,7 +5,7 @@ import { useTheme } from 'react-native-paper';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviButton } from '@components/ui/SuiviButton';
-import { Task } from '../../../api/tasks';
+import type { Task } from '../../../types/task';
 import { tokens } from '@theme';
 
 export interface QuickActionCommentProps {

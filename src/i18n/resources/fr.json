@@ -57,7 +57,8 @@
       "checkbox_checked": "Étape cochée",
       "checkbox_unchecked": "Étape décochée",
       "selected_option": "Option sélectionnée : {{option}}",
-      "generic": "Action {{actionType}} effectuée"
+      "generic": "Action {{actionType}} effectuée",
+      "task_updated": "{{field}} modifié : {{value}}"
     },
     "context": {
       "separator": " · ",
@@ -79,11 +80,20 @@
       "blocked": "Bloquée",
       "done": "Terminée"
     },
-    "due": "Échéance : "
+    "due": "Échéance : ",
+    "sections": {
+      "overdue": "En retard",
+      "today": "Aujourd'hui",
+      "thisWeek": "Cette semaine",
+      "nextWeek": "Semaine prochaine",
+      "later": "Plus tard",
+      "noDate": "Sans date"
+    }
   },
   "taskDetail": {
     "status": "Statut",
     "overview": "Aperçu de la tâche",
+    "overviewTitle": "Vue tâche",
     "quickAction": "Action rapide",
     "quickActionSubtitle": "En lien avec votre notification",
     "details": "Détails",
@@ -93,7 +103,26 @@
     "updated": "Mis à jour",
     "activityTimeline": "Historique d'activité",
     "noActivity": "Aucune activité",
-    "noDescription": "Aucune description"
+    "noDescription": "Aucune description",
+    "breadcrumb": "{{workspace}} > {{board}}",
+    "metadata": "Métadonnées",
+    "information": "Informations",
+    "editableFields": "Champs éditables",
+    "quickActions": "Actions rapides",
+    "priority": "Priorité",
+    "priority.normal": "Normal",
+    "priority.high": "Haute",
+    "priority.low": "Basse",
+    "comments": "Commentaires / Activité",
+    "activity": "Activité",
+    "activitySubtitle": "Historique des actions et commentaires",
+    "editStatus": "Modifier le statut",
+    "editDueDate": "Modifier l'échéance",
+    "editAssignee": "Modifier l'assigné",
+    "editDescription": "Modifier la description",
+    "description": "Description",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
   },
   "activityDetail": {
     "overview": "Aperçu de l'activité",

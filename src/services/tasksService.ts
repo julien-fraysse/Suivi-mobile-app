@@ -3,6 +3,8 @@
  * 
  * Service API pour les tâches avec sélection automatique mock/API.
  * Utilise API_MODE pour basculer entre les mocks et les endpoints réels.
+ * 
+ * TODO: align this with central Task type from src/types/task.ts
  */
 
 import { API_MODE } from '../config/apiMode';

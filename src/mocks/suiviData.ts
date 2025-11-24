@@ -2,7 +2,7 @@
  * Suivi Data - Source Unique de Vérité pour les Données Mockées
  * 
  * Ce fichier centralise TOUTES les données mockées pour le MVP Suivi mobile :
- * - Tâches (avec Quick Actions)
+ * - Tâches (avec Quick Actions) - IMPORTÉES depuis tasksApi.mock.ts (source unique)
  * - Notifications (liées aux tâches via relatedTaskId)
  * 
  * RÈGLE ABSOLUE :
@@ -18,7 +18,9 @@
  * @see docs/suiviData.md pour la documentation complète
  */
 
-import type { Task, TaskStatus } from '../api/tasks';
+import type { Task, TaskStatus } from '../types/task';
+import { MOCK_TASKS } from '../api/tasksApi.mock';
+import { normalizeTask } from '../types/task';
 
 // ============================================================================
 // TYPES
@@ -72,155 +74,22 @@ export type SuiviNotification = {
 };
 
 // ============================================================================
-// TÂCHES (10 tâches avec Quick Actions)
+// TÂCHES (importées depuis tasksApi.mock.ts - source unique de vérité)
 // ============================================================================
 
 /**
  * TASKS
  * 
- * Source unique de vérité pour les tâches mockées.
+ * Alias pour MOCK_TASKS depuis tasksApi.mock.ts (source unique de vérité).
  * 
  * IMPORTANT :
- * - IDs : strings numériques '1', '2', '3', etc. (compatible API backend)
- * - Toutes les tâches ont une quickAction pour le MVP
+ * - Les tâches sont maintenant importées depuis tasksApi.mock.ts
+ * - Cela garantit que MyTasksScreen et TaskDetailScreen utilisent les mêmes données
  * - Les IDs doivent être cohérents avec les relatedTaskId des notifications
+ * - Toutes les tâches (y compris les 6 nouvelles "demo-*") sont disponibles partout
  */
-export const TASKS: Task[] = [
-  {
-    id: '1',
-    title: 'Répondre à un commentaire sur le design system',
-    status: 'in_progress',
-    dueDate: '2024-11-20',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-16T10:00:00Z',
-    quickAction: {
-      actionType: "COMMENT",
-      uiHint: "comment_input",
-    },
-  },
-  {
-    id: '2',
-    title: 'Approuver ou refuser la demande de composants UI',
-    status: 'done',
-    dueDate: '2024-11-15',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-15T16:30:00Z',
-    quickAction: {
-      actionType: "APPROVAL",
-      uiHint: "approval_dual_button",
-      payload: { requestId: "req_1" },
-    },
-  },
-  {
-    id: '3',
-    title: 'Noter l\'intégration des polices Inter et IBM Plex Mono',
-    status: 'done',
-    dueDate: '2024-11-14',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-14T14:20:00Z',
-    quickAction: {
-      actionType: "RATING",
-      uiHint: "stars_1_to_5",
-    },
-  },
-  {
-    id: '4',
-    title: 'Marquer la progression de la configuration de navigation',
-    status: 'todo',
-    dueDate: '2024-11-21',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-16T08:00:00Z',
-    quickAction: {
-      actionType: "PROGRESS",
-      uiHint: "stars_1_to_5",
-      payload: { min: 0, max: 100 },
-    },
-  },
-  {
-    id: '5',
-    title: 'Indiquer la météo pour la page de profil',
-    status: 'todo',
-    dueDate: '2024-11-22',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-16T09:00:00Z',
-    quickAction: {
-      actionType: "WEATHER",
-      uiHint: "weather_picker",
-      payload: { options: ["sunny", "cloudy", "storm"] },
-    },
-  },
-  {
-    id: '6',
-    title: 'Définir l\'échéance pour l\'optimisation des performances',
-    status: 'blocked',
-    dueDate: '2024-11-25',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-16T11:00:00Z',
-    quickAction: {
-      actionType: "CALENDAR",
-      uiHint: "calendar_picker",
-    },
-  },
-  {
-    id: '7',
-    title: 'Cocher les étapes du système de notifications push',
-    status: 'todo',
-    dueDate: '2024-11-18',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-16T09:15:00Z',
-    quickAction: {
-      actionType: "CHECKBOX",
-      uiHint: "simple_checkbox",
-    },
-  },
-  {
-    id: '8',
-    title: 'Sélectionner le type de tests unitaires à créer',
-    status: 'in_progress',
-    dueDate: '2024-11-19',
-    projectName: 'Mobile App',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-16T10:30:00Z',
-    quickAction: {
-      actionType: "SELECT",
-      uiHint: "dropdown_select",
-      payload: { options: ["Option A", "Option B", "Option C"] },
-    },
-  },
-  {
-    id: '9',
-    title: 'Finaliser le planning trimestriel Q1 2025',
-    status: 'in_progress',
-    dueDate: '2024-11-20', // Aujourd'hui (pour test)
-    projectName: 'Quarterly Planning',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-20T10:00:00Z',
-    quickAction: {
-      actionType: "CALENDAR",
-      uiHint: "calendar_picker",
-    },
-  },
-  {
-    id: '10',
-    title: 'Réviser la roadmap stratégique 2025',
-    status: 'blocked',
-    dueDate: '2024-11-10', // Date passée
-    projectName: 'Roadmap 2025',
-    assigneeName: 'Julien',
-    updatedAt: '2024-11-15T10:00:00Z',
-    quickAction: {
-      actionType: "CALENDAR",
-      uiHint: "calendar_picker",
-    },
-  },
-];
+// Normaliser toutes les tâches vers le type Task central
+export const TASKS: Task[] = MOCK_TASKS.map((rawTask) => normalizeTask(rawTask));
 
 // ============================================================================
 // NOTIFICATIONS (liées aux tâches via relatedTaskId)
@@ -451,9 +320,9 @@ export function validateDataIntegrity(): { valid: boolean; errors: string[] } {
       // Cohérence selon le type de notification
       if (notification.type === 'comment' || notification.type === 'mention_in_comment') {
         // Les notifications de commentaire doivent pointer vers des tâches avec quickAction COMMENT
-        if (task.quickAction?.actionType !== 'COMMENT') {
+        if (task.quickAction?.type !== 'COMMENT') {
           errors.push(
-            `Notification "${notification.id}" (type: ${notification.type}) pointe vers une tâche avec quickAction "${task.quickAction?.actionType}" au lieu de "COMMENT"`
+            `Notification "${notification.id}" (type: ${notification.type}) pointe vers une tâche avec quickAction "${task.quickAction?.type}" au lieu de "COMMENT"`
           );
         }
       }

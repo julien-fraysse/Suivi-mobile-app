@@ -3,14 +3,11 @@
  * 
  * Types normalisés pour les tâches dans l'application Suivi.
  * Ces types correspondent à la structure attendue par l'API Suivi.
+ * 
+ * Utilise maintenant le type Task central depuis src/types/task.ts
  */
 
-/**
- * Task Status
- * 
- * Statuts possibles pour une tâche dans le système Suivi.
- */
-export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
+import type { Task, TaskStatus } from '../types/task';
 
 /**
  * Task Filter
@@ -19,67 +16,8 @@ export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
  */
 export type TaskFilter = 'all' | 'active' | 'completed';
 
-/**
- * Task Interface
- * 
- * Représente une tâche dans l'application Suivi.
- * Structure normalisée compatible avec l'API Suivi.
- */
-export interface Task {
-  /** Identifiant unique de la tâche */
-  id: string;
-  
-  /** Titre de la tâche */
-  title: string;
-  
-  /** Description détaillée (optionnelle) */
-  description?: string;
-  
-  /** Statut actuel de la tâche */
-  status: TaskStatus;
-  
-  /** Date d'échéance (format ISO 8601: YYYY-MM-DD) */
-  dueDate?: string;
-  
-  /** Identifiant du projet (optionnel) */
-  projectId?: string;
-  
-  /** Nom du projet (optionnel, pour affichage) */
-  projectName?: string;
-  
-  /** Nom du workspace (optionnel, pour affichage du fil d'Ariane) */
-  workspaceName?: string;
-  
-  /** Nom du board (optionnel, pour affichage du fil d'Ariane) */
-  boardName?: string;
-  
-  /** Nom de l'assigné (optionnel) */
-  assigneeName?: string;
-  
-  /** Initiales de l'assigné (optionnel) */
-  assigneeInitials?: string;
-  
-  /** Date de création (format ISO 8601, optionnelle) */
-  createdAt?: string;
-  
-  /** Date de dernière mise à jour (format ISO 8601) */
-  updatedAt: string;
-  
-  /** Quick Action associée à la tâche (optionnelle) */
-  quickAction?: {
-    actionType:
-      | "COMMENT"
-      | "APPROVAL"
-      | "RATING"
-      | "PROGRESS"
-      | "WEATHER"
-      | "CALENDAR"
-      | "CHECKBOX"
-      | "SELECT";
-    uiHint: string;
-    payload?: Record<string, any>;
-  };
-}
+// Ré-exporter Task et TaskStatus depuis le type central pour compatibilité
+export type { Task, TaskStatus };
 
 /**
  * Task Update Payload
@@ -122,6 +60,9 @@ export interface TasksContextValue {
   
   /** Mettre à jour le statut d'une tâche */
   updateTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
+  
+  /** Mettre à jour une tâche (champs partiels) */
+  updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   
   /** Rafraîchir la liste des tâches */
   refreshTasks: () => Promise<void>;

@@ -7,8 +7,10 @@
  * TODO: Remplacer par de vrais appels API Suivi quand le backend sera prêt.
  */
 
-import type { Task, TaskStatus, TaskUpdatePayload } from '../../tasks/tasks.types';
+import type { Task, TaskStatus } from '../../types/task';
+import type { TaskUpdatePayload } from '../../tasks/tasks.types';
 import { loadTasks, TASKS as MOCK_TASKS } from '../suiviData';
+import { normalizeTask } from '../../types/task';
 
 /**
  * Simule un délai réseau
@@ -24,9 +26,11 @@ function delay(ms: number = 200): Promise<void> {
  */
 export async function loadMockTasks(): Promise<Task[]> {
   // Utilise loadTasks() depuis suiviData.ts (source unique de vérité)
-  const tasks = await loadTasks();
-  console.log("QA-DIAG: loadMockTasks() returning", tasks);
-  return tasks;
+  const rawTasks = await loadTasks();
+  // Normaliser toutes les tâches vers le type Task central
+  const normalizedTasks = rawTasks.map((rawTask) => normalizeTask(rawTask));
+  console.log("QA-DIAG: loadMockTasks() returning", normalizedTasks);
+  return normalizedTasks;
 }
 
 /**
@@ -36,7 +40,12 @@ export async function loadMockTasks(): Promise<Task[]> {
  */
 export async function loadMockTaskById(id: string): Promise<Task | undefined> {
   await delay(200);
-  return MOCK_TASKS.find((task) => task.id === id);
+  const rawTask = MOCK_TASKS.find((task) => task.id === id);
+  if (!rawTask) {
+    return undefined;
+  }
+  // Normaliser la tâche vers le type Task central
+  return normalizeTask(rawTask);
 }
 
 /**
@@ -57,17 +66,18 @@ export async function updateMockTask(
     throw new Error(`Task with id ${id} not found`);
   }
   
-  const task = MOCK_TASKS[taskIndex];
-  const updatedTask: Task = {
-    ...task,
+  const rawTask = MOCK_TASKS[taskIndex];
+  const updatedRawTask = {
+    ...rawTask,
     ...updates,
     updatedAt: new Date().toISOString(),
   };
   
   // Mettre à jour dans le tableau mock
-  MOCK_TASKS[taskIndex] = updatedTask;
+  MOCK_TASKS[taskIndex] = updatedRawTask;
   
-  return { ...updatedTask };
+  // Normaliser la tâche vers le type Task central
+  return normalizeTask(updatedRawTask);
 }
 
 /**

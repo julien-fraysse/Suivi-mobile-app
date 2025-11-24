@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import Constants from 'expo-constants';
 import { Switch } from 'react-native-paper';
 import { useTheme } from 'react-native-paper';
 import { Screen } from '@components/Screen';
@@ -153,8 +154,11 @@ export function MoreScreen() {
     );
   };
 
-  // Version app mockée
-  const appVersion = '1.0.0';
+  // Récupération dynamique du buildNumber depuis app.json
+  const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? null;
+  const designSystemVersion = buildNumber
+    ? buildNumber.split('.').slice(0, 2).join('.')
+    : '—';
 
   // Formater la date du jour selon la locale de l'app (ex: "MERCREDI 19 NOVEMBRE" ou "WEDNESDAY 19 NOVEMBER")
   const formatDateHeader = (): string => {
@@ -413,7 +417,7 @@ export function MoreScreen() {
               </SuiviText>
               <View style={styles.aboutRowValue}>
                 <SuiviText variant="body" color="primary">
-                  {appVersion}
+                  {buildNumber || '—'}
                 </SuiviText>
               </View>
             </View>
@@ -432,7 +436,7 @@ export function MoreScreen() {
               </SuiviText>
               <View style={styles.aboutRowValue}>
                 <SuiviText variant="body" color="primary">
-                  Suivi v1.0
+                  {designSystemVersion}
                 </SuiviText>
               </View>
             </View>

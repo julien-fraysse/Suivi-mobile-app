@@ -49,6 +49,29 @@ export interface TaskQuickAction {
 }
 
 /**
+ * Custom Field
+ * 
+ * Champ personnalisé associé à une tâche.
+ * Compatible avec le futur backend Suivi Desktop.
+ */
+export interface CustomField {
+  /** Identifiant unique du champ personnalisé */
+  id: string;
+  
+  /** Type de champ */
+  type: 'text' | 'number' | 'date' | 'enum' | 'boolean' | 'multi';
+  
+  /** Label du champ (affiché à l'utilisateur) */
+  label: string;
+  
+  /** Valeur actuelle du champ */
+  value?: any;
+  
+  /** Options disponibles (pour type enum et multi) */
+  options?: string[];
+}
+
+/**
  * Task Interface
  * 
  * Représente une tâche dans l'application Suivi.
@@ -99,6 +122,12 @@ export interface Task {
   
   /** Date de création (format ISO 8601, optionnelle) */
   createdAt?: string;
+  
+  /** Priorité de la tâche */
+  priority?: 'normal' | 'low' | 'high';
+  
+  /** Champs personnalisés (compatible API Suivi Desktop) */
+  customFields?: CustomField[];
 }
 
 /**
@@ -227,6 +256,28 @@ export function normalizeTask(raw: unknown): Task {
     description: typeof r.description === 'string' ? r.description : undefined,
     updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : undefined,
     createdAt: typeof r.createdAt === 'string' ? r.createdAt : undefined,
+    priority:
+      r.priority === 'normal' ||
+      r.priority === 'low' ||
+      r.priority === 'high'
+        ? (r.priority as 'normal' | 'low' | 'high')
+        : undefined,
+    customFields: Array.isArray(r.customFields)
+      ? r.customFields
+          .filter((cf) => cf && typeof cf === 'object')
+          .map((cf) => {
+            const field = cf as Record<string, unknown>;
+            return {
+              id: String(field.id ?? ''),
+              type: String(field.type ?? 'text') as CustomField['type'],
+              label: String(field.label ?? ''),
+              value: field.value,
+              options: Array.isArray(field.options)
+                ? field.options.map((opt) => String(opt))
+                : undefined,
+            };
+          })
+      : undefined,
   };
 }
 

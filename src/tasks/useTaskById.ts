@@ -25,12 +25,12 @@ import { useTasksContext } from './TasksContext';
  * @returns { task, isLoading, error } - Tâche et états
  */
 export function useTaskById(taskId: string) {
-  const { getTaskById, isLoading, error } = useTasksContext();
+  const { tasks, isLoading, error } = useTasksContext();
 
-  // Récupérer la tâche (memoïsé pour éviter les recalculs)
+  // Récupérer la tâche (memoïsé avec tasks comme dépendance pour détecter les changements)
   const task = useMemo(() => {
-    return getTaskById(taskId);
-  }, [getTaskById, taskId]);
+    return tasks.find((task) => task.id === taskId);
+  }, [tasks, taskId]);
 
   console.log("QA-DIAG: useTaskById() → taskId =", taskId, "result =", task);
 

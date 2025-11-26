@@ -58,6 +58,10 @@ export let MOCK_TASKS: RawTaskMock[] = [
       { actionType: 'RATING', uiHint: 'stars_1_to_5' },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
+    customFields: [
+      { id: "cf1", type: "text", label: "Client", value: "Decathlon" },
+      { id: "cf2", type: "enum", label: "Complexité", value: "Moyenne", options: ["Faible", "Moyenne", "Haute"] },
+    ],
   },
   {
     id: '3',
@@ -97,6 +101,11 @@ export let MOCK_TASKS: RawTaskMock[] = [
     quickActions: [
       { actionType: 'CALENDAR', uiHint: 'calendar_picker' },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+    customFields: [
+      { id: "cf3", type: "number", label: "Budget", value: 5000 },
+      { id: "cf4", type: "boolean", label: "Urgent", value: true },
+      { id: "cf5", type: "date", label: "Date de début", value: "2024-11-20" },
     ],
   },
   {

@@ -17,13 +17,14 @@
  *   const activeTasks = tasksByStatus('active');
  */
 
-import { useMemo, useEffect, useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth';
 import { API_MODE } from '../config/apiMode';
 import { getMyTasks } from '../api/tasks';
 import type { Task, TaskStatus } from '../types/task';
 import { normalizeTask } from '../types/task';
+import { useTasksContext } from '../tasks/TasksContext';
 
 export type UseMyWorkOptions = {
   /** Filtre initial par statut (optionnel) */
@@ -90,10 +91,8 @@ export function useMyWork(options: UseMyWorkOptions = {}) {
   const { accessToken } = useAuth();
   const { initialStatus } = options;
 
-  // État pour le mode mock (quand React Query est désactivé)
-  const [mockTasks, setMockTasks] = useState<Task[]>([]);
-  const [mockIsLoading, setMockIsLoading] = useState(true);
-  const [mockError, setMockError] = useState<Error | null>(null);
+  // Utiliser TasksContext en mode mock (source unique de vérité)
+  const tasksContext = API_MODE === 'mock' ? useTasksContext() : null;
 
   // React Query pour le mode API
   const query = useInfiniteQuery({
@@ -120,101 +119,32 @@ export function useMyWork(options: UseMyWorkOptions = {}) {
     },
   });
 
-  // Charger les mocks en mode mock (quand React Query est désactivé)
-  useEffect(() => {
-    if (API_MODE === 'mock') {
-      const loadMockTasks = async () => {
-        try {
-          setMockIsLoading(true);
-          setMockError(null);
-          
-          // Charger toutes les pages de tâches
-          const allTasks: Task[] = [];
-          let page = 1;
-          let hasMore = true;
-          
-          while (hasMore) {
-            const result = await getMyTasks(null, {
-              page,
-              pageSize: 20,
-              filters: initialStatus && initialStatus !== 'all' && initialStatus !== 'cancelled'
-                ? { status: initialStatus as 'todo' | 'in_progress' | 'blocked' | 'done' | 'all' }
-                : undefined,
-            });
-            
-            // Normaliser chaque tâche
-            const normalized = result.items.map((rawTask) => normalizeTask(rawTask));
-            allTasks.push(...normalized);
-            
-            hasMore = result.page * result.pageSize < result.total;
-            page++;
-          }
-          
-          setMockTasks(allTasks);
-        } catch (err) {
-          const error = err instanceof Error ? err : new Error('Failed to load tasks');
-          setMockError(error);
-          console.error('Error loading mock tasks:', err);
-        } finally {
-          setMockIsLoading(false);
-        }
-      };
-      
-      loadMockTasks();
-    }
-  }, [initialStatus]);
+  // En mode mock, les tâches sont chargées automatiquement par TasksContext
+  // Plus besoin de useEffect pour charger les mocks
 
   // Fonction de refresh
   const refresh = useCallback(async () => {
     if (API_MODE === 'api') {
       await query.refetch();
     } else {
-      // Recharger les mocks
-      setMockIsLoading(true);
-      setMockError(null);
-      
-      try {
-        const allTasks: Task[] = [];
-        let page = 1;
-        let hasMore = true;
-        
-        while (hasMore) {
-          const result = await getMyTasks(null, {
-            page,
-            pageSize: 20,
-            filters: initialStatus && initialStatus !== 'all' && initialStatus !== 'cancelled'
-              ? { status: initialStatus as 'todo' | 'in_progress' | 'blocked' | 'done' | 'all' }
-              : undefined,
-          });
-          
-          const normalized = result.items.map((rawTask) => normalizeTask(rawTask));
-          allTasks.push(...normalized);
-          
-          hasMore = result.page * result.pageSize < result.total;
-          page++;
-        }
-        
-        setMockTasks(allTasks);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to refresh tasks');
-        setMockError(error);
-      } finally {
-        setMockIsLoading(false);
+      // En mode mock, utiliser TasksContext.refreshTasks() pour synchroniser
+      if (tasksContext) {
+        await tasksContext.refreshTasks();
       }
     }
-  }, [query, initialStatus]);
+  }, [query, tasksContext]);
 
-  // Tâches normalisées (depuis React Query ou mocks)
+  // Tâches normalisées (depuis React Query ou TasksContext)
   const tasks: Task[] = useMemo(() => {
     if (API_MODE === 'api') {
       // En mode API : utiliser les données de React Query et normaliser
       const rawTasks = query.data?.pages.flatMap((page) => page.items) ?? [];
       return rawTasks.map((rawTask) => normalizeTask(rawTask));
     } else {
-      // En mode mock : utiliser les tâches déjà normalisées
-      return mockTasks;
+      // En mode mock : utiliser les tâches depuis TasksContext (source unique de vérité)
+      return tasksContext?.tasks ?? [];
     }
-  }, [API_MODE, query.data, mockTasks]);
+  }, [API_MODE, query.data, tasksContext?.tasks]);
 
   // Tâches triées par date d'échéance (plus urgentes en premier)
   const tasksSorted: Task[] = useMemo(() => {
@@ -270,8 +200,8 @@ export function useMyWork(options: UseMyWorkOptions = {}) {
   );
 
   // États de chargement et d'erreur
-  const isLoading = API_MODE === 'api' ? query.isLoading : mockIsLoading;
-  const error = API_MODE === 'api' ? query.error : mockError;
+  const isLoading = API_MODE === 'api' ? query.isLoading : (tasksContext?.isLoading ?? false);
+  const error = API_MODE === 'api' ? query.error : (tasksContext?.error ?? null);
 
   return {
     // Liste brute de toutes les tâches normalisées

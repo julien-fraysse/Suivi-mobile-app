@@ -15,6 +15,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '@components/Screen';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
+import { SuiviSwitch } from '@components/ui/SuiviSwitch';
 import { UserAvatar } from '@components/ui/UserAvatar';
 import { SuiviStatusPicker } from '@components/ui/SuiviStatusPicker';
 import { useTaskById } from '../tasks/useTaskById';
@@ -66,6 +67,9 @@ export function TaskDetailScreen() {
 
   // Status actuel de la tâche (dérivé du store)
   const taskStatus = task?.status;
+  
+  // Priorité actuelle de la tâche (dérivée du store)
+  const taskPriority = task?.priority;
 
   // Local activity history for Quick Actions (mock)
   const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
@@ -73,8 +77,16 @@ export function TaskDetailScreen() {
   // États pour les modals/pickers d'édition
   const [statusPickerVisible, setStatusPickerVisible] = useState(false);
   const [assigneePickerVisible, setAssigneePickerVisible] = useState(false);
+  const [dueDatePickerVisible, setDueDatePickerVisible] = useState(false);
+  const [priorityPickerVisible, setPriorityPickerVisible] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const [descriptionValue, setDescriptionValue] = useState(task?.description || '');
+  const [dueDateInput, setDueDateInput] = useState(task?.dueDate || '');
+  
+  // États pour les custom fields
+  const [customFieldEditModal, setCustomFieldEditModal] = useState<{ fieldId: string; type: string } | null>(null);
+  const [customFieldInputValue, setCustomFieldInputValue] = useState<string>('');
+  const [customFieldDateInput, setCustomFieldDateInput] = useState<string>('');
 
   // Synchroniser descriptionValue avec task.description quand task change
   React.useEffect(() => {
@@ -82,6 +94,13 @@ export function TaskDetailScreen() {
       setDescriptionValue(task.description);
     }
   }, [task?.description]);
+
+  // Synchroniser dueDateInput avec task.dueDate quand task change
+  React.useEffect(() => {
+    if (task?.dueDate !== undefined) {
+      setDueDateInput(task.dueDate);
+    }
+  }, [task?.dueDate]);
 
   // Helper pour créer une activité de mise à jour de tâche
   function createActivityForTaskUpdate(fieldName: string, newValue: any, oldValue?: any): SuiviActivityEvent | null {
@@ -162,6 +181,7 @@ export function TaskDetailScreen() {
       if (activity) {
         setLocalActivities((prev) => [activity, ...prev]);
       }
+      setDueDatePickerVisible(false);
     } catch (err) {
       console.error('Error updating task due date:', err);
     }
@@ -179,6 +199,21 @@ export function TaskDetailScreen() {
       setAssigneePickerVisible(false);
     } catch (err) {
       console.error('Error updating task assignee:', err);
+    }
+  }
+
+  // Handler pour mettre à jour la priority
+  async function handlePriorityChange(newPriority: 'normal' | 'low' | 'high') {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { priority: newPriority });
+      const activity = createActivityForTaskUpdate(t('taskDetail.priority'), t(`taskDetail.priority.${newPriority}`), task.priority ? t(`taskDetail.priority.${task.priority}`) : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      setPriorityPickerVisible(false);
+    } catch (err) {
+      console.error('Error updating task priority:', err);
     }
   }
 
@@ -277,6 +312,35 @@ export function TaskDetailScreen() {
     }
   }
 
+  // Handler pour mettre à jour un custom field
+  async function handleCustomFieldChange(fieldId: string, newValue: any) {
+    if (!task || !task.customFields) return;
+    try {
+      const field = task.customFields.find((cf) => cf.id === fieldId);
+      if (!field) return;
+
+      const oldValue = field.value;
+      
+      // Mettre à jour uniquement le champ modifié
+      const updatedCustomFields = task.customFields.map((cf) =>
+        cf.id === fieldId ? { ...cf, value: newValue } : cf
+      );
+
+      await updateTask(task.id, { customFields: updatedCustomFields });
+      
+      const activity = createActivityForTaskUpdate(field.label, String(newValue), oldValue ? String(oldValue) : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      
+      setCustomFieldEditModal(null);
+      setCustomFieldInputValue('');
+      setCustomFieldDateInput('');
+    } catch (err) {
+      console.error('Error updating custom field:', err);
+    }
+  }
+
   // Mock users pour le picker d'assignee
   const mockUsers = [
     { id: '1', name: 'Julien', avatarUrl: undefined },
@@ -309,7 +373,7 @@ export function TaskDetailScreen() {
           <SuiviText variant="body" color="primary" style={styles.commentText}>
             {commentText}
           </SuiviText>
-          <SuiviText variant="body2" color="secondary" style={styles.commentTimestamp}>
+          <SuiviText variant="body" color="secondary" style={styles.commentTimestamp}>
             {formatActivityDate(activity.createdAt, t)}
           </SuiviText>
         </View>
@@ -324,7 +388,7 @@ export function TaskDetailScreen() {
           <SuiviText variant="body" color="secondary" style={styles.activityText}>
             {activity.title}
           </SuiviText>
-          <SuiviText variant="body2" color="secondary" style={styles.activityTimestamp}>
+          <SuiviText variant="body" color="secondary" style={styles.activityTimestamp}>
             {formatActivityDate(activity.createdAt, t)}
           </SuiviText>
         </View>
@@ -480,8 +544,6 @@ export function TaskDetailScreen() {
     }
   }
 
-  // Mock priority (pour l'instant, non dynamique)
-  const mockPriority = 'normal';
 
   // Format breadcrumb
   const formatBreadcrumb = (): string | null => {
@@ -505,7 +567,7 @@ export function TaskDetailScreen() {
               <MaterialCommunityIcons name="arrow-left" size={24} color={tokens.colors.text.primary} />
             </Pressable>
             <View style={styles.headerTitleContainer}>
-              <SuiviText variant="h4" style={styles.headerTitle}>
+              <SuiviText variant="h2" style={styles.headerTitle}>
                 {t('taskDetail.overviewTitle')}
               </SuiviText>
             </View>
@@ -586,13 +648,13 @@ export function TaskDetailScreen() {
                 </SuiviText>
               </View>
               {task.dueDate ? (
-                <Pressable onPress={() => {}}>
+                <Pressable onPress={() => setDueDatePickerVisible(true)}>
                   <SuiviText variant="body" color="primary" style={styles.metadataValue}>
                     {formatDate(task.dueDate)}
                   </SuiviText>
                 </Pressable>
               ) : (
-                <Pressable onPress={() => {}}>
+                <Pressable onPress={() => setDueDatePickerVisible(true)}>
                   <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
                     {t('taskDetail.editDueDate')}
                   </SuiviText>
@@ -646,14 +708,25 @@ export function TaskDetailScreen() {
               </View>
             )}
 
-            {/* Priority (mock) */}
+            {/* Priority (éditable) */}
             <View style={styles.metadataRow}>
               <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
                 {t('taskDetail.priority')}
               </SuiviText>
-              <SuiviText variant="body" color="primary" style={styles.metadataValue}>
-                {t(`taskDetail.priority.${mockPriority}`)}
-              </SuiviText>
+              <Pressable
+                onPress={() => setPriorityPickerVisible(true)}
+                style={styles.metadataValueContainer}
+              >
+                <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                  {t(`taskDetail.priority.${taskPriority || 'normal'}`)}
+                </SuiviText>
+                <MaterialCommunityIcons
+                  name="chevron-down"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+              </Pressable>
             </View>
 
             {/* Project */}
@@ -669,6 +742,110 @@ export function TaskDetailScreen() {
             )}
 
           </SuiviCard>
+
+          {/* Section Custom Fields */}
+          {task.customFields && task.customFields.length > 0 && (
+            <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.xl }]}>
+              <SuiviText variant="h2" style={styles.sectionTitle}>
+                {t('taskDetail.customFields')}
+              </SuiviText>
+              <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                {task.customFields.map((field, index) => {
+                  const isLast = index === task.customFields!.length - 1;
+                  
+                  // Rendre la valeur selon le type
+                  const renderValue = () => {
+                    if (field.value === undefined || field.value === null || field.value === '') {
+                      return (
+                        <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                          {t('taskDetail.noValue')}
+                        </SuiviText>
+                      );
+                    }
+                    
+                    switch (field.type) {
+                      case 'boolean':
+                        return (
+                          <SuiviSwitch
+                            value={Boolean(field.value)}
+                            onValueChange={(value) => handleCustomFieldChange(field.id, value)}
+                          />
+                        );
+                      case 'date':
+                        return (
+                          <Pressable onPress={() => {
+                            setCustomFieldEditModal({ fieldId: field.id, type: 'date' });
+                            setCustomFieldDateInput(field.value || '');
+                          }}>
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {formatDate(field.value)}
+                            </SuiviText>
+                          </Pressable>
+                        );
+                      case 'enum':
+                      case 'multi':
+                        return (
+                          <Pressable
+                            onPress={() => {
+                              setCustomFieldEditModal({ fieldId: field.id, type: field.type });
+                            }}
+                            style={styles.metadataValueContainer}
+                          >
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {Array.isArray(field.value) ? field.value.join(', ') : String(field.value)}
+                            </SuiviText>
+                            <MaterialCommunityIcons
+                              name="chevron-down"
+                              size={16}
+                              color={tokens.colors.neutral.medium}
+                              style={styles.metadataIcon}
+                            />
+                          </Pressable>
+                        );
+                      case 'number':
+                        return (
+                          <Pressable onPress={() => {
+                            setCustomFieldEditModal({ fieldId: field.id, type: 'number' });
+                            setCustomFieldInputValue(String(field.value || ''));
+                          }}>
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {String(field.value)}
+                            </SuiviText>
+                          </Pressable>
+                        );
+                      case 'text':
+                      default:
+                        return (
+                          <Pressable onPress={() => {
+                            setCustomFieldEditModal({ fieldId: field.id, type: 'text' });
+                            setCustomFieldInputValue(String(field.value || ''));
+                          }}>
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {String(field.value)}
+                            </SuiviText>
+                          </Pressable>
+                        );
+                    }
+                  };
+
+                  return (
+                    <View key={field.id} style={[styles.metadataRow, isLast && styles.metadataRowLast]}>
+                      <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                        {field.label}
+                      </SuiviText>
+                      {field.type === 'boolean' ? (
+                        <View style={styles.metadataValueContainer}>
+                          {renderValue()}
+                        </View>
+                      ) : (
+                        renderValue()
+                      )}
+                    </View>
+                  );
+                })}
+              </SuiviCard>
+            </View>
+          )}
 
           {/* Description (éditable) - en bloc plein */}
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.descriptionCard}>
@@ -779,10 +956,355 @@ export function TaskDetailScreen() {
               </View>
             </View>
           </Modal>
+
+          {/* Due Date Picker Modal */}
+          <Modal
+            visible={dueDatePickerVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setDueDatePickerVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setDueDatePickerVisible(false)}
+              />
+              <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                <SuiviText variant="h2" style={styles.modalTitle}>
+                  {t('taskDetail.editDueDate')}
+                </SuiviText>
+                <View style={styles.datePickerContainer}>
+                  <TextInput
+                    style={[
+                      styles.dateInput,
+                      {
+                        color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                        borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                        backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
+                      },
+                    ]}
+                    value={dueDateInput}
+                    onChangeText={(text) => {
+                      setDueDateInput(text);
+                      if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        handleDueDateChange(text);
+                      }
+                    }}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={tokens.colors.neutral.medium}
+                  />
+                  <View style={styles.datePickerActions}>
+                    <Pressable
+                      onPress={() => setDueDatePickerVisible(false)}
+                      style={styles.datePickerButton}
+                    >
+                      <SuiviText variant="body" color="secondary">
+                        {t('taskDetail.cancel')}
+                      </SuiviText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        handleDueDateChange(today);
+                        setDueDatePickerVisible(false);
+                      }}
+                      style={styles.datePickerButton}
+                    >
+                      <SuiviText variant="body" color="primary">
+                        {t('tasks.sections.today')}
+                      </SuiviText>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Priority Picker Modal */}
+          <Modal
+            visible={priorityPickerVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setPriorityPickerVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setPriorityPickerVisible(false)}
+              />
+              <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                <SuiviText variant="h2" style={styles.modalTitle}>
+                  {t('taskDetail.priority')}
+                </SuiviText>
+                <Pressable
+                  onPress={() => handlePriorityChange('normal')}
+                  style={styles.assigneeOption}
+                >
+                  <SuiviText variant="body" color="primary">
+                    {t('taskDetail.priority.normal')}
+                  </SuiviText>
+                  {(!taskPriority || taskPriority === 'normal') && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color={tokens.colors.brand.primary}
+                    />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={() => handlePriorityChange('low')}
+                  style={styles.assigneeOption}
+                >
+                  <SuiviText variant="body" color="primary">
+                    {t('taskDetail.priority.low')}
+                  </SuiviText>
+                  {taskPriority === 'low' && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color={tokens.colors.brand.primary}
+                    />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={() => handlePriorityChange('high')}
+                  style={styles.assigneeOption}
+                >
+                  <SuiviText variant="body" color="primary">
+                    {t('taskDetail.priority.high')}
+                  </SuiviText>
+                  {taskPriority === 'high' && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color={tokens.colors.brand.primary}
+                    />
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Custom Field Edit Modals */}
+          {customFieldEditModal && (() => {
+            const field = task?.customFields?.find((cf) => cf.id === customFieldEditModal.fieldId);
+            if (!field) return null;
+
+            if (customFieldEditModal.type === 'text' || customFieldEditModal.type === 'number') {
+              return (
+                <Modal
+                  visible={customFieldEditModal !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => {
+                    setCustomFieldEditModal(null);
+                    setCustomFieldInputValue('');
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Pressable
+                      style={styles.modalBackdrop}
+                      onPress={() => {
+                        setCustomFieldEditModal(null);
+                        setCustomFieldInputValue('');
+                      }}
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                      <SuiviText variant="h2" style={styles.modalTitle}>
+                        {field.label}
+                      </SuiviText>
+                      <View style={styles.datePickerContainer}>
+                        <TextInput
+                          style={[
+                            styles.dateInput,
+                            {
+                              color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                              borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                              backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
+                            },
+                          ]}
+                          value={customFieldInputValue}
+                          onChangeText={setCustomFieldInputValue}
+                          keyboardType={customFieldEditModal.type === 'number' ? 'numeric' : 'default'}
+                          placeholder={t('taskDetail.enterValue')}
+                          placeholderTextColor={tokens.colors.neutral.medium}
+                        />
+                        <View style={styles.datePickerActions}>
+                          <Pressable
+                            onPress={() => {
+                              setCustomFieldEditModal(null);
+                              setCustomFieldInputValue('');
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="secondary">
+                              {t('taskDetail.cancel')}
+                            </SuiviText>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => {
+                              const value = customFieldEditModal.type === 'number' 
+                                ? Number(customFieldInputValue) 
+                                : customFieldInputValue;
+                              handleCustomFieldChange(field.id, value);
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="primary">
+                              {t('taskDetail.save')}
+                            </SuiviText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Modal>
+              );
+            }
+
+            if (customFieldEditModal.type === 'date') {
+              return (
+                <Modal
+                  visible={customFieldEditModal !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => {
+                    setCustomFieldEditModal(null);
+                    setCustomFieldDateInput('');
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Pressable
+                      style={styles.modalBackdrop}
+                      onPress={() => {
+                        setCustomFieldEditModal(null);
+                        setCustomFieldDateInput('');
+                      }}
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                      <SuiviText variant="h2" style={styles.modalTitle}>
+                        {field.label}
+                      </SuiviText>
+                      <View style={styles.datePickerContainer}>
+                        <TextInput
+                          style={[
+                            styles.dateInput,
+                            {
+                              color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                              borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                              backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
+                            },
+                          ]}
+                          value={customFieldDateInput}
+                          onChangeText={(text) => {
+                            setCustomFieldDateInput(text);
+                            if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                              handleCustomFieldChange(field.id, text);
+                            }
+                          }}
+                          placeholder="YYYY-MM-DD"
+                          placeholderTextColor={tokens.colors.neutral.medium}
+                        />
+                        <View style={styles.datePickerActions}>
+                          <Pressable
+                            onPress={() => {
+                              setCustomFieldEditModal(null);
+                              setCustomFieldDateInput('');
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="secondary">
+                              {t('taskDetail.cancel')}
+                            </SuiviText>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => {
+                              const today = new Date().toISOString().split('T')[0];
+                              handleCustomFieldChange(field.id, today);
+                              setCustomFieldEditModal(null);
+                              setCustomFieldDateInput('');
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="primary">
+                              {t('tasks.sections.today')}
+                            </SuiviText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Modal>
+              );
+            }
+
+            if (customFieldEditModal.type === 'enum' || customFieldEditModal.type === 'multi') {
+              return (
+                <Modal
+                  visible={customFieldEditModal !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => {
+                    setCustomFieldEditModal(null);
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Pressable
+                      style={styles.modalBackdrop}
+                      onPress={() => {
+                        setCustomFieldEditModal(null);
+                      }}
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                      <SuiviText variant="h2" style={styles.modalTitle}>
+                        {field.label}
+                      </SuiviText>
+                      {field.options?.map((option) => {
+                        const isSelected = customFieldEditModal.type === 'multi'
+                          ? Array.isArray(field.value) && field.value.includes(option)
+                          : field.value === option;
+                        
+                        return (
+                          <Pressable
+                            key={option}
+                            onPress={() => {
+                              if (customFieldEditModal.type === 'multi') {
+                                const currentValues = Array.isArray(field.value) ? field.value : [];
+                                const newValues = isSelected
+                                  ? currentValues.filter((v) => v !== option)
+                                  : [...currentValues, option];
+                                handleCustomFieldChange(field.id, newValues);
+                              } else {
+                                handleCustomFieldChange(field.id, option);
+                              }
+                            }}
+                            style={styles.assigneeOption}
+                          >
+                            <SuiviText variant="body" color="primary">
+                              {option}
+                            </SuiviText>
+                            {isSelected && (
+                              <MaterialCommunityIcons
+                                name="check"
+                                size={20}
+                                color={tokens.colors.brand.primary}
+                              />
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </Modal>
+              );
+            }
+
+            return null;
+          })()}
         </View>
 
         {/* Bloc Actions rapides */}
-        <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.lg }]}>
+        <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.md }]}>
           <SuiviText variant="h2" style={styles.sectionTitle}>
             {t('taskDetail.quickActions')}
           </SuiviText>
@@ -796,7 +1318,7 @@ export function TaskDetailScreen() {
         </View>
 
         {/* Bloc Activité */}
-        <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.lg }]}>
+        <View style={[styles.section, { marginTop: tokens.spacing.md, marginBottom: tokens.spacing.lg }]}>
           <SuiviText variant="h2" style={styles.sectionTitle}>
             {t('taskDetail.activity')}
           </SuiviText>
@@ -1264,5 +1786,25 @@ const styles = StyleSheet.create({
   },
   assigneeOptionAvatar: {
     marginRight: tokens.spacing.md,
+  },
+  datePickerContainer: {
+    marginTop: tokens.spacing.md,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderRadius: tokens.radius.md,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.md,
+    fontSize: tokens.typography.body.fontSize,
+    fontFamily: tokens.typography.body.fontFamily,
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: tokens.spacing.md,
+  },
+  datePickerButton: {
+    paddingVertical: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.md,
   },
 });

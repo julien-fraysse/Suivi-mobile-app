@@ -22,6 +22,7 @@ import type { Task, TaskStatus, TasksContextValue, TaskFilter } from './tasks.ty
 import { loadMockTasks, updateMockTaskStatus } from '../mocks/tasks/mockTaskHelpers';
 import { normalizeTask } from '../types/task';
 import type { TaskUpdatePayload } from './tasks.types';
+import { applyTaskDependencies } from './taskRules';
 
 const TasksContext = createContext<TasksContextValue | undefined>(undefined);
 
@@ -80,13 +81,13 @@ export function TasksProvider({ children }: TasksProviderProps) {
       // TODO: Remplacer par un appel API réel
       // const response = await api.get('/api/tasks', { headers: { Authorization: `Bearer ${token}` } });
       // setTasks(response.data);
-      const rawTasks = await loadMockTasks();
-      // Normaliser toutes les tâches vers le type Task central
-      const normalizedTasks = rawTasks.map((rawTask) => normalizeTask(rawTask));
+      const normalizedTasks = await loadMockTasks();
+      // loadMockTasks() retourne déjà des Task[] normalisés, pas besoin de re-normaliser
       console.log("QA-DIAG: Tasks loaded from mockTasks.ts →", normalizedTasks);
       console.log("TEST-TASKS", normalizedTasks);
       if (normalizedTasks.length > 0) {
         console.log("TEST-FIRST-TASK quickActions =", normalizedTasks[0].quickActions);
+        console.log("TEST-FIRST-TASK customFields =", normalizedTasks[0].customFields);
       }
       setTasks(normalizedTasks);
     } catch (err) {
@@ -223,19 +224,32 @@ export function TasksProvider({ children }: TasksProviderProps) {
       }
 
       // Merger les updates avec la tâche existante
+      // Gérer le merge spécial des customFields (mettre à jour uniquement les champs modifiés)
+      let mergedCustomFields = existingTask.customFields || [];
+      if (updates.customFields !== undefined) {
+        // updates.customFields contient déjà tous les customFields avec le champ modifié mis à jour
+        // (géré dans handleCustomFieldChange de TaskDetailScreen)
+        mergedCustomFields = updates.customFields;
+      }
+
       const mergedTask = {
         ...existingTask,
         ...updates,
+        customFields: mergedCustomFields,
         updatedAt: new Date().toISOString(),
       };
 
       // Normaliser la tâche mise à jour (défensif)
       const normalizedTask = normalizeTask(mergedTask);
 
+      // Appliquer les dépendances automatiques (règles métier)
+      // Passer updates pour que les règles ne s'appliquent que sur les champs modifiés
+      const finalTask = applyTaskDependencies(normalizedTask, updates);
+
       // Mise à jour optimiste (UI immédiate)
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
-          task.id === id ? normalizedTask : task
+          task.id === id ? finalTask : task
         )
       );
 

@@ -122,7 +122,10 @@
     "editDescription": "Edit description",
     "description": "Description",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "customFields": "Custom Fields",
+    "noValue": "No value",
+    "enterValue": "Enter a value"
   },
   "activityDetail": {
     "overview": "Activity overview",

@@ -1,7 +1,18 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "expo/tsconfig.base.json",
   "compilerOptions": {
+    "jsx": "react-native",
     "strict": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "moduleResolution": "bundler",       
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+
     "baseUrl": "./src",
     "paths": {
       "@assets/*": ["assets/*"],
@@ -14,8 +25,5 @@
       "@store/*": ["store/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"]
 }

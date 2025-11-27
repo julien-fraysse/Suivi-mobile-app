@@ -20,6 +20,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import type { Task, TaskStatus, TasksContextValue, TaskFilter } from './tasks.types';
 import { loadMockTasks, updateMockTaskStatus } from '../mocks/tasks/mockTaskHelpers';
+import { normalizeTask } from '../types/task';
+import type { TaskUpdatePayload } from './tasks.types';
+import { applyTaskDependencies } from './taskRules';
 
 const TasksContext = createContext<TasksContextValue | undefined>(undefined);
 
@@ -78,13 +81,15 @@ export function TasksProvider({ children }: TasksProviderProps) {
       // TODO: Remplacer par un appel API réel
       // const response = await api.get('/api/tasks', { headers: { Authorization: `Bearer ${token}` } });
       // setTasks(response.data);
-      const mockTasks = await loadMockTasks();
-      console.log("QA-DIAG: Tasks loaded from mockTasks.ts →", mockTasks);
-      console.log("TEST-TASKS", mockTasks);
-      if (mockTasks.length > 0) {
-        console.log("TEST-FIRST-TASK quickAction =", mockTasks[0].quickAction);
+      const normalizedTasks = await loadMockTasks();
+      // loadMockTasks() retourne déjà des Task[] normalisés, pas besoin de re-normaliser
+      console.log("QA-DIAG: Tasks loaded from mockTasks.ts →", normalizedTasks);
+      console.log("TEST-TASKS", normalizedTasks);
+      if (normalizedTasks.length > 0) {
+        console.log("TEST-FIRST-TASK quickActions =", normalizedTasks[0].quickActions);
+        console.log("TEST-FIRST-TASK customFields =", normalizedTasks[0].customFields);
       }
-      setTasks(mockTasks);
+      setTasks(normalizedTasks);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load tasks');
       setError(error);
@@ -200,6 +205,74 @@ export function TasksProvider({ children }: TasksProviderProps) {
     await loadTasks();
   }, [loadTasks]);
 
+  /**
+   * Mettre à jour une tâche (champs partiels)
+   * 
+   * Mise à jour optimiste : met à jour l'UI immédiatement,
+   * puis synchronise avec le backend (mock pour le MVP).
+   * 
+   * Normalise automatiquement la tâche mise à jour via normalizeTask().
+   * 
+   * TODO: Remplacer par PATCH /api/tasks/:id avec rollback en cas d'erreur
+   */
+  const updateTask = useCallback(
+    async (id: string, updates: Partial<Task>): Promise<void> => {
+      // Trouver la tâche existante
+      const existingTask = tasks.find((task) => task.id === id);
+      if (!existingTask) {
+        throw new Error(`Task with id ${id} not found`);
+      }
+
+      // Merger les updates avec la tâche existante
+      // Gérer le merge spécial des customFields (mettre à jour uniquement les champs modifiés)
+      let mergedCustomFields = existingTask.customFields || [];
+      if (updates.customFields !== undefined) {
+        // updates.customFields contient déjà tous les customFields avec le champ modifié mis à jour
+        // (géré dans handleCustomFieldChange de TaskDetailScreen)
+        mergedCustomFields = updates.customFields;
+      }
+
+      const mergedTask = {
+        ...existingTask,
+        ...updates,
+        customFields: mergedCustomFields,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Normaliser la tâche mise à jour (défensif)
+      const normalizedTask = normalizeTask(mergedTask);
+
+      // Appliquer les dépendances automatiques (règles métier)
+      // Passer updates pour que les règles ne s'appliquent que sur les champs modifiés
+      const finalTask = applyTaskDependencies(normalizedTask, updates);
+
+      // Mise à jour optimiste (UI immédiate)
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === id ? finalTask : task
+        )
+      );
+
+      try {
+        // TODO: Remplacer par un appel API réel
+        // await api.patch(`/api/tasks/${id}`, updates, { headers: { Authorization: `Bearer ${token}` } });
+        // Pour l'instant, on utilise updateMockTaskStatus si c'est un statut, sinon on fait rien (mock)
+        if (updates.status) {
+          await updateMockTaskStatus(id, updates.status);
+        }
+        // Si succès, la tâche est déjà mise à jour dans l'état local (mise à jour optimiste)
+      } catch (err) {
+        // Rollback en cas d'erreur
+        console.error('Error updating task:', err);
+        // Recharger les tâches pour récupérer l'état correct du serveur
+        await loadTasks();
+        // TODO: Afficher une notification d'erreur à l'utilisateur
+        throw err;
+      }
+    },
+    [tasks, loadTasks]
+  );
+
   const value: TasksContextValue = {
     tasks,
     isLoading,
@@ -208,6 +281,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
     getTaskByIdStrict,
     getTasksByStatus,
     updateTaskStatus,
+    updateTask,
     refreshTasks,
   };
 

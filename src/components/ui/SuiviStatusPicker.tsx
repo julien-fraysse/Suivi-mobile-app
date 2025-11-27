@@ -48,7 +48,7 @@ export function SuiviStatusPicker({
       case 'todo':
         return tokens.colors.brand.primary; // #4F5DFF - violet
       case 'in_progress':
-        return tokens.colors.accent.maize; // #FDD447 - jaune
+        return '#FF6B35'; // Orange, même couleur que TaskItem
       case 'blocked':
         return tokens.colors.semantic.error; // #D32F2F - red
       case 'done':

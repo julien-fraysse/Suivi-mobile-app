@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviButton } from '@components/ui/SuiviButton';
-import { Task } from '../../../api/tasks';
+import type { Task } from '../../../types/task';
 import { tokens } from '@theme';
 
 export interface QuickActionApprovalProps {

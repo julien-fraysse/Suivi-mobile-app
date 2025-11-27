@@ -1,34 +1,11 @@
 import { USE_MOCK_API } from '../config/environment';
 import { apiFetch } from './client';
 import * as mockTasks from './tasksApi.mock';
+import type { Task, TaskStatus } from '../types/task';
+import { normalizeTask } from '../types/task';
 
-export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
-
-export type Task = {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  dueDate?: string | null;
-  projectName?: string | null;
-  assigneeName?: string | null;
-  updatedAt?: string;
-  description?: string | null;
-  workspaceName?: string | null;
-  boardName?: string | null;
-  quickAction?: {
-    actionType:
-      | "COMMENT"
-      | "APPROVAL"
-      | "RATING"
-      | "PROGRESS"
-      | "WEATHER"
-      | "CALENDAR"
-      | "CHECKBOX"
-      | "SELECT";
-    uiHint: string;
-    payload?: Record<string, any>;
-  };
-};
+// Ré-exporter Task et TaskStatus pour compatibilité avec les fichiers qui importent depuis './tasks'
+export type { Task, TaskStatus };
 
 export type MyTasksFilters = {
   status?: TaskStatus | 'all';
@@ -60,7 +37,10 @@ export async function getMyTasks(
       : params.filters.status === 'done'
         ? 'completed'
         : 'active'; // 'todo', 'in_progress', 'blocked' → tous traités comme 'active'
-    const tasks = await mockTasks.getMyTasks(filter);
+    const rawTasks = await mockTasks.getMyTasks(filter);
+    
+    // Normaliser toutes les tâches vers le type Task central
+    const tasks = rawTasks.map((rawTask) => normalizeTask(rawTask));
     
     // Paginer manuellement
     const { page = 1, pageSize = 20 } = params;
@@ -98,11 +78,12 @@ export async function getTaskById(
   _accessToken?: string | null,
 ): Promise<Task> {
   if (USE_MOCK_API) {
-    const task = await mockTasks.getTaskById(taskId);
-    if (!task) {
+    const rawTask = await mockTasks.getTaskById(taskId);
+    if (!rawTask) {
       throw new Error(`Task with id ${taskId} not found`);
     }
-    return task;
+    // Normaliser la tâche vers le type Task central
+    return normalizeTask(rawTask);
   }
 
   const path = `/tasks/${encodeURIComponent(taskId)}`;
@@ -119,7 +100,9 @@ export async function updateTaskStatus(
   _accessToken?: string | null,
 ): Promise<Task> {
   if (USE_MOCK_API) {
-    return await mockTasks.updateTaskStatus(taskId, newStatus);
+    const rawTask = await mockTasks.updateTaskStatus(taskId, newStatus);
+    // Normaliser la tâche vers le type Task central
+    return normalizeTask(rawTask);
   }
 
   const path = `/tasks/${encodeURIComponent(taskId)}/status`;
@@ -139,7 +122,9 @@ export async function updateTaskStatus(
  */
 export async function getMyPriorities(_accessToken?: string | null): Promise<Task[]> {
   if (USE_MOCK_API) {
-    return mockTasks.getMyPriorities();
+    const rawTasks = await mockTasks.getMyPriorities();
+    // Normaliser toutes les tâches vers le type Task central
+    return rawTasks.map((rawTask) => normalizeTask(rawTask));
   }
 
   const path = '/me/tasks/priorities';
@@ -152,7 +137,9 @@ export async function getMyPriorities(_accessToken?: string | null): Promise<Tas
  */
 export async function getDueSoon(_accessToken?: string | null): Promise<Task[]> {
   if (USE_MOCK_API) {
-    return mockTasks.getDueSoon();
+    const rawTasks = await mockTasks.getDueSoon();
+    // Normaliser toutes les tâches vers le type Task central
+    return rawTasks.map((rawTask) => normalizeTask(rawTask));
   }
 
   const path = '/me/tasks/due-soon';
@@ -165,7 +152,9 @@ export async function getDueSoon(_accessToken?: string | null): Promise<Task[]> 
  */
 export async function getRecentlyUpdated(_accessToken?: string | null): Promise<Task[]> {
   if (USE_MOCK_API) {
-    return mockTasks.getRecentlyUpdated();
+    const rawTasks = await mockTasks.getRecentlyUpdated();
+    // Normaliser toutes les tâches vers le type Task central
+    return rawTasks.map((rawTask) => normalizeTask(rawTask));
   }
 
   const path = '/me/tasks/recently-updated';
@@ -178,7 +167,9 @@ export async function getRecentlyUpdated(_accessToken?: string | null): Promise<
  */
 export async function getLate(_accessToken?: string | null): Promise<Task[]> {
   if (USE_MOCK_API) {
-    return mockTasks.getLate();
+    const rawTasks = await mockTasks.getLate();
+    // Normaliser toutes les tâches vers le type Task central
+    return rawTasks.map((rawTask) => normalizeTask(rawTask));
   }
 
   const path = '/me/tasks/late';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task } from '../../../api/tasks';
+import type { Task } from '../../../types/task';
 import { QuickActionComment } from './QuickActionComment';
 import { QuickActionApproval } from './QuickActionApproval';
 import { QuickActionRating } from './QuickActionRating';
@@ -23,15 +23,19 @@ export interface QuickActionRendererProps {
 export function QuickActionRenderer({ task, onActionComplete }: QuickActionRendererProps) {
   console.log("QA-DIAG: QuickActionRenderer", {
     taskId: task.id,
-    hasQuickAction: !!task.quickAction,
-    uiHint: task.quickAction?.uiHint
+    hasQuickActions: !!task.quickActions && task.quickActions.length > 0,
+    quickActionsCount: task.quickActions?.length || 0
   });
 
-  if (!task.quickAction) {
+  // QuickActionRenderer est déprécié, utiliser directement les composants QuickAction dans TaskDetailScreen
+  // On retourne null car le rendu est maintenant géré par renderQuickAction dans TaskDetailScreen
+  if (!task.quickActions || task.quickActions.length === 0) {
     return null;
   }
 
-  const { uiHint, payload } = task.quickAction;
+  // Pour rétrocompatibilité, utiliser la première quickAction
+  const firstAction = task.quickActions[0];
+  const { uiHint, payload } = firstAction;
 
   switch (uiHint) {
     case "comment_input":

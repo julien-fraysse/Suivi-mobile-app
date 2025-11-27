@@ -33,6 +33,7 @@ export type SuiviActivityEventType =
   | 'TASK_CREATED'
   | 'TASK_COMPLETED'
   | 'TASK_REPLANNED'
+  | 'COMMENT'
   // Événements liés aux objectifs
   | 'OBJECTIVE_STATUS_CHANGED'
   // Événements liés aux boards

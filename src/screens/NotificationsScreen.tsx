@@ -4,6 +4,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,6 +18,7 @@ import { SuiviText } from '@components/ui/SuiviText';
 import { SegmentedControl } from '@components/ui/SegmentedControl';
 import { NotificationItem } from '@components/ui/NotificationItem';
 import { useNotificationsStore } from '../features/notifications/notificationsStore';
+import { fetchNotifications } from '../services/notificationsService';
 import { tokens } from '@theme';
 
 type NotificationsNavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -38,6 +40,7 @@ export function NotificationsScreen() {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [filter, setFilter] = useState<FilterOption>('all');
+  const [refreshing, setRefreshing] = useState(false);
   
   // Source unique de vérité pour les notifications - TODO: Replace with real Suivi API
   const { notifications, markAsRead, markAllAsRead } = useNotificationsStore();
@@ -62,6 +65,22 @@ export function NotificationsScreen() {
     }
     return notifications;
   }, [notifications, filter]);
+  
+  // Fonction de refresh (pull-to-refresh)
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Recharger les notifications depuis le service (respecte API_MODE)
+      await fetchNotifications();
+      // Le store se mettra à jour automatiquement via son mécanisme interne
+      // Pour l'instant, on simule un délai pour l'UX du pull-to-refresh
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error('Error refreshing notifications:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
   
   // Marquer toutes comme lues
   const handleMarkAllAsRead = () => {
@@ -147,6 +166,9 @@ export function NotificationsScreen() {
         renderItem={renderNotificationItem}
         contentContainerStyle={filteredNotifications.length === 0 ? styles.emptyList : styles.listContent}
         ListEmptyComponent={filteredNotifications.length === 0 ? renderEmptyState : null}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </Screen>
   );

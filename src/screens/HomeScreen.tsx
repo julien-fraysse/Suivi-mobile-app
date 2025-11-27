@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -42,9 +42,10 @@ export function HomeScreen() {
   
   const [filter, setFilter] = useState<'all' | 'board' | 'portal'>('all');
   const [limit, setLimit] = useState(5);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Données activité depuis api.ts via hooks
-  const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities } = useActivityFeed(50);
+  const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities, refetch: refetchActivities } = useActivityFeed(50);
 
   /**
    * Réordonne les activités pour que la première soit un board si disponible
@@ -86,6 +87,18 @@ export function HomeScreen() {
   // Calculer les activités visibles avec pagination
   const visibleActivities = filteredActivities.slice(0, limit);
 
+  // Fonction de refresh (pull-to-refresh)
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Recharger les activités via React Query (respecte API_MODE automatiquement)
+      await refetchActivities();
+    } catch (error) {
+      console.error('Error refreshing activities:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Handler pour la recherche (prêt pour intégration future avec les APIs Suivi)
   const handleSearch = (query: string) => {
@@ -101,7 +114,13 @@ export function HomeScreen() {
         <HomeSearchBar onSearch={handleSearch} />
       </View>
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* AI Daily Pulse Card */}
         <View style={styles.pulseContainer}>
           <AIDailyPulseCard />

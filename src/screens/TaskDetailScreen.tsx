@@ -1,27 +1,38 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   ActivityIndicator,
-  Animated,
-  Easing,
+  TextInput,
+  Pressable,
+  Modal,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '@components/Screen';
-import { ScreenHeader } from '@components/layout/ScreenHeader';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
+import { SuiviSwitch } from '@components/ui/SuiviSwitch';
 import { UserAvatar } from '@components/ui/UserAvatar';
+import { SuiviStatusPicker } from '@components/ui/SuiviStatusPicker';
 import { useTaskById } from '../tasks/useTaskById';
-import type { TaskStatus } from '../tasks/tasks.types';
+import { useTasksContext } from '../tasks/TasksContext';
+import type { TaskStatus, TaskQuickAction } from '../types/task';
 import { useTaskActivity } from '@hooks/useActivity';
 import { useUser } from '@hooks/useUser';
 import { tokens } from '@theme';
 import type { AppStackParamList } from '../navigation/types';
-import { QuickActionRenderer } from '@components/tasks/quickactions/QuickActionRenderer';
+import { QuickActionWeather } from '@components/tasks/quickactions/QuickActionWeather';
+import { QuickActionProgress } from '@components/tasks/quickactions/QuickActionProgress';
+import { QuickActionRating } from '@components/tasks/quickactions/QuickActionRating';
+import { QuickActionCheckbox } from '@components/tasks/quickactions/QuickActionCheckbox';
+import { QuickActionSelect } from '@components/tasks/quickactions/QuickActionSelect';
+import { QuickActionCalendar } from '@components/tasks/quickactions/QuickActionCalendar';
+import { QuickActionApproval } from '@components/tasks/quickactions/QuickActionApproval';
+import { QuickActionComment } from '@components/tasks/quickactions/QuickActionComment';
 import type { SuiviActivityEvent } from '../types/activity';
 
 type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
@@ -49,43 +60,76 @@ export function TaskDetailScreen() {
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
+  const { updateTask } = useTasksContext();
   
   const { data: user } = useUser();
   const { data: taskActivities = [] } = useTaskActivity(taskId);
 
   // Status actuel de la tâche (dérivé du store)
   const taskStatus = task?.status;
+  
+  // Priorité actuelle de la tâche (dérivée du store)
+  const taskPriority = task?.priority;
 
   // Local activity history for Quick Actions (mock)
   const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
 
-  // Animation pour le point violet du titre Quick action
-  const pulse = useRef(new Animated.Value(1)).current;
+  // États pour les modals/pickers d'édition
+  const [statusPickerVisible, setStatusPickerVisible] = useState(false);
+  const [assigneePickerVisible, setAssigneePickerVisible] = useState(false);
+  const [dueDatePickerVisible, setDueDatePickerVisible] = useState(false);
+  const [priorityPickerVisible, setPriorityPickerVisible] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [descriptionValue, setDescriptionValue] = useState(task?.description || '');
+  const [dueDateInput, setDueDateInput] = useState(task?.dueDate || '');
+  
+  // États pour les custom fields
+  const [customFieldEditModal, setCustomFieldEditModal] = useState<{ fieldId: string; type: string } | null>(null);
+  const [customFieldInputValue, setCustomFieldInputValue] = useState<string>('');
+  const [customFieldDateInput, setCustomFieldDateInput] = useState<string>('');
 
-  // Animation en boucle pour le point violet
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 0.2,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
+  // Synchroniser descriptionValue avec task.description quand task change
+  React.useEffect(() => {
+    if (task?.description !== undefined) {
+      setDescriptionValue(task.description);
+    }
+  }, [task?.description]);
 
-  // Style animé pour l'opacité du point
-  const animatedOpacityStyle = { opacity: pulse };
+  // Synchroniser dueDateInput avec task.dueDate quand task change
+  React.useEffect(() => {
+    if (task?.dueDate !== undefined) {
+      setDueDateInput(task.dueDate);
+    }
+  }, [task?.dueDate]);
 
-  // Handle Quick Action completion (mock)
+  // Helper pour créer une activité de mise à jour de tâche
+  function createActivityForTaskUpdate(fieldName: string, newValue: any, oldValue?: any): SuiviActivityEvent | null {
+    if (!task || !user) return null;
+
+    const activityEntry: SuiviActivityEvent = {
+      id: `local-${Date.now()}`,
+      source: 'BOARD',
+      eventType: 'TASK_REPLANNED',
+      title: t('activity.actions.task_updated', { field: fieldName, value: String(newValue) }),
+      workspaceName: task.location?.workspaceName || 'Default',
+      boardName: task.location?.boardName || '',
+      actor: {
+        name: `${user.firstName} ${user.lastName}`,
+        avatarUrl: user.avatarUrl,
+        userId: user.id,
+      },
+      createdAt: new Date().toISOString(),
+      severity: 'INFO',
+      taskInfo: {
+        taskId: task.id,
+        taskTitle: task.title,
+      },
+    };
+
+    return activityEntry;
+  }
+
+  // Handle Quick Action completion (mock) - pour Approval et Comment uniquement
   function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
     if (!task || !user) return;
 
@@ -95,8 +139,8 @@ export function TaskDetailScreen() {
       source: 'BOARD',
       eventType: getEventTypeFromActionType(result.actionType),
       title: getActivityTitle(result.actionType, result.details, t),
-      workspaceName: task.workspaceName || 'Default',
-      boardName: task.boardName,
+      workspaceName: task.location?.workspaceName || 'Default',
+      boardName: task.location?.boardName || '',
       actor: {
         name: `${user.firstName} ${user.lastName}`,
         avatarUrl: user.avatarUrl,
@@ -114,12 +158,243 @@ export function TaskDetailScreen() {
     setLocalActivities((prev) => [activityEntry, ...prev]);
   }
 
+  // Handler pour mettre à jour le statut
+  async function handleStatusChange(newStatus: TaskStatus) {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { status: newStatus });
+      const activity = createActivityForTaskUpdate(t('taskDetail.status'), formatStatus(newStatus, t), formatStatus(task.status, t));
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error updating task status:', err);
+    }
+  }
+
+  // Handler pour mettre à jour la due date
+  async function handleDueDateChange(date: string) {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { dueDate: date });
+      const activity = createActivityForTaskUpdate(t('taskDetail.dueDate'), formatDate(date), task.dueDate ? formatDate(task.dueDate) : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      setDueDatePickerVisible(false);
+    } catch (err) {
+      console.error('Error updating task due date:', err);
+    }
+  }
+
+  // Handler pour mettre à jour l'assignee
+  async function handleAssigneeChange(selectedUser: { id: string; name: string; avatarUrl?: string }) {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { assignee: selectedUser });
+      const activity = createActivityForTaskUpdate(t('taskDetail.assignee'), selectedUser.name, task.assignee?.name);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      setAssigneePickerVisible(false);
+    } catch (err) {
+      console.error('Error updating task assignee:', err);
+    }
+  }
+
+  // Handler pour mettre à jour la priority
+  async function handlePriorityChange(newPriority: 'normal' | 'low' | 'high') {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { priority: newPriority });
+      const activity = createActivityForTaskUpdate(t('taskDetail.priority'), t(`taskDetail.priority.${newPriority}`), task.priority ? t(`taskDetail.priority.${task.priority}`) : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      setPriorityPickerVisible(false);
+    } catch (err) {
+      console.error('Error updating task priority:', err);
+    }
+  }
+
+  // Handler pour mettre à jour la description
+  async function handleDescriptionSave() {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { description: descriptionValue });
+      const activity = createActivityForTaskUpdate(t('taskDetail.description'), descriptionValue, task.description);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      setEditingDescription(false);
+    } catch (err) {
+      console.error('Error updating task description:', err);
+    }
+  }
+
+  // Handler pour mettre à jour le progress
+  async function handleProgressChange(progress: number) {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { progress });
+      const activity = createActivityForTaskUpdate(t('quickActions.progress.title'), `${progress}%`, task.progress !== undefined ? `${task.progress}%` : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error updating task progress:', err);
+    }
+  }
+
+  // Wrapper pour QuickActionProgress qui extrait la valeur du payload
+  function handleProgressAction(result: { actionType: string; details: Record<string, any> }) {
+    // QuickActionProgress envoie { progress, min, max } dans details
+    if (result.details.progress !== undefined) {
+      handleProgressChange(result.details.progress);
+    } else {
+      handleMockAction(result);
+    }
+  }
+
+  // Handler pour mettre à jour le rating
+  async function handleRatingChange(rating: number) {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { rating });
+      const activity = createActivityForTaskUpdate(t('quickActions.rating.title'), `${rating}`, task.rating !== undefined ? `${task.rating}` : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error updating task rating:', err);
+    }
+  }
+
+  // Handler pour mettre à jour le weather
+  async function handleWeatherChange(weather: string) {
+    if (!task) return;
+    try {
+      await updateTask(task.id, { weather });
+      const activity = createActivityForTaskUpdate(t('quickActions.weather.title'), weather, task.weather);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error updating task weather:', err);
+    }
+  }
+
+  // Handler pour mettre à jour le checkbox
+  async function handleCheckboxChange(checked: boolean) {
+    if (!task) return;
+    try {
+      // Note: checkbox n'est pas un champ Task, on crée juste une activité
+      const activity = createActivityForTaskUpdate(t('quickActions.checkbox.title'), checked ? t('quickActions.checkbox.completed') : t('taskDetail.cancel'));
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error updating task checkbox:', err);
+    }
+  }
+
+  // Handler pour mettre à jour le select
+  async function handleSelectChange(selectedOption: string) {
+    if (!task) return;
+    try {
+      // Note: selectValue n'est pas un champ Task standard, on crée juste une activité
+      const activity = createActivityForTaskUpdate(t('quickActions.select.title'), selectedOption);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error updating task select:', err);
+    }
+  }
+
+  // Handler pour mettre à jour un custom field
+  async function handleCustomFieldChange(fieldId: string, newValue: any) {
+    if (!task || !task.customFields) return;
+    try {
+      const field = task.customFields.find((cf) => cf.id === fieldId);
+      if (!field) return;
+
+      const oldValue = field.value;
+      
+      // Mettre à jour uniquement le champ modifié
+      const updatedCustomFields = task.customFields.map((cf) =>
+        cf.id === fieldId ? { ...cf, value: newValue } : cf
+      );
+
+      await updateTask(task.id, { customFields: updatedCustomFields });
+      
+      const activity = createActivityForTaskUpdate(field.label, String(newValue), oldValue ? String(oldValue) : undefined);
+      if (activity) {
+        setLocalActivities((prev) => [activity, ...prev]);
+      }
+      
+      setCustomFieldEditModal(null);
+      setCustomFieldInputValue('');
+      setCustomFieldDateInput('');
+    } catch (err) {
+      console.error('Error updating custom field:', err);
+    }
+  }
+
+  // Mock users pour le picker d'assignee
+  const mockUsers = [
+    { id: '1', name: 'Julien', avatarUrl: undefined },
+    { id: '2', name: 'Alice', avatarUrl: undefined },
+    { id: '3', name: 'Bob', avatarUrl: undefined },
+  ];
+
   // Merge API activities with local activities, sorted by createdAt DESC
   const allActivities = [...localActivities, ...taskActivities].sort((a, b) => {
     const dateA = new Date(a.createdAt).getTime();
     const dateB = new Date(b.createdAt).getTime();
     return dateB - dateA; // DESC
   });
+
+  // Render activity item (comment or system activity)
+  function renderActivityItem(activity: SuiviActivityEvent) {
+    // Detect comment: eventType is COMMENT
+    const isComment = activity.eventType === 'COMMENT';
+    
+    if (isComment) {
+      // Extract comment text from title (format: "{prefix} : {comment}" - FR/EN agnostic)
+      const commentText = activity.title.split(':').slice(1).join(':').trim() || activity.title;
+      
+      // Render comment bubble
+      return (
+        <View key={activity.id} style={[styles.commentContainer, { backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default }]}>
+          <SuiviText variant="body" color="primary" style={styles.commentAuthor}>
+            {activity.actor.name}
+          </SuiviText>
+          <SuiviText variant="body" color="primary" style={styles.commentText}>
+            {commentText}
+          </SuiviText>
+          <SuiviText variant="body" color="secondary" style={styles.commentTimestamp}>
+            {formatActivityDate(activity.createdAt, t)}
+          </SuiviText>
+        </View>
+      );
+    }
+    
+    // Render system activity (simple line with dot)
+    return (
+      <View key={activity.id} style={styles.activityRow}>
+        <View style={styles.activityDot} />
+        <View style={styles.activityContent}>
+          <SuiviText variant="body" color="secondary" style={styles.activityText}>
+            {activity.title}
+          </SuiviText>
+          <SuiviText variant="body" color="secondary" style={styles.activityTimestamp}>
+            {formatActivityDate(activity.createdAt, t)}
+          </SuiviText>
+        </View>
+      </View>
+    );
+  }
 
   // Loading state
   if (isLoadingTask) {
@@ -159,195 +434,907 @@ export function TaskDetailScreen() {
   console.log(
     "QA-DIAG: TaskDetailScreen rendering for",
     task?.id,
-    "quickAction =",
-    task?.quickAction
+    "quickActions =",
+    task?.quickActions
   );
+
+  // Helper function to render a single Quick Action
+  function renderQuickAction(qa: TaskQuickAction, index: number) {
+    switch (qa.type) {
+      case 'WEATHER':
+        return (
+          <QuickActionWeather
+            key={index}
+            task={task!}
+            payload={qa.payload}
+            onActionComplete={(result) => {
+              if (result.details.weather) {
+                handleWeatherChange(result.details.weather);
+              } else {
+                handleMockAction(result);
+              }
+            }}
+          />
+        );
+      case 'PROGRESS':
+        return (
+          <QuickActionProgress
+            key={index}
+            task={task!}
+            payload={qa.payload || { value: task?.progress || 0 }}
+            onActionComplete={handleProgressAction}
+          />
+        );
+      case 'RATING':
+        return (
+          <QuickActionRating
+            key={index}
+            task={task!}
+            onActionComplete={(result) => {
+              if (result.details.rating !== undefined) {
+                handleRatingChange(result.details.rating);
+              } else {
+                handleMockAction(result);
+              }
+            }}
+          />
+        );
+      case 'CHECKBOX':
+        return (
+          <QuickActionCheckbox
+            key={index}
+            task={task!}
+            onActionComplete={(result) => {
+              if (result.details.checked !== undefined) {
+                handleCheckboxChange(result.details.checked);
+              } else {
+                handleMockAction(result);
+              }
+            }}
+          />
+        );
+      case 'SELECT':
+        return (
+          <QuickActionSelect
+            key={index}
+            task={task!}
+            payload={qa.payload}
+            onActionComplete={(result) => {
+              if (result.details.selectedOption) {
+                handleSelectChange(result.details.selectedOption);
+              } else {
+                handleMockAction(result);
+              }
+            }}
+          />
+        );
+      case 'CALENDAR':
+        return (
+          <QuickActionCalendar
+            key={index}
+            task={task!}
+            onActionComplete={(result) => {
+              if (result.details.date) {
+                handleDueDateChange(result.details.date);
+              } else {
+                handleMockAction(result);
+              }
+            }}
+          />
+        );
+      case 'APPROVAL':
+        return (
+          <QuickActionApproval
+            key={index}
+            task={task!}
+            payload={qa.payload}
+            onActionComplete={handleMockAction}
+          />
+        );
+      case 'COMMENT':
+        return (
+          <QuickActionComment
+            key={index}
+            task={task!}
+            onActionComplete={handleMockAction}
+          />
+        );
+      default:
+        return null;
+    }
+  }
+
+
+  // Format breadcrumb
+  const formatBreadcrumb = (): string | null => {
+    if (!task.location) return null;
+    const { workspaceName, boardName } = task.location;
+    if (workspaceName && boardName) {
+      return t('taskDetail.breadcrumb', { workspace: workspaceName, board: boardName });
+    }
+    if (workspaceName) return workspaceName;
+    if (boardName) return boardName;
+    return null;
+  };
 
   return (
     <Screen scrollable noTopBackground>
       <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
-        {/* Screen Header avec bouton retour */}
-        <ScreenHeader 
-          title={t('taskDetail.overview')} 
-          showBackButton 
-          onBack={() => navigation.goBack()} 
-        />
-
-        {/* Task Title (display only, no label) */}
-        <View style={styles.taskTitleContainer}>
-        <SuiviText variant="h1" style={styles.taskTitleText}>
-          {task.title}
-        </SuiviText>
-      </View>
-
-      {/* Status Display (read-only) */}
-      <View style={styles.statusSection}>
-        <SuiviCard 
-          padding="md" 
-          elevation="card" 
-          variant="default" 
-          style={[
-            styles.statusCard,
-            {
-              borderWidth: 1.5,
-              borderColor: statusColors.border,
-              borderLeftWidth: 6,
-              borderLeftColor: statusColors.border,
-              borderRadius: 10,
-              backgroundColor: theme.colors.surface,
-            },
-          ]}
-        >
-          <SuiviText variant="label" color="secondary" style={[styles.statusLabel, { opacity: 0.7 }]}>
-            {t('taskDetail.status')}
-          </SuiviText>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor: statusColors.bg,
-              },
-            ]}
-          >
-            <SuiviText variant="body" style={{ color: statusColors.text, fontWeight: '600', fontSize: 13 }}>
-              {formatStatus(taskStatus!, t)}
-            </SuiviText>
-          </View>
-        </SuiviCard>
-      </View>
-
-      {/* Quick Action Renderer */}
-      {task && task.quickAction && (
-        <View style={styles.section}>
-          <View style={styles.quickActionHeader}>
-            <SuiviText variant="h1" style={styles.quickActionTitle}>
-              {t('taskDetail.quickAction')}
-            </SuiviText>
-            <Animated.View style={[styles.quickActionDot, { backgroundColor: tokens.colors.brand.primary }, animatedOpacityStyle]} />
-          </View>
-          <SuiviText variant="label" color="secondary" style={styles.quickActionSubtitle}>
-            {t('taskDetail.quickActionSubtitle')}
-          </SuiviText>
-          <QuickActionRenderer task={task} onActionComplete={handleMockAction} />
-        </View>
-      )}
-
-      {/* Task Details Card */}
-      <View style={styles.section}>
-        <SuiviText variant="h1" style={styles.sectionTitle}>
-          {t('taskDetail.details')}
-        </SuiviText>
-        <SuiviCard padding="md" elevation="card" variant="default" style={[styles.card, styles.detailsCard]}>
-        {/* Description */}
-        {task.description ? (
-          <View style={styles.descriptionRow}>
-            <SuiviText variant="body" color="primary">
-              {task.description}
-            </SuiviText>
-          </View>
-        ) : (
-          <View style={styles.descriptionRow}>
-            <SuiviText variant="body" color="secondary" style={{ opacity: 0.6 }}>
-              {t('taskDetail.noDescription')}
-            </SuiviText>
-          </View>
-        )}
-
-        {/* Project/Board Label */}
-        {task.projectName && (
-          <View style={styles.infoRow}>
-            <SuiviText variant="label" color="secondary" style={styles.label}>
-              {t('taskDetail.projectBoard')}
-            </SuiviText>
-            <SuiviText variant="body" color="primary">
-              {task.projectName}
-            </SuiviText>
-          </View>
-        )}
-
-        {/* Due Date */}
-        {task.dueDate && (
-          <View style={styles.infoRow}>
-            <SuiviText variant="label" color="secondary" style={styles.label}>
-              {t('taskDetail.dueDate')}
-            </SuiviText>
-            <SuiviText variant="body" color="primary">
-              {formatDate(task.dueDate)}
-            </SuiviText>
-          </View>
-        )}
-
-        {/* Assigned User */}
-        {task.assigneeName && (
-          <View style={styles.infoRow}>
-            <SuiviText variant="label" color="secondary" style={styles.label}>
-              {t('taskDetail.assignee')}
-            </SuiviText>
-            <View style={styles.assigneeContainer}>
-              <UserAvatar
-                size={32}
-                fullName={task.assigneeName}
-                style={styles.avatar}
-              />
-              <SuiviText variant="body" color="primary" style={styles.assigneeText}>
-                {task.assigneeName}
+        {/* Header inline "Task Overview" avec bouton retour */}
+        <View style={styles.headerContainer}>
+          <View style={styles.headerRow}>
+            <Pressable onPress={() => navigation.goBack()} style={styles.backIcon}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color={tokens.colors.text.primary} />
+            </Pressable>
+            <View style={styles.headerTitleContainer}>
+              <SuiviText variant="h2" style={styles.headerTitle}>
+                {t('taskDetail.overviewTitle')}
               </SuiviText>
             </View>
           </View>
-        )}
+        </View>
 
-        {/* Updated At */}
-        {task.updatedAt && (
-          <View style={styles.infoRow}>
-            <SuiviText variant="label" color="secondary" style={styles.label}>
-              {t('taskDetail.updated')}
-            </SuiviText>
-            <SuiviText variant="body" color="secondary">
-              {formatDate(task.updatedAt)}
+        {/* En-tête Monday-like : Titre + Breadcrumb + Badge Statut */}
+        <View style={styles.headerSection}>
+          {/* Breadcrumb */}
+          {formatBreadcrumb() && (
+            <View style={styles.breadcrumbContainer}>
+              <SuiviText variant="label" color="secondary" style={styles.breadcrumb}>
+                {formatBreadcrumb()}
+              </SuiviText>
+            </View>
+          )}
+
+          {/* Titre de la tâche */}
+          <View style={styles.taskTitleContainer}>
+            <SuiviText variant="h1" style={styles.taskTitleText}>
+              {task.title}
             </SuiviText>
           </View>
-        )}
-      </SuiviCard>
-      </View>
 
-      {/* Activity Timeline Section */}
-      <View style={styles.section}>
-        <SuiviText variant="h1" style={[styles.sectionTitle, styles.activityTimelineTitle]}>
-          {t('taskDetail.activityTimeline')}
-        </SuiviText>
-        {allActivities.length > 0 ? (
-          allActivities.map((activity, index) => (
-            <View key={activity.id} style={styles.timelineItem}>
-              {index < allActivities.length - 1 && <View style={styles.timelineLine} />}
-              <View style={styles.timelineDot} />
-              <SuiviCard
-                padding="md"
-                elevation="sm"
-                variant="default"
-                style={styles.activityCard}
+          {/* Badge Statut inline (éditable) */}
+          <View style={styles.statusBadgeContainer}>
+            <Pressable onPress={() => setStatusPickerVisible(true)}>
+              <View
+                style={[
+                  styles.statusBadgeInline,
+                  {
+                    backgroundColor: statusColors.bg,
+                    borderColor: statusColors.border,
+                  },
+                ]}
               >
-                <SuiviText variant="body" color="primary">
-                  {t('activity.user_action', { actor: activity.actor.name, action: activity.title })}
+                <View style={styles.statusBadgeContent}>
+                  <SuiviText variant="label" style={{ color: statusColors.text, fontWeight: '600' }}>
+                    {formatStatus(taskStatus!, t)}
+                  </SuiviText>
+                  <MaterialCommunityIcons
+                    name="chevron-down"
+                    size={16}
+                    color={statusColors.text}
+                    style={styles.statusBadgeIcon}
+                  />
+                </View>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* Status Picker Modal */}
+          <SuiviStatusPicker
+            visible={statusPickerVisible}
+            onClose={() => setStatusPickerVisible(false)}
+            currentStatus={taskStatus!}
+            onSelectStatus={handleStatusChange}
+          />
+        </View>
+
+        {/* Bloc Informations principales */}
+        <View style={[styles.section, { marginBottom: tokens.spacing.xl }]}>
+          <SuiviText variant="h2" style={styles.sectionTitle}>
+            {t('taskDetail.information')}
+          </SuiviText>
+          <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+            {/* Date d'échéance (éditable) */}
+            <View style={styles.metadataRow}>
+              <View style={styles.metadataLabelContainer}>
+                <MaterialCommunityIcons
+                  name="calendar"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.dueDate')}
                 </SuiviText>
-                {activity.taskInfo?.taskTitle && (
-                  <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
-                    {t('activity.on_task', { taskTitle: activity.taskInfo.taskTitle })}
+              </View>
+              {task.dueDate ? (
+                <Pressable onPress={() => setDueDatePickerVisible(true)}>
+                  <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                    {formatDate(task.dueDate)}
+                  </SuiviText>
+                </Pressable>
+              ) : (
+                <Pressable onPress={() => setDueDatePickerVisible(true)}>
+                  <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                    {t('taskDetail.editDueDate')}
+                  </SuiviText>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Assignee (éditable) */}
+            <View style={styles.metadataRow}>
+              <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                {t('taskDetail.assignee')}
+              </SuiviText>
+              <Pressable
+                onPress={() => setAssigneePickerVisible(true)}
+                style={styles.metadataValueContainer}
+              >
+                {task.assignee?.name ? (
+                  <>
+                    <UserAvatar
+                      size={24}
+                      fullName={task.assignee.name}
+                      style={styles.metadataAvatar}
+                    />
+                    <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                      {task.assignee.name}
+                    </SuiviText>
+                  </>
+                ) : (
+                  <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                    {t('taskDetail.editAssignee')}
                   </SuiviText>
                 )}
-                <SuiviText variant="body" color="secondary" style={styles.activityMeta}>
-                  {formatActivityDate(activity.createdAt, t)}
+                <MaterialCommunityIcons
+                  name="chevron-down"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+              </Pressable>
+            </View>
+
+            {/* Dernière mise à jour */}
+            {task.updatedAt && (
+              <View style={styles.metadataRow}>
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.updated')}
                 </SuiviText>
+                <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                  {formatDate(task.updatedAt)}
+                </SuiviText>
+              </View>
+            )}
+
+            {/* Priority (éditable) */}
+            <View style={styles.metadataRow}>
+              <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                {t('taskDetail.priority')}
+              </SuiviText>
+              <Pressable
+                onPress={() => setPriorityPickerVisible(true)}
+                style={styles.metadataValueContainer}
+              >
+                <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                  {t(`taskDetail.priority.${taskPriority || 'normal'}`)}
+                </SuiviText>
+                <MaterialCommunityIcons
+                  name="chevron-down"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+              </Pressable>
+            </View>
+
+            {/* Project */}
+            {task.projectName && (
+              <View style={[styles.metadataRow, styles.metadataRowLast]}>
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.projectBoard')}
+                </SuiviText>
+                <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                  {task.projectName}
+                </SuiviText>
+              </View>
+            )}
+
+          </SuiviCard>
+
+          {/* Section Custom Fields */}
+          {task.customFields && task.customFields.length > 0 && (
+            <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.xl }]}>
+              <SuiviText variant="h2" style={styles.sectionTitle}>
+                {t('taskDetail.customFields')}
+              </SuiviText>
+              <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                {task.customFields.map((field, index) => {
+                  const isLast = index === task.customFields!.length - 1;
+                  
+                  // Rendre la valeur selon le type
+                  const renderValue = () => {
+                    if (field.value === undefined || field.value === null || field.value === '') {
+                      return (
+                        <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                          {t('taskDetail.noValue')}
+                        </SuiviText>
+                      );
+                    }
+                    
+                    switch (field.type) {
+                      case 'boolean':
+                        return (
+                          <SuiviSwitch
+                            value={Boolean(field.value)}
+                            onValueChange={(value) => handleCustomFieldChange(field.id, value)}
+                          />
+                        );
+                      case 'date':
+                        return (
+                          <Pressable onPress={() => {
+                            setCustomFieldEditModal({ fieldId: field.id, type: 'date' });
+                            setCustomFieldDateInput(field.value || '');
+                          }}>
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {formatDate(field.value)}
+                            </SuiviText>
+                          </Pressable>
+                        );
+                      case 'enum':
+                      case 'multi':
+                        return (
+                          <Pressable
+                            onPress={() => {
+                              setCustomFieldEditModal({ fieldId: field.id, type: field.type });
+                            }}
+                            style={styles.metadataValueContainer}
+                          >
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {Array.isArray(field.value) ? field.value.join(', ') : String(field.value)}
+                            </SuiviText>
+                            <MaterialCommunityIcons
+                              name="chevron-down"
+                              size={16}
+                              color={tokens.colors.neutral.medium}
+                              style={styles.metadataIcon}
+                            />
+                          </Pressable>
+                        );
+                      case 'number':
+                        return (
+                          <Pressable onPress={() => {
+                            setCustomFieldEditModal({ fieldId: field.id, type: 'number' });
+                            setCustomFieldInputValue(String(field.value || ''));
+                          }}>
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {String(field.value)}
+                            </SuiviText>
+                          </Pressable>
+                        );
+                      case 'text':
+                      default:
+                        return (
+                          <Pressable onPress={() => {
+                            setCustomFieldEditModal({ fieldId: field.id, type: 'text' });
+                            setCustomFieldInputValue(String(field.value || ''));
+                          }}>
+                            <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                              {String(field.value)}
+                            </SuiviText>
+                          </Pressable>
+                        );
+                    }
+                  };
+
+                  return (
+                    <View key={field.id} style={[styles.metadataRow, isLast && styles.metadataRowLast]}>
+                      <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                        {field.label}
+                      </SuiviText>
+                      {field.type === 'boolean' ? (
+                        <View style={styles.metadataValueContainer}>
+                          {renderValue()}
+                        </View>
+                      ) : (
+                        renderValue()
+                      )}
+                    </View>
+                  );
+                })}
               </SuiviCard>
             </View>
-          ))
-        ) : (
-          <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.activityCard}>
-            <SuiviText variant="body" color="secondary">
-              {t('taskDetail.noActivity')}
-            </SuiviText>
+          )}
+
+          {/* Description (éditable) - en bloc plein */}
+          <SuiviCard padding="md" elevation="card" variant="default" style={styles.descriptionCard}>
+            <View style={styles.descriptionHeader}>
+              <SuiviText variant="label" color="secondary" style={styles.descriptionLabel}>
+                {t('taskDetail.description')}
+              </SuiviText>
+              {!editingDescription && (
+                <Pressable
+                  onPress={() => {
+                    setDescriptionValue(task?.description || '');
+                    setEditingDescription(true);
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="pencil"
+                    size={16}
+                    color={tokens.colors.neutral.medium}
+                  />
+                </Pressable>
+              )}
+            </View>
+            {editingDescription ? (
+              <View style={styles.descriptionEditContainer}>
+                <TextInput
+                  style={[
+                    styles.descriptionInput,
+                    {
+                      color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                      borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                    },
+                  ]}
+                  value={descriptionValue}
+                  onChangeText={setDescriptionValue}
+                  multiline
+                  numberOfLines={3}
+                  placeholder={t('taskDetail.noDescription')}
+                  placeholderTextColor={tokens.colors.neutral.medium}
+                />
+                <View style={styles.descriptionEditActions}>
+                  <Pressable
+                    onPress={() => {
+                      setDescriptionValue(task?.description || '');
+                      setEditingDescription(false);
+                    }}
+                    style={styles.descriptionEditButton}
+                  >
+                    <SuiviText variant="body" color="secondary">
+                      {t('taskDetail.cancel')}
+                    </SuiviText>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleDescriptionSave}
+                    style={styles.descriptionEditButton}
+                  >
+                    <SuiviText variant="body" color="primary">
+                      {t('taskDetail.save')}
+                    </SuiviText>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <SuiviText variant="body" color={task.description ? 'primary' : 'secondary'} style={styles.descriptionText}>
+                {task.description || t('taskDetail.noDescription')}
+              </SuiviText>
+            )}
           </SuiviCard>
-        )}
-      </View>
+
+          {/* Assignee Picker Modal */}
+          <Modal
+            visible={assigneePickerVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setAssigneePickerVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setAssigneePickerVisible(false)}
+              />
+              <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                <SuiviText variant="h2" style={styles.modalTitle}>
+                  {t('taskDetail.editAssignee')}
+                </SuiviText>
+                {mockUsers.map((mockUser) => (
+                  <Pressable
+                    key={mockUser.id}
+                    onPress={() => handleAssigneeChange(mockUser)}
+                    style={styles.assigneeOption}
+                  >
+                    <UserAvatar
+                      size={32}
+                      fullName={mockUser.name}
+                      style={styles.assigneeOptionAvatar}
+                    />
+                    <SuiviText variant="body" color="primary">
+                      {mockUser.name}
+                    </SuiviText>
+                    {task.assignee?.id === mockUser.id && (
+                      <MaterialCommunityIcons
+                        name="check"
+                        size={20}
+                        color={tokens.colors.brand.primary}
+                      />
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </Modal>
+
+          {/* Due Date Picker Modal */}
+          <Modal
+            visible={dueDatePickerVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setDueDatePickerVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setDueDatePickerVisible(false)}
+              />
+              <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                <SuiviText variant="h2" style={styles.modalTitle}>
+                  {t('taskDetail.editDueDate')}
+                </SuiviText>
+                <View style={styles.datePickerContainer}>
+                  <TextInput
+                    style={[
+                      styles.dateInput,
+                      {
+                        color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                        borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                        backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
+                      },
+                    ]}
+                    value={dueDateInput}
+                    onChangeText={(text) => {
+                      setDueDateInput(text);
+                      if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        handleDueDateChange(text);
+                      }
+                    }}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={tokens.colors.neutral.medium}
+                  />
+                  <View style={styles.datePickerActions}>
+                    <Pressable
+                      onPress={() => setDueDatePickerVisible(false)}
+                      style={styles.datePickerButton}
+                    >
+                      <SuiviText variant="body" color="secondary">
+                        {t('taskDetail.cancel')}
+                      </SuiviText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        handleDueDateChange(today);
+                        setDueDatePickerVisible(false);
+                      }}
+                      style={styles.datePickerButton}
+                    >
+                      <SuiviText variant="body" color="primary">
+                        {t('tasks.sections.today')}
+                      </SuiviText>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Priority Picker Modal */}
+          <Modal
+            visible={priorityPickerVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setPriorityPickerVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setPriorityPickerVisible(false)}
+              />
+              <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                <SuiviText variant="h2" style={styles.modalTitle}>
+                  {t('taskDetail.priority')}
+                </SuiviText>
+                <Pressable
+                  onPress={() => handlePriorityChange('normal')}
+                  style={styles.assigneeOption}
+                >
+                  <SuiviText variant="body" color="primary">
+                    {t('taskDetail.priority.normal')}
+                  </SuiviText>
+                  {(!taskPriority || taskPriority === 'normal') && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color={tokens.colors.brand.primary}
+                    />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={() => handlePriorityChange('low')}
+                  style={styles.assigneeOption}
+                >
+                  <SuiviText variant="body" color="primary">
+                    {t('taskDetail.priority.low')}
+                  </SuiviText>
+                  {taskPriority === 'low' && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color={tokens.colors.brand.primary}
+                    />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={() => handlePriorityChange('high')}
+                  style={styles.assigneeOption}
+                >
+                  <SuiviText variant="body" color="primary">
+                    {t('taskDetail.priority.high')}
+                  </SuiviText>
+                  {taskPriority === 'high' && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color={tokens.colors.brand.primary}
+                    />
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Custom Field Edit Modals */}
+          {customFieldEditModal && (() => {
+            const field = task?.customFields?.find((cf) => cf.id === customFieldEditModal.fieldId);
+            if (!field) return null;
+
+            if (customFieldEditModal.type === 'text' || customFieldEditModal.type === 'number') {
+              return (
+                <Modal
+                  visible={customFieldEditModal !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => {
+                    setCustomFieldEditModal(null);
+                    setCustomFieldInputValue('');
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Pressable
+                      style={styles.modalBackdrop}
+                      onPress={() => {
+                        setCustomFieldEditModal(null);
+                        setCustomFieldInputValue('');
+                      }}
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                      <SuiviText variant="h2" style={styles.modalTitle}>
+                        {field.label}
+                      </SuiviText>
+                      <View style={styles.datePickerContainer}>
+                        <TextInput
+                          style={[
+                            styles.dateInput,
+                            {
+                              color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                              borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                              backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
+                            },
+                          ]}
+                          value={customFieldInputValue}
+                          onChangeText={setCustomFieldInputValue}
+                          keyboardType={customFieldEditModal.type === 'number' ? 'numeric' : 'default'}
+                          placeholder={t('taskDetail.enterValue')}
+                          placeholderTextColor={tokens.colors.neutral.medium}
+                        />
+                        <View style={styles.datePickerActions}>
+                          <Pressable
+                            onPress={() => {
+                              setCustomFieldEditModal(null);
+                              setCustomFieldInputValue('');
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="secondary">
+                              {t('taskDetail.cancel')}
+                            </SuiviText>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => {
+                              const value = customFieldEditModal.type === 'number' 
+                                ? Number(customFieldInputValue) 
+                                : customFieldInputValue;
+                              handleCustomFieldChange(field.id, value);
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="primary">
+                              {t('taskDetail.save')}
+                            </SuiviText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Modal>
+              );
+            }
+
+            if (customFieldEditModal.type === 'date') {
+              return (
+                <Modal
+                  visible={customFieldEditModal !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => {
+                    setCustomFieldEditModal(null);
+                    setCustomFieldDateInput('');
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Pressable
+                      style={styles.modalBackdrop}
+                      onPress={() => {
+                        setCustomFieldEditModal(null);
+                        setCustomFieldDateInput('');
+                      }}
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                      <SuiviText variant="h2" style={styles.modalTitle}>
+                        {field.label}
+                      </SuiviText>
+                      <View style={styles.datePickerContainer}>
+                        <TextInput
+                          style={[
+                            styles.dateInput,
+                            {
+                              color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
+                              borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                              backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
+                            },
+                          ]}
+                          value={customFieldDateInput}
+                          onChangeText={(text) => {
+                            setCustomFieldDateInput(text);
+                            if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                              handleCustomFieldChange(field.id, text);
+                            }
+                          }}
+                          placeholder="YYYY-MM-DD"
+                          placeholderTextColor={tokens.colors.neutral.medium}
+                        />
+                        <View style={styles.datePickerActions}>
+                          <Pressable
+                            onPress={() => {
+                              setCustomFieldEditModal(null);
+                              setCustomFieldDateInput('');
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="secondary">
+                              {t('taskDetail.cancel')}
+                            </SuiviText>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => {
+                              const today = new Date().toISOString().split('T')[0];
+                              handleCustomFieldChange(field.id, today);
+                              setCustomFieldEditModal(null);
+                              setCustomFieldDateInput('');
+                            }}
+                            style={styles.datePickerButton}
+                          >
+                            <SuiviText variant="body" color="primary">
+                              {t('tasks.sections.today')}
+                            </SuiviText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Modal>
+              );
+            }
+
+            if (customFieldEditModal.type === 'enum' || customFieldEditModal.type === 'multi') {
+              return (
+                <Modal
+                  visible={customFieldEditModal !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => {
+                    setCustomFieldEditModal(null);
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Pressable
+                      style={styles.modalBackdrop}
+                      onPress={() => {
+                        setCustomFieldEditModal(null);
+                      }}
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default }]}>
+                      <SuiviText variant="h2" style={styles.modalTitle}>
+                        {field.label}
+                      </SuiviText>
+                      {field.options?.map((option) => {
+                        const isSelected = customFieldEditModal.type === 'multi'
+                          ? Array.isArray(field.value) && field.value.includes(option)
+                          : field.value === option;
+                        
+                        return (
+                          <Pressable
+                            key={option}
+                            onPress={() => {
+                              if (customFieldEditModal.type === 'multi') {
+                                const currentValues = Array.isArray(field.value) ? field.value : [];
+                                const newValues = isSelected
+                                  ? currentValues.filter((v) => v !== option)
+                                  : [...currentValues, option];
+                                handleCustomFieldChange(field.id, newValues);
+                              } else {
+                                handleCustomFieldChange(field.id, option);
+                              }
+                            }}
+                            style={styles.assigneeOption}
+                          >
+                            <SuiviText variant="body" color="primary">
+                              {option}
+                            </SuiviText>
+                            {isSelected && (
+                              <MaterialCommunityIcons
+                                name="check"
+                                size={20}
+                                color={tokens.colors.brand.primary}
+                              />
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </Modal>
+              );
+            }
+
+            return null;
+          })()}
+        </View>
+
+        {/* Bloc Actions rapides */}
+        <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.md }]}>
+          <SuiviText variant="h2" style={styles.sectionTitle}>
+            {t('taskDetail.quickActions')}
+          </SuiviText>
+          
+          {/* Afficher toutes les quick actions disponibles, une par ligne */}
+          {task.quickActions?.map((qa, index) => (
+            <View key={index} style={{ marginBottom: tokens.spacing.md }}>
+              {renderQuickAction(qa, index)}
+            </View>
+          ))}
+        </View>
+
+        {/* Bloc Activité */}
+        <View style={[styles.section, { marginTop: tokens.spacing.md, marginBottom: tokens.spacing.lg }]}>
+          <SuiviText variant="h2" style={styles.sectionTitle}>
+            {t('taskDetail.activity')}
+          </SuiviText>
+          <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
+            {t('taskDetail.activitySubtitle')}
+          </SuiviText>
+          {allActivities.length > 0 ? (
+            allActivities.map((activity) => renderActivityItem(activity))
+          ) : (
+            <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
+              <SuiviText variant="body" color="secondary">
+                {t('taskDetail.noActivity')}
+              </SuiviText>
+            </SuiviCard>
+          )}
+        </View>
       </View>
     </Screen>
   );
@@ -378,7 +1365,7 @@ function getStatusColors(status: TaskStatus, isDark: boolean): { border: string;
   
   switch (status) {
     case 'in_progress': {
-      const color = '#F38F20';
+      const color = '#FF6B35'; // Orange, même couleur que TaskItem
       return {
         border: color,
         text: color,
@@ -478,7 +1465,7 @@ function formatDate(dateString: string): string {
 function getEventTypeFromActionType(actionType: string): SuiviActivityEvent['eventType'] {
   switch (actionType) {
     case 'COMMENT':
-      return 'TASK_CREATED'; // Approximation pour commentaire
+      return 'COMMENT';
     case 'APPROVAL':
       return 'TASK_COMPLETED'; // Approximation pour approbation
     case 'RATING':
@@ -579,129 +1566,245 @@ const styles = StyleSheet.create({
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
   },
+  // Header inline "Task Overview" (structure identique à ScreenHeader)
+  headerContainer: {
+    paddingHorizontal: tokens.spacing.lg,
+    marginBottom: tokens.spacing.xl,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 40,
+  },
+  backIcon: {
+    marginRight: tokens.spacing.md,
+    padding: tokens.spacing.sm,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  // En-tête Monday-like
+  headerSection: {
+    marginBottom: tokens.spacing.xl,
+  },
+  breadcrumbContainer: {
+    marginBottom: tokens.spacing.xs,
+  },
+  breadcrumb: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   taskTitleContainer: {
-    marginTop: 4,
-    marginBottom: tokens.spacing.lg + 10, // +10px en bas
-  },
-  taskTitleText: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  statusSection: {
-    marginBottom: tokens.spacing.lg,
-  },
-  statusCard: {
     marginBottom: tokens.spacing.md,
   },
-  statusLabel: {
-    marginBottom: tokens.spacing.sm,
+  taskTitleText: {
+    fontSize: tokens.typography.h1.fontSize,
+    fontWeight: tokens.typography.h1.fontWeight,
+    lineHeight: tokens.typography.h1.lineHeight,
   },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  statusBadgeContainer: {
+    marginTop: tokens.spacing.sm,
   },
-  card: {
-    marginBottom: tokens.spacing.lg,
+  statusBadgeInline: {
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xs,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    minHeight: 32,
+    justifyContent: 'center',
   },
-  descriptionRow: {
+  // Sections
+  section: {
+    marginBottom: tokens.spacing.md,
+  },
+  sectionTitle: {
+    fontSize: tokens.typography.h2.fontSize,
+    fontFamily: tokens.typography.h2.fontFamily,
+    fontWeight: tokens.typography.h2.fontWeight,
+    marginBottom: tokens.spacing.md,
+  },
+  sectionSubtitle: {
+    marginBottom: tokens.spacing.md,
+  },
+  // Métadonnées
+  metadataCard: {
+    marginTop: tokens.spacing.sm,
+  },
+  metadataRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: tokens.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border.default,
-    marginBottom: tokens.spacing.sm,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: tokens.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border.default,
+  metadataRowLast: {
+    borderBottomWidth: 0,
   },
-  label: {
-    width: 120,
-    marginRight: tokens.spacing.md,
-  },
-  assigneeContainer: {
+  metadataLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  avatar: {
-    marginRight: tokens.spacing.sm,
+  metadataIcon: {
+    marginRight: tokens.spacing.xs,
   },
-  assigneeText: {
+  metadataLabel: {
     flex: 1,
   },
-  section: {
-    marginBottom: tokens.spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  quickActionHeader: {
+  metadataValueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 24,
-    marginBottom: 12,
+    flex: 1,
+    justifyContent: 'flex-end',
   },
-  quickActionTitle: {
-    fontSize: 18,
+  metadataAvatar: {
+    marginRight: tokens.spacing.xs,
+  },
+  metadataValue: {
+    textAlign: 'right',
+  },
+  // Activity Timeline
+  commentContainer: {
+    padding: tokens.spacing.md,
+    borderRadius: tokens.radius.lg,
+    marginBottom: tokens.spacing.md,
+  },
+  commentAuthor: {
     fontWeight: '600',
+    marginBottom: tokens.spacing.xs,
   },
-  quickActionDot: {
+  commentText: {
+    marginBottom: tokens.spacing.xs,
+  },
+  commentTimestamp: {
+    marginTop: tokens.spacing.xs,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: tokens.spacing.md,
+  },
+  activityDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginTop: -1,
-  },
-  quickActionSubtitle: {
-    fontSize: 13,
-    opacity: 0.6,
-    marginTop: -4, // Ajustement pour être juste sous le titre
-    marginBottom: 12,
-  },
-  detailsCard: {
-    marginTop: 10, // 10px de marge au-dessus du bloc blanc
-  },
-  activityTimelineTitle: {
-    marginTop: 14, // Réduit de ~10px (24 -> 14)
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    marginBottom: tokens.spacing.md,
-    position: 'relative',
-  },
-  timelineLine: {
-    position: 'absolute',
-    left: 12,
-    top: 24,
-    width: 2,
-    height: '100%',
-    backgroundColor: tokens.colors.border.default,
-  },
-  timelineDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
     backgroundColor: tokens.colors.brand.primary,
-    marginRight: tokens.spacing.md,
-    borderWidth: 3,
-    borderColor: tokens.colors.background.default,
-    zIndex: 1,
-  },
-  activityCard: {
-    flex: 1,
-    marginBottom: 0,
-  },
-  activityMeta: {
+    marginRight: tokens.spacing.sm,
     marginTop: tokens.spacing.xs,
   },
-  quickActionSection: {
+  activityContent: {
+    flex: 1,
+  },
+  activityText: {
+    marginBottom: tokens.spacing.xs,
+  },
+  activityTimestamp: {
+    marginTop: 0,
+  },
+  emptyActivityCard: {
+    marginTop: tokens.spacing.md,
+  },
+  statusBadgeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusBadgeIcon: {
+    marginLeft: tokens.spacing.xs,
+  },
+  descriptionEditContainer: {
+    flex: 1,
+  },
+  descriptionInput: {
+    borderWidth: 1,
+    borderRadius: tokens.radius.md,
+    padding: tokens.spacing.sm,
+    minHeight: 80,
+    fontSize: tokens.typography.body.fontSize,
+    fontFamily: tokens.typography.body.fontFamily,
+    marginBottom: tokens.spacing.sm,
+  },
+  descriptionEditActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: tokens.spacing.md,
+  },
+  descriptionEditButton: {
+    padding: tokens.spacing.xs,
+  },
+  descriptionCard: {
+    marginTop: tokens.spacing.md,
+  },
+  descriptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: tokens.spacing.sm,
+  },
+  descriptionLabel: {
+    flex: 1,
+  },
+  descriptionText: {
+    marginTop: tokens.spacing.xs,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    borderTopLeftRadius: tokens.radius.xl,
+    borderTopRightRadius: tokens.radius.xl,
+    padding: tokens.spacing.lg,
+    paddingBottom: tokens.spacing.xl,
+    maxHeight: '60%',
+  },
+  modalTitle: {
     marginBottom: tokens.spacing.lg,
+  },
+  assigneeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.md,
+    borderRadius: tokens.radius.md,
+    marginBottom: tokens.spacing.xs,
+    borderWidth: 1,
+    borderColor: tokens.colors.border.default,
+  },
+  assigneeOptionAvatar: {
+    marginRight: tokens.spacing.md,
+  },
+  datePickerContainer: {
+    marginTop: tokens.spacing.md,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderRadius: tokens.radius.md,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.md,
+    fontSize: tokens.typography.body.fontSize,
+    fontFamily: tokens.typography.body.fontFamily,
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: tokens.spacing.md,
+  },
+  datePickerButton: {
+    paddingVertical: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.md,
   },
 });

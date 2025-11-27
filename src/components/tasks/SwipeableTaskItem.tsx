@@ -80,7 +80,7 @@ export function SwipeableTaskItem({
           <MaterialCommunityIcons
             name="check-circle"
             size={24}
-            color={tokens.colors.text.inverse}
+            color="#FFFFFF"
           />
           <View style={styles.rightActionTextContainer}>
             {/* Utiliser la clé i18n existante pour "Done" */}

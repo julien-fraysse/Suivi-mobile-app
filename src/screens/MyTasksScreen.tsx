@@ -49,6 +49,9 @@ export function MyTasksScreen() {
   // Source unique de vérité pour les tâches - utilise le hook canonique useMyWork()
   const { tasks, tasksByStatus, sections, tasksBySection, isLoading, error, refresh } = useMyWork();
   
+  // Couleur du pull-to-refresh (blanc en dark mode, primary en light mode)
+  const refreshColor = isDark ? tokens.colors.text.dark.primary : tokens.colors.brand.primary;
+  
   // Contexte pour mettre à jour les tâches (swipe → done)
   const { updateTask } = useTasksContext();
   
@@ -295,7 +298,12 @@ export function MyTasksScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refresh} />
+          <RefreshControl 
+            refreshing={isLoading} 
+            onRefresh={refresh}
+            tintColor={refreshColor}
+            colors={[refreshColor]}
+          />
         }
       >
         {ORDER.map((sectionName) => renderSection(sectionName))}

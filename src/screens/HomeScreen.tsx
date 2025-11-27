@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'react-native-paper';
 import { Screen } from '@components/Screen';
 import { AppHeader } from '@components/AppHeader';
 import { HomeSearchBar } from '@components/HomeSearchBar';
@@ -39,6 +40,8 @@ const ACTIVITY_CARD_SPACING = 4;
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
   const { t } = useTranslation();
+  const theme = useTheme();
+  const isDark = theme.dark;
   
   const [filter, setFilter] = useState<'all' | 'board' | 'portal'>('all');
   const [limit, setLimit] = useState(5);
@@ -46,6 +49,9 @@ export function HomeScreen() {
   
   // Données activité depuis api.ts via hooks
   const { data: activities, isLoading: isLoadingActivities, isError: isErrorActivities, refetch: refetchActivities } = useActivityFeed(50);
+  
+  // Couleur du pull-to-refresh (blanc en dark mode, primary en light mode)
+  const refreshColor = isDark ? tokens.colors.text.dark.primary : tokens.colors.brand.primary;
 
   /**
    * Réordonne les activités pour que la première soit un board si disponible
@@ -118,7 +124,12 @@ export function HomeScreen() {
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            tintColor={refreshColor}
+            colors={[refreshColor]}
+          />
         }
       >
         {/* AI Daily Pulse Card */}

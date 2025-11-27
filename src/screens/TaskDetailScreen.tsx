@@ -6,6 +6,8 @@ import {
   TextInput,
   Pressable,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +59,9 @@ export function TaskDetailScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { taskId } = route.params;
+  
+  // Offset pour KeyboardAvoidingView (header + safe area)
+  const keyboardVerticalOffset = insets.top + 60; // ~60px pour le header "Task Overview"
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
@@ -559,7 +564,12 @@ export function TaskDetailScreen() {
 
   return (
     <Screen scrollable noTopBackground>
-      <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+      >
+        <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
         {/* Header inline "Task Overview" avec bouton retour */}
         <View style={styles.headerContainer}>
           <View style={styles.headerRow}>
@@ -1310,23 +1320,12 @@ export function TaskDetailScreen() {
           </SuiviText>
           
           {/* Afficher toutes les quick actions disponibles, une par ligne */}
-          {task.quickActions?.map((qa, index) => (
-            <View key={index} style={{ marginBottom: tokens.spacing.md }}>
-              {renderQuickAction(qa, index)}
-            </View>
-          ))}
-        </View>
-
-        {/* Bloc Activité */}
-        <View style={[styles.section, { marginTop: tokens.spacing.md, marginBottom: tokens.spacing.lg }]}>
-          <SuiviText variant="h2" style={styles.sectionTitle}>
-            {t('taskDetail.activity')}
-          </SuiviText>
-          <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
-            {t('taskDetail.activitySubtitle')}
-          </SuiviText>
-          {allActivities.length > 0 ? (
-            allActivities.map((activity) => renderActivityItem(activity))
+          {task.quickActions && task.quickActions.length > 0 ? (
+            task.quickActions.map((qa, index) => (
+              <View key={index} style={{ marginBottom: tokens.spacing.md }}>
+                {renderQuickAction(qa, index)}
+              </View>
+            ))
           ) : (
             <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
               <SuiviText variant="body" color="secondary">
@@ -1336,6 +1335,7 @@ export function TaskDetailScreen() {
           )}
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
@@ -1568,7 +1568,6 @@ const styles = StyleSheet.create({
   },
   // Header inline "Task Overview" (structure identique à ScreenHeader)
   headerContainer: {
-    paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.xl,
   },
   headerRow: {

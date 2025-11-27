@@ -39,11 +39,15 @@ export function NotificationsScreen() {
   const navigation = useNavigation<NotificationsNavigationProp>();
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const isDark = theme.dark;
   const [filter, setFilter] = useState<FilterOption>('all');
   const [refreshing, setRefreshing] = useState(false);
   
   // Source unique de vérité pour les notifications - TODO: Replace with real Suivi API
   const { notifications, markAsRead, markAllAsRead } = useNotificationsStore();
+  
+  // Couleur du pull-to-refresh (blanc en dark mode, primary en light mode)
+  const refreshColor = isDark ? tokens.colors.text.dark.primary : tokens.colors.brand.primary;
   
   // Formater la date du jour selon la locale de l'app (ex: "MERCREDI 19 NOVEMBRE" ou "WEDNESDAY 19 NOVEMBER")
   const formatDateHeader = (): string => {
@@ -167,7 +171,12 @@ export function NotificationsScreen() {
         contentContainerStyle={filteredNotifications.length === 0 ? styles.emptyList : styles.listContent}
         ListEmptyComponent={filteredNotifications.length === 0 ? renderEmptyState : null}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            tintColor={refreshColor}
+            colors={[refreshColor]}
+          />
         }
       />
     </Screen>

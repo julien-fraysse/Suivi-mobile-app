@@ -16,9 +16,10 @@ import { Screen } from '@components/Screen';
 import { AppHeader } from '@components/AppHeader';
 import { TasksFilterControl } from '@components/ui/TasksFilterControl';
 import { SuiviText } from '@components/ui/SuiviText';
-import { TaskItem } from '@components/ui/TaskItem';
+import { SwipeableTaskItem } from '@components/tasks/SwipeableTaskItem';
 import { AiBriefingButton } from '@components/ui/AiBriefingButton';
 import { useMyWork } from '../hooks/useMyWork';
+import { useTasksContext } from '../tasks/TasksContext';
 import type { Task } from '../types/task';
 import type { SectionName } from '../hooks/useMyWork';
 import { tokens } from '@theme';
@@ -47,6 +48,9 @@ export function MyTasksScreen() {
 
   // Source unique de vérité pour les tâches - utilise le hook canonique useMyWork()
   const { tasks, tasksByStatus, sections, tasksBySection, isLoading, error, refresh } = useMyWork();
+  
+  // Contexte pour mettre à jour les tâches (swipe → done)
+  const { updateTask } = useTasksContext();
   
   /**
    * Classifie une tâche par sa date d'échéance dans une section chronologique.
@@ -224,11 +228,14 @@ export function MyTasksScreen() {
         {!isCollapsed && (
           <View style={styles.sectionContent}>
             {sectionTasks.map((task) => (
-              <TaskItem
+              <SwipeableTaskItem
                 key={task.id}
                 task={task}
                 onPress={() => {
                   navigation.navigate('TaskDetail', { taskId: task.id });
+                }}
+                onDone={() => {
+                  updateTask(task.id, { status: 'done' });
                 }}
                 style={styles.taskCard}
               />

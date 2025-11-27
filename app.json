@@ -17,9 +17,8 @@
     ],
     "ios": {
       "bundleIdentifier": "co.suivi.mobile",
-      "buildNumber": "1.0.2",
+      "buildNumber": "1.0.3",
       "supportsTablet": false,
-      "deploymentTarget": "13.4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

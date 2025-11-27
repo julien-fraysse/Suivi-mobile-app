@@ -67,7 +67,7 @@ export function SuiviSwitch({
     Animated.timing(translateXAnim, {
       toValue: value ? 1 : 0,
       duration: tokens.animation.normal,
-      useNativeDriver: true,
+      useNativeDriver: false, // false sur Web car translateX n'est pas supporté avec useNativeDriver
     }).start();
   }, [value, translateXAnim]);
 
@@ -75,14 +75,14 @@ export function SuiviSwitch({
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.95,
-      useNativeDriver: true,
+      useNativeDriver: !isWeb, // scale fonctionne avec useNativeDriver sur iOS/Android, mais pas nécessaire sur Web
     }).start();
   };
 
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: !isWeb, // scale fonctionne avec useNativeDriver sur iOS/Android, mais pas nécessaire sur Web
     }).start();
   };
 

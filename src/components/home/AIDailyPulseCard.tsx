@@ -33,13 +33,15 @@
  * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SuiviText } from '../ui/SuiviText';
 import { tokens } from '@theme';
+import { useMyWork, type SectionName } from '../../hooks/useMyWork';
+import type { Task } from '../../types/task';
 
 export interface AIDailyPulseData {
   importantUpdates: number;
@@ -61,7 +63,7 @@ export interface AIDailyPulseCardProps {
   style?: any;
 }
 
-// Mock data pour le MVP
+// Mock data pour le MVP (fallback si pas de données)
 const mockAIPulse: AIDailyPulseData = {
   importantUpdates: 3,
   overdue: 2,
@@ -70,13 +72,149 @@ const mockAIPulse: AIDailyPulseData = {
 };
 
 /**
+ * Compare deux dates pour vérifier si elles sont le même jour
+ */
+function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
+
+/**
+ * Classifie une tâche par sa date d'échéance dans une section chronologique.
+ * (Copie identique de la fonction dans MyTasksScreen.tsx pour garantir la cohérence)
+ */
+function classifyTaskByDate(task: Task): SectionName {
+  if (!task.dueDate) {
+    return 'noDate';
+  }
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+  
+  const taskDate = new Date(task.dueDate + 'T00:00:00');
+  taskDate.setHours(0, 0, 0, 0);
+  
+  // Aujourd'hui
+  if (task.dueDate === todayStr) {
+    return 'today';
+  }
+  
+  // Overdue (strictement avant aujourd'hui)
+  if (taskDate < today) {
+    return 'overdue';
+  }
+  
+  // Calculer la différence en jours
+  const diffTime = taskDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  // This week (1-7 jours)
+  if (diffDays >= 1 && diffDays <= 7) {
+    return 'thisWeek';
+  }
+  
+  // Next week (8-14 jours)
+  if (diffDays >= 8 && diffDays <= 14) {
+    return 'nextWeek';
+  }
+  
+  // Later (> 14 jours)
+  return 'later';
+}
+
+/**
  * AIDailyPulseCard
  * 
  * Carte full-width avec gradient violet/bleu affichant les insights AI du jour.
+ * Utilise les vraies tâches de l'utilisateur pour calculer les métriques.
  */
-export function AIDailyPulseCard({ data = mockAIPulse, style }: AIDailyPulseCardProps) {
+export function AIDailyPulseCard({ data, style }: AIDailyPulseCardProps) {
   const { t } = useTranslation();
-  const pulseData = data || mockAIPulse;
+  const { tasks, tasksByStatus, tasksBySection, isLoading, error } = useMyWork();
+  const isError = !!error;
+
+  // Calculer les métriques à partir des tâches réelles
+  const pulseData = useMemo(() => {
+    // Si data est fourni explicitement, l'utiliser
+    if (data) {
+      return data;
+    }
+
+    // Si pas de données ou en erreur, utiliser mock
+    if (isError || !tasks || tasks.length === 0) {
+      return mockAIPulse;
+    }
+
+    // Utiliser EXACTEMENT la même logique que MyTasksScreen pour obtenir les tâches overdue
+    // Reproduire la logique exacte de MyTasksScreen.filteredSections avec filter='all'
+    const allTasks = tasksByStatus('all');
+    
+    // Construire les sections exactement comme MyTasksScreen
+    const sections: Record<SectionName, Task[]> = {
+      overdue: [],
+      today: [],
+      thisWeek: [],
+      nextWeek: [],
+      later: [],
+      noDate: [],
+    };
+    
+    // Classifier chaque tâche dans sa section (même logique que MyTasksScreen)
+    allTasks.forEach((task) => {
+      const section = classifyTaskByDate(task);
+      sections[section].push(task);
+    });
+
+    // Focus project : le projet/board qui revient le plus souvent dans les tâches en retard
+    const projectCounts: Record<string, number> = {};
+    sections.overdue.forEach((task) => {
+      const projectName = task.location?.boardName || task.projectName || '';
+      if (projectName) {
+        projectCounts[projectName] = (projectCounts[projectName] || 0) + 1;
+      }
+    });
+
+    let focusProject = '';
+    let maxCount = 0;
+    Object.entries(projectCounts).forEach(([project, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        focusProject = project;
+      }
+    });
+
+    // Si pas de focus project trouvé, utiliser un projet des tâches dues aujourd'hui
+    if (!focusProject && sections.today.length > 0) {
+      const todayProjectCounts: Record<string, number> = {};
+      sections.today.forEach((task) => {
+        const projectName = task.location?.boardName || task.projectName || '';
+        if (projectName) {
+          todayProjectCounts[projectName] = (todayProjectCounts[projectName] || 0) + 1;
+        }
+      });
+      Object.entries(todayProjectCounts).forEach(([project, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          focusProject = project;
+        }
+      });
+    }
+
+    const overdueCount = sections.overdue.length;
+    const dueTodayCount = sections.today.length;
+    const importantUpdates = overdueCount + dueTodayCount;
+
+    return {
+      importantUpdates,
+      overdue: overdueCount,
+      dueToday: dueTodayCount,
+      focus: focusProject || mockAIPulse.focus,
+    };
+  }, [data, tasks, tasksByStatus, isError]);
 
   return (
     <View style={[styles.container, style]}>

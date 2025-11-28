@@ -15,6 +15,7 @@
     "searchPlaceholder": "Rechercher tâches, notifications...",
     "filters": {
       "all": "Tous",
+      "tasks": "Tâches",
       "boards": "Boards",
       "portals": "Portails"
     },

@@ -30,15 +30,19 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ViewStyle, Image, ImageSourcePropType } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviCard } from '../ui/SuiviCard';
 import { SuiviText } from '../ui/SuiviText';
 import { UserAvatar } from '../ui/UserAvatar';
 import { tokens } from '@theme';
 import type { SuiviActivityEvent } from '../../types/activity';
+
+// Import des icônes PNG
+import TaskIcon from '../../assets/activity-icons/Task.png';
+import BoardIcon from '../../assets/activity-icons/Board.png';
+import PortalIcon from '../../assets/activity-icons/Portal.png';
 
 export interface ActivityCardProps {
   /** Événement d'activité à afficher */
@@ -65,8 +69,7 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
 
   // Couleur du bloc graphique selon source et eventType
   const iconBackgroundColor = getIconBackgroundColor(event.source, event.eventType, isDark);
-  const iconColor = getIconColor(event.source, event.eventType, isDark);
-  const iconName = getIconName(event.eventType);
+  const iconSource = getActivityIcon(event.eventType, event.source);
 
   // Formatage du contexte (workspace · board/portail)
   const contextText = formatContext(event, t);
@@ -101,17 +104,20 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
             },
           ]}
         >
-          <MaterialCommunityIcons
-            name={iconName}
-            size={compact ? 18 : 22}
-            color={iconBackgroundColor}
+          <Image
+            source={iconSource}
+            style={[
+              styles.iconImage,
+              compact && styles.iconImageCompact,
+            ]}
+            resizeMode="contain"
           />
         </View>
       </View>
 
       {/* Contenu texte à droite */}
       <View style={styles.textContainer}>
-        {/* Ligne 1 : Titre avec badge et date en haut à droite */}
+        {/* Ligne 1 : Titre avec badge en haut à droite */}
         <View style={styles.titleRow}>
           <SuiviText
             variant="h2"
@@ -125,7 +131,7 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
           >
             {event.title}
           </SuiviText>
-          {/* Badge et date en haut à droite */}
+          {/* Badge en haut à droite */}
           <View style={styles.topRightContainer}>
             <View
               style={[
@@ -147,17 +153,6 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
                 {activityTypeLabel}
               </SuiviText>
             </View>
-            <SuiviText
-              variant="label"
-              style={[
-                styles.timeAgo,
-                {
-                  color: textColorSecondary,
-                },
-              ]}
-            >
-              {timeAgo}
-            </SuiviText>
           </View>
         </View>
 
@@ -176,25 +171,39 @@ export function ActivityCard({ event, onPress, style, compact = false }: Activit
           {contextText}
         </SuiviText>
 
-        {/* Ligne 3 : Meta (avatar + nom) */}
+        {/* Ligne 3 : Meta (avatar + nom + date) */}
         <View style={styles.metaRow}>
-          <UserAvatar
-            size={34}
-            fullName={event.actor.name}
-            imageSource={event.actor.avatarUrl}
-            style={styles.avatar}
-          />
+          <View style={styles.metaLeft}>
+            <UserAvatar
+              size={24}
+              fullName={event.actor.name}
+              imageSource={event.actor.avatarUrl}
+              userId={event.actor.userId}
+              style={styles.avatar}
+            />
+            <SuiviText
+              variant="body"
+              color="secondary"
+              style={[
+                styles.metaText,
+                {
+                  color: textColorSecondary,
+                },
+              ]}
+            >
+              {event.actor.name}
+            </SuiviText>
+          </View>
           <SuiviText
-            variant="body"
-            color="secondary"
+            variant="label"
             style={[
-              styles.metaText,
+              styles.timeAgo,
               {
                 color: textColorSecondary,
               },
             ]}
           >
-            {event.actor.name}
+            {timeAgo}
           </SuiviText>
         </View>
       </View>
@@ -275,46 +284,29 @@ function getIconBackgroundColor(
 }
 
 /**
- * Retourne la couleur de l'icône selon source et eventType
- * Toutes les icônes utilisent blanc (fond coloré : violet pour task/objective, rose pour board, vert pour portal)
+ * Retourne l'icône PNG selon eventType et source
  */
-function getIconColor(
-  source: 'BOARD' | 'PORTAL',
+function getActivityIcon(
   eventType: string,
-  isDark: boolean,
-): string {
-  // Toutes les icônes utilisent blanc pour un bon contraste sur les fonds colorés
-  return '#FFFFFF';
-}
-
-/**
- * Retourne le nom de l'icône MaterialCommunityIcons selon eventType
- */
-function getIconName(eventType: string): keyof typeof MaterialCommunityIcons.glyphMap {
-  switch (eventType) {
-    case 'TASK_CREATED':
-      return 'plus-circle';
-    case 'TASK_COMPLETED':
-      return 'check-circle';
-    case 'TASK_REPLANNED':
-      return 'calendar-clock';
-    case 'OBJECTIVE_STATUS_CHANGED':
-      return 'target';
-    case 'BOARD_CREATED':
-      return 'view-dashboard';
-    case 'BOARD_UPDATED':
-      return 'view-dashboard-edit';
-    case 'BOARD_ARCHIVED':
-      return 'archive';
-    case 'PORTAL_CREATED':
-      return 'web';
-    case 'PORTAL_UPDATED':
-      return 'web';
-    case 'PORTAL_SHARED':
-      return 'share-variant';
-    default:
-      return 'information';
+  source: 'BOARD' | 'PORTAL',
+): ImageSourcePropType {
+  // TASK / OBJECTIVE events → Task.png
+  if (eventType.startsWith('TASK_') || eventType === 'OBJECTIVE_STATUS_CHANGED') {
+    return TaskIcon;
   }
+
+  // BOARD events → Board.png
+  if (eventType.startsWith('BOARD_')) {
+    return BoardIcon;
+  }
+
+  // PORTAL events → Portal.png
+  if (eventType.startsWith('PORTAL_')) {
+    return PortalIcon;
+  }
+
+  // Par défaut : Task.png
+  return TaskIcon;
 }
 
 /**
@@ -398,26 +390,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBlockContainer: {
-    width: 48,
+    width: tokens.spacing.xxl + tokens.spacing.lg + tokens.spacing.sm + tokens.spacing.sm, // 32 + 16 + 8 + 8 = 64
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: tokens.spacing.lg,
   },
   iconBlockContainerCompact: {
-    width: 36,
+    width: tokens.spacing.xl + tokens.spacing.md + tokens.spacing.md + tokens.spacing.sm, // 24 + 12 + 12 + 8 = 56
     marginRight: tokens.spacing.md,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: tokens.spacing.xxl + tokens.spacing.lg, // 32 + 16 = 48
+    height: tokens.spacing.xxl + tokens.spacing.lg, // 32 + 16 = 48
+    borderRadius: tokens.radius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconContainerCompact: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: tokens.spacing.xl + tokens.spacing.lg, // 24 + 16 = 40
+    height: tokens.spacing.xl + tokens.spacing.lg, // 24 + 16 = 40
+    borderRadius: tokens.radius.md,
+  },
+  iconImage: {
+    width: tokens.spacing.xxl + tokens.spacing.sm, // 32 + 8 = 40
+    height: tokens.spacing.xxl + tokens.spacing.sm, // 32 + 8 = 40
+  },
+  iconImageCompact: {
+    width: tokens.spacing.xl + tokens.spacing.sm, // 24 + 8 = 32
+    height: tokens.spacing.xl + tokens.spacing.sm, // 24 + 8 = 32
   },
   textContainer: {
     flex: 1,
@@ -463,13 +463,19 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: tokens.spacing.xs,
+  },
+  metaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   avatar: {
     marginRight: tokens.spacing.xs,
   },
   metaText: {
-    flex: 1,
+    flexShrink: 1,
   },
   card: {
     marginBottom: 0,

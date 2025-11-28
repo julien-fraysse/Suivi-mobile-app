@@ -23,6 +23,12 @@ export interface UserAvatarProps {
   fullName?: string;
 
   /**
+   * User ID (optional, used for stable color selection)
+   * If provided, used for hash-based color selection. Falls back to fullName if not provided.
+   */
+  userId?: string;
+
+  /**
    * Optional custom style
    */
   style?: ViewStyle;
@@ -66,23 +72,71 @@ export function UserAvatar({
   size = 48,
   imageSource,
   fullName,
+  userId,
   style,
 }: UserAvatarProps) {
   const theme = useTheme();
   const isDark = theme.dark;
   const [imageError, setImageError] = useState(false);
 
-  // Background color adapts to theme
-  const backgroundColor = isDark 
-    ? tokens.colors.surface.darkElevated // #242424 in dark mode
-    : tokens.colors.neutral.light; // #E8E8E8 in light mode
+  /**
+   * Get avatar color based on userId or fullName hash
+   * Returns a stable color from tokens.colors.avatar.*
+   */
+  const getAvatarColor = (): string => {
+    const identifier = userId || fullName || '';
+    if (!identifier) {
+      // Fallback to theme-based color if no identifier
+      return isDark 
+        ? tokens.colors.surface.darkElevated
+        : tokens.colors.neutral.light;
+    }
 
-  // Text color for initials
-  const textColor = isDark 
-    ? tokens.colors.text.dark.primary // #FFFFFF in dark mode
-    : tokens.colors.text.primary; // #4F4A45 in light mode
+    // Defensive check: ensure avatar colors exist
+    if (!tokens.colors.avatar) {
+      // Fallback to theme-based color if avatar colors are not available
+      return isDark 
+        ? tokens.colors.surface.darkElevated
+        : tokens.colors.neutral.light;
+    }
+
+    // Simple hash function for stable color selection
+    let hash = 0;
+    for (let i = 0; i < identifier.length; i++) {
+      const char = identifier.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+
+    // Array of avatar colors from tokens
+    const avatarColors = [
+      tokens.colors.avatar.blue,
+      tokens.colors.avatar.mint,
+      tokens.colors.avatar.green,
+      tokens.colors.avatar.yellow,
+      tokens.colors.avatar.brown,
+      tokens.colors.avatar.pink,
+      tokens.colors.avatar.teal,
+      tokens.colors.avatar.lightBlue,
+      tokens.colors.avatar.purple,
+    ];
+
+    // Use absolute value and modulo to select a color
+    const colorIndex = Math.abs(hash) % avatarColors.length;
+    return avatarColors[colorIndex];
+  };
+
+  // Background color: use avatar color if no image, otherwise theme-based
+  const backgroundColor = getAvatarColor();
+
+  // Text color for initials : blanc pour contraste sur fond coloré
+  // Utilise tokens.colors.text.onPrimary qui est blanc (#FFFFFF)
+  const textColor = tokens.colors.text.onPrimary;
 
   // Generate initials from fullName
+  // Règle : TOUJOURS 2 initiales
+  // - Si un seul mot : prendre les 2 premières lettres (ex: "Emma" → "EM")
+  // - Si plusieurs mots : première lettre du premier + première lettre du dernier (ex: "Emma Laurent" → "EL")
   const getInitials = (): string => {
     if (!fullName || fullName.trim().length === 0) return '';
 
@@ -90,8 +144,13 @@ export function UserAvatar({
     if (words.length === 0) return '';
 
     if (words.length === 1) {
-      // Single word: take first letter
-      return words[0].charAt(0).toUpperCase();
+      // Single word: take first 2 letters
+      const word = words[0];
+      if (word.length >= 2) {
+        return (word.charAt(0) + word.charAt(1)).toUpperCase();
+      }
+      // Si le mot n'a qu'une lettre, répéter (ex: "A" → "AA")
+      return (word.charAt(0) + word.charAt(0)).toUpperCase();
     }
 
     // Multiple words: take first letter of first and last word
@@ -168,7 +227,7 @@ export function UserAvatar({
 
 const styles = StyleSheet.create({
   initials: {
-    fontWeight: '600', // Semi-bold weight for better visibility
+    fontWeight: tokens.typography.fontWeight.bold, // Bold weight pour meilleure visibilité
     textAlign: 'center',
   },
 });

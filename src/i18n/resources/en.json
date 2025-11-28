@@ -12,6 +12,7 @@
     "dueToday": "Due Today",
     "filters": {
       "all": "All",
+      "tasks": "Tasks",
       "boards": "Boards",
       "portals": "Portals"
     },

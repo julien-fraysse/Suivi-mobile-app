@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, Text, ImageSourcePropType, ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { MaterialIcons } from '@expo/vector-icons';
 import { tokens } from '@theme';
 
 export interface UserAvatarProps {
@@ -32,6 +33,14 @@ export interface UserAvatarProps {
    * Optional custom style
    */
   style?: ViewStyle;
+
+  /**
+   * Badge type to display on the avatar
+   * - 'assigned': Badge for task assignment notifications
+   * - 'mentioned': Badge for mention notifications
+   * - null: No badge
+   */
+  badge?: 'assigned' | 'mentioned' | null;
 }
 
 /**
@@ -74,6 +83,7 @@ export function UserAvatar({
   fullName,
   userId,
   style,
+  badge,
 }: UserAvatarProps) {
   const theme = useTheme();
   const isDark = theme.dark;
@@ -184,6 +194,44 @@ export function UserAvatar({
   // Font size for initials (proportional to avatar size)
   const fontSize = size >= 34 ? 14 : Math.max(12, size * 0.4);
 
+  // Badge size : 20px (tokens.spacing.lg + tokens.spacing.xs = 16 + 4 = 20px)
+  const badgeSize = tokens.spacing.lg + tokens.spacing.xs;
+  
+  // Badge icon size : 12px (tokens.spacing.md = 12px)
+  const badgeIconSize = tokens.spacing.md;
+
+  // Render badge if needed
+  const renderBadge = () => {
+    if (!badge) return null;
+
+    const badgeIcon: keyof typeof MaterialIcons.glyphMap = 
+      badge === 'assigned' ? 'person' : 'alternate-email';
+    
+    return (
+      <View
+        style={[
+          styles.badgeContainer,
+          {
+            width: badgeSize,
+            height: badgeSize,
+            borderRadius: tokens.radius.full,
+            bottom: -tokens.spacing.xs / 2,
+            right: -tokens.spacing.xs / 2,
+            backgroundColor: tokens.colors.brand.primary,
+            zIndex: 10,
+            elevation: 5,
+          },
+        ]}
+      >
+        <MaterialIcons
+          name={badgeIcon}
+          size={badgeIconSize}
+          color={tokens.colors.text.onPrimary}
+        />
+      </View>
+    );
+  };
+
   // Render content
   if (hasImage) {
     // Try to determine if imageSource is a require() object or URL string
@@ -192,42 +240,56 @@ export function UserAvatar({
       : imageSource;
 
     return (
-      <View style={[containerStyle, style]}>
-        <Image
-          source={source}
-          style={imageStyle}
-          resizeMode="cover"
-          onError={() => {
-            setImageError(true);
-          }}
-        />
+      <View style={styles.avatarWrapper}>
+        <View style={[containerStyle, style]}>
+          <Image
+            source={source}
+            style={imageStyle}
+            resizeMode="cover"
+            onError={() => {
+              setImageError(true);
+            }}
+          />
+        </View>
+        {renderBadge()}
       </View>
     );
   }
 
   // Fallback: show initials or empty avatar
   return (
-    <View style={[containerStyle, style]}>
-      {initials ? (
-        <Text
-          style={[
-            styles.initials,
-            {
-              fontSize,
-              color: textColor,
-            },
-          ]}
-        >
-          {initials}
-        </Text>
-      ) : null}
+    <View style={styles.avatarWrapper}>
+      <View style={[containerStyle, style]}>
+        {initials ? (
+          <Text
+            style={[
+              styles.initials,
+              {
+                fontSize,
+                color: textColor,
+              },
+            ]}
+          >
+            {initials}
+          </Text>
+        ) : null}
+      </View>
+      {renderBadge()}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  avatarWrapper: {
+    position: 'relative',
+  },
   initials: {
     fontWeight: tokens.typography.fontWeight.bold, // Bold weight pour meilleure visibilité
     textAlign: 'center',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -155,7 +155,9 @@
     "justNow": "À l'instant",
     "minutesAgo": " min",
     "hoursAgo": " h",
-    "daysAgo": " j"
+    "daysAgo": " j",
+    "delete": "Supprimer",
+    "markAsRead": "Marquer comme lu"
   },
   "notificationDetail": {
     "linkedTo": "Lié à",

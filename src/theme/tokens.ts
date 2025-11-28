@@ -88,6 +88,19 @@ export const colors = {
     darkElevated: '#242424', // Surface élevée pour dark mode (cards, modals)
     darkVariant: '#2C2C2C', // Variante de surface sombre
   },
+  
+  // Avatar colors (for avatars without photo)
+  avatar: {
+    blue: '#5465FF',
+    mint: '#71D6C3',
+    green: '#0E9F6E',
+    yellow: '#FBEA75',
+    brown: '#96897B',
+    pink: '#FFB1FD',
+    teal: '#006D77',
+    lightBlue: '#A3E0FF',
+    purple: '#B868FD',
+  },
 } as const;
 
 // Spacing Scale (base unit: 4px)

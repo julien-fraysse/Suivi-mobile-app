@@ -43,7 +43,7 @@ export function HomeScreen() {
   const theme = useTheme();
   const isDark = theme.dark;
   
-  const [filter, setFilter] = useState<'all' | 'board' | 'portal'>('all');
+  const [filter, setFilter] = useState<'all' | 'tasks' | 'board' | 'portal'>('all');
   const [limit, setLimit] = useState(5);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -81,6 +81,8 @@ export function HomeScreen() {
     if (!orderedActivities || orderedActivities.length === 0) return [];
     
     switch (filter) {
+      case 'tasks':
+        return orderedActivities.filter((a) => a.eventType.startsWith('TASK_') || a.eventType === 'OBJECTIVE_STATUS_CHANGED');
       case 'board':
         return orderedActivities.filter((a) => a.eventType.startsWith('BOARD_'));
       case 'portal':
@@ -183,12 +185,13 @@ export function HomeScreen() {
               variant="fullWidth"
               options={[
                 { key: 'all', label: t('home.filters.all') },
+                { key: 'tasks', label: t('home.filters.tasks') },
                 { key: 'board', label: t('home.filters.boards') },
                 { key: 'portal', label: t('home.filters.portals') },
               ]}
               value={filter}
               onChange={(key) => {
-                setFilter(key as 'all' | 'board' | 'portal');
+                setFilter(key as 'all' | 'tasks' | 'board' | 'portal');
                 setLimit(5);
               }}
             />

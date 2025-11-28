@@ -21,7 +21,9 @@ import React, { useRef } from 'react';
 import { View, StyleSheet, Platform, ViewStyle } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { TaskItem } from '../ui/TaskItem';
+import { SuiviText } from '../ui/SuiviText';
 import type { Task } from '../../types/task';
 import { tokens } from '@theme';
 
@@ -45,6 +47,7 @@ export function SwipeableTaskItem({
   onDone,
   style,
 }: SwipeableTaskItemProps) {
+  const { t } = useTranslation();
   const swipeableRef = useRef<Swipeable>(null);
   const hasCompletedRef = useRef(false);
 
@@ -77,17 +80,16 @@ export function SwipeableTaskItem({
     return (
       <View style={styles.rightAction}>
         <View style={styles.rightActionContent}>
+          <View style={styles.rightActionTextContainer}>
+            <SuiviText variant="body" style={styles.rightActionText}>
+              {t('tasks.status.done')}
+            </SuiviText>
+          </View>
           <MaterialCommunityIcons
             name="check-circle"
             size={24}
-            color="#FFFFFF"
+            color={tokens.colors.text.onPrimary}
           />
-          <View style={styles.rightActionTextContainer}>
-            {/* Utiliser la clé i18n existante pour "Done" */}
-            {/* Note: On pourrait utiliser t('tasks.status.done') mais c'est "Terminée" en français */}
-            {/* Pour un swipe, "Done" est plus court et universel, mais on respecte i18n */}
-            {/* Pour l'instant, on utilise juste l'icône, le texte peut être ajouté si nécessaire */}
-          </View>
         </View>
       </View>
     );
@@ -115,15 +117,19 @@ const styles = StyleSheet.create({
     paddingLeft: tokens.spacing.lg,
     borderRadius: tokens.radius.lg,
     marginBottom: tokens.spacing.md,
+    minWidth: tokens.spacing.xxl * 6,
   },
   rightActionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     minWidth: 80,
   },
   rightActionTextContainer: {
-    marginLeft: tokens.spacing.sm,
+    marginRight: tokens.spacing.sm,
+  },
+  rightActionText: {
+    color: tokens.colors.text.onPrimary,
   },
 });
 

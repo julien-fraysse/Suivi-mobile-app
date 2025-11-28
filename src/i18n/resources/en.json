@@ -155,7 +155,9 @@
     "justNow": "Just now",
     "minutesAgo": " min",
     "hoursAgo": " h",
-    "daysAgo": " d"
+    "daysAgo": " d",
+    "delete": "Delete",
+    "markAsRead": "Mark as read"
   },
   "notificationDetail": {
     "linkedTo": "Linked to",

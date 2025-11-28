@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, StyleSheet, ViewStyle, Pressable, Platform, Alert } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviText } from './SuiviText';
 import { UserAvatar } from './UserAvatar';
 import { useTasksContext } from '../../tasks/TasksContext';
@@ -64,7 +65,9 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
   const theme = useTheme();
   const navigation = useNavigation<NotificationItemNavigationProp>();
   const { getTaskByIdStrict } = useTasksContext();
-  const { markAsRead } = useNotificationsStore();
+  const { markAsRead, deleteNotification } = useNotificationsStore();
+  const swipeableRef = useRef<Swipeable>(null);
+  const hasCompletedActionRef = useRef(false);
   const notificationTitle = getNotificationTypeLabel(notification.type, t);
   
   /**
@@ -183,6 +186,19 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
     return notification.actor?.name || notification.author?.name;
   };
 
+  /**
+   * Détermine le type de badge à afficher sur l'avatar selon le type de notification
+   */
+  const getBadgeType = (): 'assigned' | 'mentioned' | null => {
+    if (notification.type === 'task_assigned') {
+      return 'assigned';
+    }
+    if (notification.type === 'mention_in_comment' || notification.type === 'comment') {
+      return 'mentioned';
+    }
+    return null;
+  };
+
   // Rendre l'icône ou l'avatar selon le type
   const renderIconOrAvatar = () => {
     const iconColor = getBorderColor();
@@ -192,12 +208,13 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
       const avatarUrl = getAvatarUrl();
       const actorName = getActorName();
       
-      // Utiliser UserAvatar avec fallback initiales
+      // Utiliser UserAvatar avec fallback initiales et badge
       return (
         <UserAvatar
           size={36}
           imageSource={avatarUrl}
           fullName={actorName}
+          badge={getBadgeType()}
           style={theme.dark ? {
             borderWidth: 1,
             borderColor: 'rgba(255,255,255,0.2)',
@@ -238,7 +255,78 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
         },
       });
 
-  return (
+  /**
+   * Gère l'ouverture complète du swipe
+   */
+  const handleSwipeableOpen = (direction: 'left' | 'right') => {
+    if (hasCompletedActionRef.current) return;
+
+    if (direction === 'right') {
+      // Swipe gauche → Delete
+      hasCompletedActionRef.current = true;
+      deleteNotification(notification.id);
+      setTimeout(() => {
+        swipeableRef.current?.close();
+        hasCompletedActionRef.current = false;
+      }, 300);
+    } else if (direction === 'left') {
+      // Swipe droite → Mark as read
+      hasCompletedActionRef.current = true;
+      if (!notification.read) {
+        markAsRead(notification.id);
+      }
+      setTimeout(() => {
+        swipeableRef.current?.close();
+        hasCompletedActionRef.current = false;
+      }, 300);
+    }
+  };
+
+  /**
+   * Render l'action "Delete" révélée lors du swipe gauche
+   */
+  const renderRightActions = () => {
+    return (
+      <View style={styles.rightAction}>
+        <View style={styles.rightActionContent}>
+          <MaterialCommunityIcons
+            name="delete"
+            size={24}
+            color={tokens.colors.text.onPrimary}
+          />
+          <SuiviText variant="body" style={styles.rightActionText}>
+            {t('notifications.delete')}
+          </SuiviText>
+        </View>
+      </View>
+    );
+  };
+
+  /**
+   * Render l'action "Mark as read" révélée lors du swipe droite
+   */
+  const renderLeftActions = () => {
+    if (notification.read) {
+      return null;
+    }
+    return (
+      <View style={styles.leftAction}>
+        <View style={styles.leftActionContent}>
+          <MaterialCommunityIcons
+            name="check"
+            size={24}
+            color={tokens.colors.text.onPrimary}
+          />
+          <SuiviText variant="body" style={styles.leftActionText}>
+            {t('notifications.markAsRead')}
+          </SuiviText>
+        </View>
+      </View>
+    );
+  };
+
+  // Contenu principal de la notification
+  const notificationContent = (
     <Pressable
       onPress={handleNotificationClick}
       style={({ pressed }) => [
@@ -299,6 +387,26 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
         </View>
       </View>
     </Pressable>
+  );
+
+  // Fallback Web : retourner le Pressable sans Swipeable
+  if (Platform.OS === 'web') {
+    return notificationContent;
+  }
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      renderLeftActions={renderLeftActions}
+      onSwipeableOpen={handleSwipeableOpen}
+      rightThreshold={40}
+      leftThreshold={40}
+      overshootRight={false}
+      overshootLeft={false}
+    >
+      {notificationContent}
+    </Swipeable>
   );
 }
 
@@ -413,6 +521,44 @@ const styles = StyleSheet.create({
   date: {
     marginTop: tokens.spacing.xs,
     lineHeight: 20,
+  },
+  rightAction: {
+    flex: 1,
+    backgroundColor: tokens.colors.semantic.error,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingRight: tokens.spacing.lg,
+    borderRadius: tokens.radius.md,
+    marginBottom: tokens.spacing.md,
+  },
+  rightActionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+  },
+  rightActionText: {
+    color: tokens.colors.text.onPrimary,
+    marginLeft: tokens.spacing.sm,
+  },
+  leftAction: {
+    flex: 1,
+    backgroundColor: tokens.colors.semantic.success,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingLeft: tokens.spacing.lg,
+    borderRadius: tokens.radius.md,
+    marginBottom: tokens.spacing.md,
+  },
+  leftActionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+  },
+  leftActionText: {
+    color: tokens.colors.text.onPrimary,
+    marginLeft: tokens.spacing.sm,
   },
 });
 

@@ -74,6 +74,7 @@ interface NotificationsContextValue {
   notifications: Notification[];
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  deleteNotification: (id: string) => void;
 }
 
 /**
@@ -157,10 +158,26 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     // await api.patch('/api/notifications/read-all');
   }, []);
 
+  /**
+   * deleteNotification
+   * 
+   * Deletes a notification from the list.
+   * 
+   * MOCK ONLY - TODO: Replace with DELETE /api/notifications/:id API call
+   * 
+   * @param id - ID of the notification to delete
+   */
+  const deleteNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    // TODO: When Suivi API is ready, add API call here:
+    // await api.delete(`/api/notifications/${id}`);
+  }, []);
+
   const value: NotificationsContextValue = {
     notifications,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
   };
 
   return (
@@ -179,6 +196,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
  *   - notifications: Notification[] - All notifications in memory
  *   - markAsRead(id: string) - Mark a notification as read
  *   - markAllAsRead() - Mark all notifications as read
+ *   - deleteNotification(id: string) - Delete a notification
  * 
  * @throws {Error} If used outside of NotificationsProvider
  */

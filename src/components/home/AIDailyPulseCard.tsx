@@ -103,8 +103,8 @@ function classifyTaskByDate(task: Task): SectionName {
     return 'today';
   }
   
-  // Overdue (strictement avant aujourd'hui)
-  if (taskDate < today) {
+  // Overdue (strictement avant aujourd'hui, excluant les tâches "done")
+  if (taskDate < today && task.status !== 'done') {
     return 'overdue';
   }
   

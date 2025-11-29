@@ -39,7 +39,7 @@ export function QuickActionComment({ task, onActionComplete }: QuickActionCommen
   };
 
   return (
-    <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
+    <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.container}>
       <SuiviText variant="label" color="secondary" style={styles.label}>
         {t('quickActions.comment.label')}
       </SuiviText>

@@ -12,8 +12,7 @@ export interface TasksFilterControlProps {
  * TasksFilterControl
  * 
  * Composant wrapper réutilisable pour les filtres de tâches.
- * Encapsule SegmentedControl avec les 3 options standard :
- * - All / Tous
+ * Encapsule SegmentedControl avec les 2 options standard :
  * - Active / Actives
  * - Completed / Terminées
  * 
@@ -31,7 +30,6 @@ export function TasksFilterControl({
   const { t } = useTranslation();
 
   const options: SegmentedControlOption[] = [
-    { key: 'all', label: t('tasks.filters.all') },
     { key: 'active', label: t('tasks.filters.active') },
     { key: 'completed', label: t('tasks.filters.completed') },
   ];

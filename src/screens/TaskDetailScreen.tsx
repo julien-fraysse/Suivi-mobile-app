@@ -1334,6 +1334,28 @@ export function TaskDetailScreen() {
             </SuiviCard>
           )}
         </View>
+
+        {/* Bloc History & Comments */}
+        <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.xl }]}>
+          <SuiviText variant="h2" style={styles.sectionTitle}>
+            {t('taskDetail.activityTimeline')}
+          </SuiviText>
+          <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
+            {t('taskDetail.activitySubtitle')}
+          </SuiviText>
+          
+          {allActivities.length > 0 ? (
+            <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+              {allActivities.map((activity) => renderActivityItem(activity))}
+            </SuiviCard>
+          ) : (
+            <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
+              <SuiviText variant="body" color="secondary">
+                {t('taskDetail.noActivity')}
+              </SuiviText>
+            </SuiviCard>
+          )}
+        </View>
       </View>
       </KeyboardAvoidingView>
     </Screen>

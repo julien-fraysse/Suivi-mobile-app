@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     marginHorizontal: tokens.spacing.lg,
   },
   sectionContent: {
-    paddingHorizontal: tokens.spacing.lg,
+    // paddingHorizontal supprimé car déjà géré par scrollContent
     paddingTop: tokens.spacing.sm,
   },
   taskCard: {

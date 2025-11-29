@@ -123,7 +123,7 @@ function getStatusColor(status: TaskStatus): string {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: tokens.spacing.md,
+    // marginBottom géré par le parent (taskCard dans MyTasksScreen)
   },
   horizontalRow: {
     flexDirection: 'row',

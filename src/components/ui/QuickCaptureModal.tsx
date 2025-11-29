@@ -262,7 +262,7 @@ export function QuickCaptureModal({ visible, onClose, onSuccess }: QuickCaptureM
                       styles.cancelButton,
                       {
                         height: 48,
-                        borderRadius: 16,
+                        borderRadius: tokens.radius.lg,
                         borderColor: cancelBorderColor,
                         borderWidth: 1,
                         opacity: isLoading ? 0.6 : 1,
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   },
   modal: {
     width: '100%',
-    borderRadius: 24,
+    borderRadius: tokens.radius.xl,
     padding: 24,
     maxWidth: 500,
   },
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.xl,
   },
   input: {
-    borderRadius: 16,
+    borderRadius: tokens.radius.lg,
     padding: 14,
     minHeight: 80,
     maxHeight: 120,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: '100%',
     height: 48,
-    borderRadius: 16,
+    borderRadius: tokens.radius.lg,
   },
   cancelButton: {
     width: '100%',

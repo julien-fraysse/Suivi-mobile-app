@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   typeBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: tokens.radius.full,
     marginBottom: tokens.spacing.xs / 2,
   },
   typeBadgeText: {

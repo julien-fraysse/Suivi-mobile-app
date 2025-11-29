@@ -1714,7 +1714,7 @@ const styles = StyleSheet.create({
   activityDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: tokens.radius.xs,
     backgroundColor: tokens.colors.brand.primary,
     marginRight: tokens.spacing.sm,
     marginTop: tokens.spacing.xs,

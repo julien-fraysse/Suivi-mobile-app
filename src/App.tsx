@@ -31,7 +31,7 @@ import { NotificationsProvider } from './features/notifications/notificationsSto
 import { SuiviQueryProvider } from './services/QueryProvider';
 import { useAuthStore } from '@store/authStore';
 import { AppLoadingScreen } from '@screens/AppLoadingScreen';
-import { tokens } from './theme';
+import { tokens } from '@theme';
 
 // Navigation root
 import RootNavigator from './navigation/RootNavigator';

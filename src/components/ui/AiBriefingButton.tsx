@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
 import { SuiviText } from './SuiviText';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 import { useTranslation } from 'react-i18next';
 
 export interface AiBriefingButtonProps {
@@ -60,21 +60,13 @@ export function AiBriefingButton({ onPress, style }: AiBriefingButtonProps) {
   // Couleurs du gradient (violet Suivi)
   const gradientColors = ['#7A5CFF', '#4F5DFF'];
 
-  // Ombre adaptée au thème
+  // Ombre adaptée au thème (utilise tokens.shadows.card avec couleur custom en light mode)
+  const baseShadow = getShadowStyle('card', isDark);
   const shadowStyle = isDark
-    ? {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-      }
+    ? baseShadow
     : {
-        shadowColor: '#7A5CFF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        ...baseShadow,
+        shadowColor: '#7A5CFF', // Couleur custom pour light mode
       };
 
   return (
@@ -136,7 +128,7 @@ const styles = StyleSheet.create({
   container: {
     height: 64,
     marginHorizontal: tokens.spacing.lg,
-    borderRadius: 20,
+    borderRadius: tokens.radius.xl,
     overflow: 'hidden', // Important pour afficher le gradient proprement
   },
   gradient: {
@@ -168,7 +160,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: tokens.radius.lg,
     backgroundColor: 'rgba(255,224,113,0.20)',
     alignItems: 'center',
     justifyContent: 'center',

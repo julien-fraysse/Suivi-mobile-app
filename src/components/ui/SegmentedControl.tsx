@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { SuiviText } from './SuiviText';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 
 export interface SegmentedControlOption {
   key: string;
@@ -63,17 +63,7 @@ export function SegmentedControl({
       : 'transparent';
 
     const tabShadow = isSelected && !theme.dark
-      ? Platform.select({
-          ios: {
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.06,
-            shadowRadius: 4,
-          },
-          android: {
-            elevation: 1,
-          },
-        })
+      ? getShadowStyle('sm', theme.dark)
       : {};
 
     return (
@@ -115,32 +105,8 @@ export function SegmentedControl({
     : tokens.colors.border.default;
 
   const containerShadow = isFullWidth
-    ? (theme.dark 
-        ? {} // Pas de shadow en dark mode
-        : Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-            },
-            android: {
-              elevation: 4,
-            },
-          }))
-    : (theme.dark 
-        ? {} // Pas de shadow en dark mode
-        : Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-            },
-            android: {
-              elevation: 2,
-            },
-          }));
+    ? getShadowStyle('card', theme.dark)
+    : getShadowStyle('sm', theme.dark);
 
   return (
     <View style={[
@@ -161,14 +127,14 @@ const styles = StyleSheet.create({
   segmentedControl: {
     flexDirection: 'row',
     borderWidth: 1,
-    borderRadius: 14, // Style par défaut (compact)
+    borderRadius: tokens.radius.md, // Style par défaut (compact)
     padding: 4,
     width: 'auto',
     alignSelf: 'center',
     // backgroundColor et borderColor sont définis dynamiquement selon le thème
   },
   segmentedControlFullWidth: {
-    borderRadius: 20, // tokens.radius.xl pour style Gemini 3
+    borderRadius: tokens.radius.xl, // Style Gemini 3
     padding: 6, // Augmenté pour plus d'espace
     width: '100%', // Largeur pleine pour style Gemini 3
     minHeight: 60, // Height 60-70px pour style Gemini 3
@@ -179,7 +145,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8, // Style par défaut
     paddingHorizontal: tokens.spacing.xl, // 24px
-    borderRadius: 10,
+    borderRadius: tokens.radius.md,
     minWidth: 80,
     backgroundColor: 'transparent',
   },
@@ -188,7 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12, // Augmenté pour meilleures touch zones (style Gemini 3)
     paddingHorizontal: tokens.spacing.md, // Réduit pour éviter la troncature "…" sur iOS réel / TestFlight
-    borderRadius: 14, // Arrondi adapté au nouveau conteneur
+    borderRadius: tokens.radius.md, // Arrondi adapté au nouveau conteneur
     flex: 1, // Taille uniforme pour les boutons (style Gemini 3)
     minWidth: 80,
   },

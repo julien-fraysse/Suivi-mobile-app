@@ -292,7 +292,7 @@ export function AIDailyPulseCard({ data, style }: AIDailyPulseCardProps) {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: tokens.radius.xl,
     overflow: 'hidden',
   },
   gradient: {
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: tokens.radius.lg,
     backgroundColor: 'rgba(255,224,113,0.20)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   insightDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: tokens.radius.xs,
     backgroundColor: '#FFFFFF',
     marginRight: 10,
     opacity: 0.8,
@@ -349,21 +349,21 @@ const styles = StyleSheet.create({
   insightDotRed: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: tokens.radius.xs,
     backgroundColor: '#FF4D4F',
     marginRight: 10,
   },
   insightDotOrange: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: tokens.radius.xs,
     backgroundColor: '#FA8C16',
     marginRight: 10,
   },
   insightDotGreen: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: tokens.radius.xs,
     backgroundColor: '#52C41A',
     marginRight: 10,
   },

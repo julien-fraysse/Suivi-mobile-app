@@ -286,6 +286,27 @@ export const zIndex = {
   tooltip: 1070,
 } as const;
 
+/**
+ * Helper function to get shadow style with Platform.select support
+ * Returns the shadow style from tokens.shadows with proper iOS/Android handling
+ * 
+ * @param shadowKey - Key from tokens.shadows ('none' | 'sm' | 'card' | 'lg')
+ * @param isDark - Whether dark mode is active (shadows disabled in dark mode)
+ * @returns Shadow style object compatible with React Native StyleSheet
+ */
+export function getShadowStyle(
+  shadowKey: keyof typeof shadows = 'card',
+  isDark: boolean = false
+): Record<string, any> {
+  // En dark mode, on n'utilise pas de shadow (matte black style)
+  if (isDark) {
+    return {};
+  }
+  
+  // Return the shadow style from tokens
+  return shadows[shadowKey];
+}
+
 // Export all tokens
 export const tokens = {
   colors,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, Platform } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 
 export interface FilterChipProps {
   label: string;
@@ -80,7 +80,7 @@ export function FilterChip({
             borderColor: getBorderColor(),
             borderWidth: getBorderWidth(),
             opacity: disabled ? 0.6 : 1,
-            ...(selected && styles.material3ChipSelected),
+            ...(selected && getShadowStyle('card', isDark)),
           },
           style,
         ]}
@@ -175,24 +175,11 @@ const styles = StyleSheet.create({
   material3Chip: {
     flex: 1,
     height: 40,
-    borderRadius: 20,
+    borderRadius: tokens.radius.xl,
     paddingHorizontal: 12,
     marginHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  material3ChipSelected: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.20,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
   },
   material3ChipText: {
     fontFamily: tokens.typography.label.fontFamily, // Inter_500Medium

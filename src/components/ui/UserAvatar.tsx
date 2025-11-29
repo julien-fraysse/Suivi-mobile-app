@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Image, Text, ImageSourcePropType, ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 
 export interface UserAvatarProps {
   /**
@@ -219,7 +219,7 @@ export function UserAvatar({
             right: -tokens.spacing.xs / 2,
             backgroundColor: tokens.colors.brand.primary,
             zIndex: 10,
-            elevation: 5,
+            ...getShadowStyle('card', isDark),
           },
         ]}
       >

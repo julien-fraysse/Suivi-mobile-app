@@ -534,13 +534,13 @@ const styles = StyleSheet.create({
   skeletonAvatar: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: tokens.radius.xl,
     marginRight: tokens.spacing.md,
   },
   skeletonLine: {
     height: 16,
     width: '60%',
-    borderRadius: 4,
+    borderRadius: tokens.radius.xs,
   },
   switchRow: {
     flexDirection: 'row',

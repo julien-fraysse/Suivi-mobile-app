@@ -116,7 +116,7 @@ export function SeeMoreActivitiesButton({
 const styles = StyleSheet.create({
   container: {
     height: 42,
-    borderRadius: 10,
+    borderRadius: tokens.radius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },

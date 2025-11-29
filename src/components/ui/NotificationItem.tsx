@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, ViewStyle, Pressable, Platform, Alert } from 'react-native';
+import { View, StyleSheet, ViewStyle, Platform, Alert } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SuiviText } from './SuiviText';
+import { SuiviCard } from './SuiviCard';
 import { UserAvatar } from './UserAvatar';
 import { useTasksContext } from '../../tasks/TasksContext';
 import { useNotificationsStore } from '../../features/notifications/notificationsStore';
@@ -52,11 +53,13 @@ type NotificationItemNavigationProp = NativeStackNavigationProp<AppStackParamLis
  * Composant pour afficher un item de notification dans la liste.
  * 
  * Design :
- * - Utilise SuiviCard avec elevation selon l'état (lue/non lue)
- * - Variant outlined pour lues, default pour non lues
- * - Badge non lue (point bleu)
- * - Bordure gauche bleue pour non lues (4px)
- * - Typography Suivi (h2 pour titre, body pour message, caption pour date)
+ * - Utilise SuiviCard avec elevation="sm" et variant="default"
+ * - Radius: tokens.radius.lg (16px) - géré par SuiviCard
+ * - Shadow: tokens.shadows.sm - géré par SuiviCard
+ * - Background: géré par SuiviCard (light: #FFFFFF, dark: #242424)
+ * - Liseret gauche: borderLeftWidth: 4px (seulement si non lue) via style prop
+ * - Badge non lue (point bleu) en position absolute
+ * - Typography Suivi (h2 pour titre, body pour message)
  * 
  * Utilise EXCLUSIVEMENT les tokens Suivi.
  */
@@ -237,23 +240,8 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
     );
   };
   
-  const cardBackgroundColor = theme.dark 
-    ? tokens.colors.surface.dark 
-    : tokens.colors.background.default;
-  
-  const cardShadow = theme.dark 
-    ? {} // Pas de shadow en dark mode
-    : Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
-        },
-        android: {
-          elevation: 2,
-        },
-      });
+  // Couleur du liseret selon le type de notification
+  const liseretColor = getBorderColor();
 
   /**
    * Gère l'ouverture complète du swipe
@@ -327,34 +315,21 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
 
   // Contenu principal de la notification
   const notificationContent = (
-    <Pressable
+    <SuiviCard
       onPress={handleNotificationClick}
-      style={({ pressed }) => [
+      elevation="sm"
+      variant="default"
+      padding="md"
+      style={[
         styles.card,
-        {
-          backgroundColor: cardBackgroundColor,
-          borderRadius: 12,
-          paddingVertical: 14,
-          paddingLeft: tokens.spacing.md,
-          // Note: paddingHorizontal est géré par le parent FlatList (NotificationsScreen)
-          // via contentContainerStyle.paddingHorizontal pour un alignement cohérent avec la Home
-          // paddingLeft ajouté pour créer un espace entre le liseret (4px) et le contenu
-          opacity: pressed ? 0.8 : 1,
-          ...cardShadow,
+        // Liseret via borderLeftWidth (seulement si non lue)
+        !notification.read && {
+          borderLeftWidth: 4,
+          borderLeftColor: liseretColor,
         },
         style,
       ]}
     >
-      {/* Liseret latéral - affiché seulement si non lue */}
-      {!notification.read && (
-        <View
-          style={[
-            styles.liseret,
-            { backgroundColor: getBorderColor() },
-          ]}
-        />
-      )}
-      
       {/* Pastille unread en position absolute sur la carte */}
       {!notification.read && (
         <View style={styles.unreadBadge} />
@@ -386,10 +361,10 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
           </SuiviText>
         </View>
       </View>
-    </Pressable>
+    </SuiviCard>
   );
 
-  // Fallback Web : retourner le Pressable sans Swipeable
+  // Fallback Web : retourner le SuiviCard sans Swipeable
   if (Platform.OS === 'web') {
     return notificationContent;
   }
@@ -462,15 +437,6 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: tokens.spacing.md,
     position: 'relative',
-    overflow: 'hidden',
-  },
-  liseret: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderRadius: 4,
   },
   contentRow: {
     flexDirection: 'row',
@@ -487,7 +453,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: tokens.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -508,7 +474,7 @@ const styles = StyleSheet.create({
   unreadBadge: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: tokens.radius.xs,
     backgroundColor: tokens.colors.brand.primary, // #4F5DFF
     position: 'absolute',
     top: 10,

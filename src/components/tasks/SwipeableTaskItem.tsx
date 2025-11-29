@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: tokens.colors.semantic.success,
     justifyContent: 'center',
-    alignItems: 'flex-start',
-    paddingLeft: tokens.spacing.lg,
+    alignItems: 'flex-end',
+    paddingRight: tokens.spacing.lg,
     borderRadius: tokens.radius.lg,
     marginBottom: tokens.spacing.md,
     minWidth: tokens.spacing.xxl * 6,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   rightActionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
     minWidth: 80,
   },
   rightActionTextContainer: {

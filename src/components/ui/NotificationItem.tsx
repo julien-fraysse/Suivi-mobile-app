@@ -193,7 +193,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
     if (notification.type === 'task_assigned') {
       return 'assigned';
     }
-    if (notification.type === 'mention_in_comment' || notification.type === 'comment') {
+    if (notification.type === 'mention_in_comment') {
       return 'mentioned';
     }
     return null;

@@ -91,7 +91,8 @@ export function SegmentedControl({
         ]}
       >
         <SuiviText 
-          variant="label" 
+          variant="label"
+          numberOfLines={1}
           style={{ 
             color: textColor, 
             fontWeight,
@@ -179,15 +180,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8, // Style par défaut
     paddingHorizontal: tokens.spacing.xl, // 24px
     borderRadius: 10,
-    minWidth: tokens.spacing.xxl * 3, // 96px
+    minWidth: 80,
     backgroundColor: 'transparent',
   },
   filterTabFullWidth: {
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 12, // Augmenté pour meilleures touch zones (style Gemini 3)
-    paddingHorizontal: tokens.spacing.lg + tokens.spacing.md, // 28px - Augmenté pour éviter le retour à la ligne sur "Portails"
+    paddingHorizontal: tokens.spacing.md, // Réduit pour éviter la troncature "…" sur iOS réel / TestFlight
     borderRadius: 14, // Arrondi adapté au nouveau conteneur
     flex: 1, // Taille uniforme pour les boutons (style Gemini 3)
-    minWidth: 0, // Permet au flex: 1 de fonctionner
+    minWidth: 80,
   },
   filterTabActive: {
     // Shadow est appliquée conditionnellement selon le thème dans le render

@@ -6,9 +6,8 @@ import {
   TextInput,
   Pressable,
   Modal,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
@@ -59,9 +58,6 @@ export function TaskDetailScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { taskId } = route.params;
-  
-  // Offset pour KeyboardAvoidingView (header + safe area)
-  const keyboardVerticalOffset = insets.top + 60; // ~60px pour le header "Task Overview"
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
@@ -371,7 +367,7 @@ export function TaskDetailScreen() {
       
       // Render comment bubble
       return (
-        <View key={activity.id} style={[styles.commentContainer, { backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default }]}>
+        <View key={activity.id} style={[styles.commentContainer, { backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.variant }]}>
           <SuiviText variant="body" color="primary" style={styles.commentAuthor}>
             {activity.actor.name}
           </SuiviText>
@@ -563,11 +559,13 @@ export function TaskDetailScreen() {
   };
 
   return (
-    <Screen scrollable noTopBackground>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={keyboardVerticalOffset}
+    <Screen noTopBackground>
+      <KeyboardAwareScrollView
+        extraScrollHeight={80}
+        enableOnAndroid={true}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: tokens.spacing.xxl }}
+        showsVerticalScrollIndicator={false}
       >
         <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
         {/* Header inline "Task Overview" avec bouton retour */}
@@ -1356,8 +1354,8 @@ export function TaskDetailScreen() {
             </SuiviCard>
           )}
         </View>
-      </View>
-      </KeyboardAvoidingView>
+        </View>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }

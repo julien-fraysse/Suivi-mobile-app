@@ -18,11 +18,12 @@ export interface TaskItemProps {
  * Composant pour afficher un item de tâche dans la liste.
  * 
  * Design :
- * - Utilise SuiviCard avec elevation card
- * - Typography Suivi (h2 pour titre, body2 pour détails)
- * - Status pill coloré selon le statut
+ * - Utilise SuiviCard avec elevation="none" (pas de shadow)
+ * - Liseret gauche via borderLeftWidth (4px) avec couleur selon le statut
+ * - Radius : tokens.radius.lg (16px) - géré par SuiviCard
+ * - Padding : tokens.spacing.md (12px) - géré par SuiviCard
+ * - Typography Suivi (body pour titre, label pour projet)
  * - Project name en texte secondaire
- * - Radius : radius.lg (16px)
  * 
  * Utilise EXCLUSIVEMENT les tokens Suivi.
  */
@@ -30,50 +31,43 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
   const statusColor = getStatusColor(task.status);
 
   return (
-    <View style={[styles.cardWrapper, style]}>
-      <View style={styles.statusLineWrapper}>
-        <View
-          style={[
-            styles.liseret,
-            { backgroundColor: statusColor },
-          ]}
+    <SuiviCard
+      onPress={onPress}
+      elevation="none"
+      variant="default"
+      padding="md"
+      style={[
+        styles.card,
+        {
+          borderLeftWidth: 4,
+          borderLeftColor: statusColor,
+        },
+        style,
+      ]}
+    >
+      <View style={styles.horizontalRow}>
+        <View style={styles.titleSection}>
+          <SuiviText variant="body">
+            {task.title}
+          </SuiviText>
+          {task.projectName && (
+            <SuiviText
+              variant="label"
+              color="secondary"
+              style={styles.projectText}
+            >
+              {task.projectName}
+            </SuiviText>
+          )}
+        </View>
+
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={20}
+          color={tokens.colors.text.secondary}
         />
       </View>
-
-      <SuiviCard
-        padding="xs"
-        elevation="card"
-        variant="default"
-        onPress={onPress}
-        noShadow={true}
-        style={styles.cardNoPadding}
-      >
-        <View style={styles.innerContent}>
-          <View style={styles.horizontalRow}>
-            <View style={styles.titleSection}>
-              <SuiviText variant="body">
-                {task.title}
-              </SuiviText>
-              {task.projectName && (
-                <SuiviText
-                  variant="body2"
-                  color="secondary"
-                  style={styles.projectText}
-                >
-                  {task.projectName}
-                </SuiviText>
-              )}
-            </View>
-
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={20}
-              color={tokens.colors.text.secondary}
-            />
-          </View>
-        </View>
-      </SuiviCard>
-    </View>
+    </SuiviCard>
   );
 }
 
@@ -128,35 +122,8 @@ function getStatusColor(status: TaskStatus): string {
 }
 
 const styles = StyleSheet.create({
-  cardWrapper: {
-    position: 'relative',
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
-  },
-  cardNoPadding: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  statusLineWrapper: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 4,
-    zIndex: 2,
-    overflow: 'hidden',
-  },
-  liseret: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: tokens.radius.lg,
-    borderBottomLeftRadius: tokens.radius.lg,
-  },
-  innerContent: {
-    padding: tokens.spacing.md,
+  card: {
+    marginBottom: tokens.spacing.md,
   },
   horizontalRow: {
     flexDirection: 'row',

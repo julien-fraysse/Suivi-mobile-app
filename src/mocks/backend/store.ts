@@ -37,20 +37,32 @@ export function updateTaskInStore(id: string, patch: Partial<Task>): Task | unde
     return undefined;
   }
   
+  const existingTask = TASKS_STORE[index];
+  
+  // Merge spécial pour les attachments : fusionner avec les existants au lieu d'écraser
+  let mergedAttachments: Task['attachments'] = existingTask.attachments;
+  if (patch.attachments !== undefined && Array.isArray(patch.attachments)) {
+    // Fusionner les attachments existants avec les nouveaux
+    mergedAttachments = [...(existingTask.attachments ?? []), ...patch.attachments];
+  }
+  
   // Merge intelligent : ignorer les undefined dans patch pour éviter d'écraser des valeurs existantes
-  const cleanPatch = Object.keys(patch).reduce((acc, key) => {
+  // Exclure attachments car géré séparément avec merge spécial
+  const { attachments: _, ...patchWithoutAttachments } = patch;
+  const cleanPatch = Object.keys(patchWithoutAttachments).reduce((acc, key) => {
     const patchKey = key as keyof Task;
-    const patchValue = patch[patchKey];
+    const patchValue = patchWithoutAttachments[patchKey];
     // Ne pas inclure undefined dans le merge (garder la valeur existante)
     if (patchValue !== undefined) {
-      acc[patchKey] = patchValue;
+      (acc as any)[patchKey] = patchValue;
     }
     return acc;
   }, {} as Partial<Task>);
   
   const updatedTask: Task = {
-    ...TASKS_STORE[index],
+    ...existingTask,
     ...cleanPatch,
+    attachments: mergedAttachments,
     updatedAt: new Date().toISOString(),
   };
   TASKS_STORE[index] = updatedTask;

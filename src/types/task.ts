@@ -74,6 +74,21 @@ export interface CustomField {
 }
 
 /**
+ * Attachment
+ * 
+ * Pièce jointe associée à une tâche.
+ */
+export interface Attachment {
+  id: string;
+  name: string;
+  type: 'image' | 'pdf' | 'spreadsheet' | 'other';
+  mime: string;
+  url: string;
+  size: number;
+  createdAt: string;
+}
+
+/**
  * Task Interface
  * 
  * Représente une tâche dans l'application Suivi.
@@ -139,6 +154,9 @@ export interface Task {
   
   /** Champs personnalisés (compatible API Suivi Desktop) */
   customFields?: CustomField[];
+  
+  /** Pièces jointes associées à la tâche */
+  attachments?: Attachment[];
 }
 
 /**
@@ -292,6 +310,7 @@ export function normalizeTask(raw: unknown): Task {
             };
           })
       : undefined,
+    attachments: Array.isArray(r.attachments) ? r.attachments : undefined,
   };
 }
 

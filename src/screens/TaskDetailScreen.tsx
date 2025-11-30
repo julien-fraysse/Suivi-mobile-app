@@ -26,7 +26,7 @@ import { SuiviButton } from '@components/ui/SuiviButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { useTaskById } from '../tasks/useTaskById';
 import { useTasksContext } from '../tasks/TasksContext';
-import type { TaskStatus, TaskQuickAction } from '../types/task';
+import type { TaskStatus, TaskQuickAction, Attachment } from '../types/task';
 import { useTaskActivity } from '@hooks/useActivity';
 import { useUser } from '@hooks/useUser';
 import { tokens, getShadowStyle } from '@theme';
@@ -1663,24 +1663,141 @@ export function TaskDetailScreen() {
         )}
 
         {activeTab === 'attachments' && (
-          <View style={styles.attachmentsEmptyWrapper}>
-            <SuiviCard variant="outlined" padding="lg" elevation="sm" style={styles.attachmentsEmptyCard}>
-              <MaterialCommunityIcons
-                name="file-outline"
-                size={32}
-                color={tokens.colors.text.secondary}
-                style={{ marginBottom: tokens.spacing.sm }}
-              />
-              <SuiviText variant="body" color="secondary" style={{ textAlign: 'center' }}>
-                {t('taskDetail.attachments.empty')}
-              </SuiviText>
-              <SuiviButton
-                title={t('taskDetail.attachments.upload')}
-                variant="primary"
-                onPress={pickDocument}
-                style={{ marginTop: tokens.spacing.md }}
-              />
-            </SuiviCard>
+          <View style={styles.attachmentsContainer}>
+            {task?.attachments && task.attachments.length > 0 ? (
+              <>
+                <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                  {task.attachments.map((attachment, index) => {
+                    const isLast = index === task.attachments!.length - 1;
+                    return (
+                      <Pressable
+                        key={attachment.id}
+                        style={[
+                          styles.metadataRow,
+                          isLast && styles.metadataRowLast,
+                          {
+                            borderBottomColor: isDark
+                              ? tokens.colors.border.darkMode.default
+                              : tokens.colors.border.default,
+                          },
+                        ]}
+                        onPress={() => {
+                          // TODO: Ouvrir le fichier (Linking.openURL pour les URLs)
+                          console.log('Open attachment:', attachment.url);
+                        }}
+                      >
+                        <View style={styles.metadataLabelContainer}>
+                          <MaterialCommunityIcons
+                            name={getAttachmentIcon(attachment.type) as any}
+                            size={20}
+                            color={
+                              isDark
+                                ? tokens.colors.text.dark.primary
+                                : tokens.colors.text.primary
+                            }
+                            style={styles.metadataIcon}
+                          />
+                          <View style={{ flex: 1, marginLeft: tokens.spacing.sm }}>
+                            <SuiviText variant="body" color="primary" style={{ flexShrink: 1 }}>
+                              {attachment.name}
+                            </SuiviText>
+                            <SuiviText variant="body" color="secondary" style={{ marginTop: tokens.spacing.xs }}>
+                              {formatFileSize(attachment.size)}
+                            </SuiviText>
+                          </View>
+                        </View>
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={20}
+                          color={
+                            isDark
+                              ? tokens.colors.text.dark.secondary
+                              : tokens.colors.neutral.medium
+                          }
+                        />
+                      </Pressable>
+                    );
+                  })}
+                </SuiviCard>
+                {/* Optionnel : Drop zone pour ajouter de nouveaux fichiers */}
+                <View style={{ marginTop: tokens.spacing.lg }}>
+                  <View
+                    style={[
+                      styles.attachmentsDropZone,
+                      {
+                        borderColor: isDark
+                          ? tokens.colors.border.darkMode.default
+                          : tokens.colors.border.default,
+                        backgroundColor: isDark
+                          ? tokens.colors.surface.darkVariant
+                          : tokens.colors.background.default,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="file-upload"
+                      size={36}
+                      color={
+                        isDark
+                          ? tokens.colors.text.dark.secondary
+                          : tokens.colors.text.secondary
+                      }
+                      style={styles.attachmentsIcon}
+                    />
+                    <SuiviButton
+                      title={t('taskDetail.attachments.upload')}
+                      variant="primary"
+                      onPress={pickDocument}
+                      style={styles.attachmentsButton}
+                    />
+                  </View>
+                </View>
+              </>
+            ) : (
+              <View
+                style={[
+                  styles.attachmentsDropZone,
+                  {
+                    borderColor: isDark
+                      ? tokens.colors.border.darkMode.default
+                      : tokens.colors.border.default,
+                    backgroundColor: isDark
+                      ? tokens.colors.surface.darkVariant
+                      : tokens.colors.background.default,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="file-upload"
+                  size={48}
+                  color={
+                    isDark
+                      ? tokens.colors.text.dark.secondary
+                      : tokens.colors.text.secondary
+                  }
+                  style={styles.attachmentsIcon}
+                />
+                <SuiviText
+                  variant="h2"
+                  style={[
+                    styles.attachmentsTitle,
+                    {
+                      color: isDark
+                        ? tokens.colors.text.dark.primary
+                        : tokens.colors.text.primary,
+                    },
+                  ]}
+                >
+                  {t('taskDetail.attachments.empty')}
+                </SuiviText>
+                <SuiviButton
+                  title={t('taskDetail.attachments.upload')}
+                  variant="primary"
+                  onPress={pickDocument}
+                  style={styles.attachmentsButton}
+                />
+              </View>
+            )}
           </View>
         )}
         </View>
@@ -1806,6 +1923,34 @@ function formatDate(dateString: string): string {
   } catch {
     return dateString;
   }
+}
+
+/**
+ * Retourne l'icône MaterialCommunityIcons pour un type d'attachment
+ */
+function getAttachmentIcon(type: Attachment['type']): string {
+  switch (type) {
+    case 'image':
+      return 'file-image';
+    case 'pdf':
+      return 'file-pdf-box';
+    case 'spreadsheet':
+      return 'file-excel';
+    case 'other':
+    default:
+      return 'file-outline';
+  }
+}
+
+/**
+ * Formate une taille de fichier en format lisible (KB, MB)
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 /**
@@ -1941,22 +2086,29 @@ const styles = StyleSheet.create({
   tabsContainer: {
     marginBottom: tokens.spacing.lg,
   },
-  attachmentsEmptyContainer: {
+  attachmentsContainer: {
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xl,
+  },
+  attachmentsDropZone: {
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    borderRadius: tokens.radius.xl,
+    padding: tokens.spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: tokens.spacing.xxl * 10, // 320px - hauteur minimale pour une drop zone visible
+  },
+  attachmentsIcon: {
+    marginBottom: tokens.spacing.md,
+  },
+  attachmentsTitle: {
+    marginBottom: tokens.spacing.sm,
+    textAlign: 'center',
+  },
+  attachmentsButton: {
     marginTop: tokens.spacing.lg,
-    paddingHorizontal: tokens.spacing.lg,
-    alignItems: 'center',
-  },
-  attachmentsEmptyWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: tokens.spacing.lg,
-  },
-  attachmentsEmptyCard: {
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   // Options Bottom Sheet
   optionsSheetContainer: {

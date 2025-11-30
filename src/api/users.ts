@@ -1,4 +1,4 @@
-import { USE_MOCK_API } from '../config/environment';
+import { API_MODE } from '../config/apiMode';
 import { apiFetch } from './client';
 import * as mockUsers from '../mocks/data/users';
 
@@ -15,7 +15,7 @@ export type User = {
  * Récupère l'utilisateur actuel
  */
 export async function getUser(_accessToken?: string | null): Promise<User> {
-  if (USE_MOCK_API) {
+  if (API_MODE === 'mock') {
     return mockUsers.getUser();
   }
 

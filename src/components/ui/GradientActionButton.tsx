@@ -2,6 +2,8 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ViewStyle, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from 'react-native-paper';
+import { tokens, getShadowStyle } from '@theme';
 
 export interface GradientActionButtonProps {
   /**
@@ -34,7 +36,7 @@ export interface GradientActionButtonProps {
  * - Largeur 100%
  * - Hauteur ~56px
  * - Fond : dégradé violet → bleu (#6366F1 → #8B5CF6)
- * - Coins : borderRadius: 14
+ * - Coins : borderRadius: tokens.radius.md (12px)
  * - Icône blanc à gauche (taille 18, spacing 12)
  * - Texte blanc semi-bold centré verticalement
  * - Shadow légère (0, 4, 12, rgba(0,0,0,0.08))
@@ -45,11 +47,14 @@ export function GradientActionButton({
   onPress,
   style,
 }: GradientActionButtonProps) {
+  const theme = useTheme();
+  const isDark = theme.dark;
+  
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      style={[styles.container, style]}
+      style={[styles.container, getShadowStyle('card', isDark), style]}
     >
       <LinearGradient
         colors={['#6366F1', '#8B5CF6']}
@@ -77,16 +82,11 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: 56,
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    borderRadius: tokens.radius.md,
   },
   gradient: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: tokens.radius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },

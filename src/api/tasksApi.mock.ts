@@ -43,7 +43,38 @@ export let MOCK_TASKS: RawTaskMock[] = [
     updatedAt: '2024-11-16T10:00:00Z',
     description: 'Créer un design system complet avec tokens, composants réutilisables et documentation. Inclure les polices Inter et IBM Plex Mono, les couleurs Suivi (violet, jaune, gris, sand), et les composants de base (buttons, cards, inputs, etc.).',
     quickActions: [
+      { actionType: 'STATUS', uiHint: 'status_chip' },
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 40 } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
+    ],
+    attachments: [
+      {
+        id: 'att-1',
+        name: 'design-mobile.png',
+        type: 'image',
+        mime: 'image/png',
+        url: 'https://placehold.co/600x400.png',
+        size: 184233,
+        createdAt: '2024-11-22T10:30:00Z',
+      },
+      {
+        id: 'att-2',
+        name: 'specifications.pdf',
+        type: 'pdf',
+        mime: 'application/pdf',
+        url: 'https://example.com/mock/specifications.pdf',
+        size: 482134,
+        createdAt: '2024-11-20T14:10:00Z',
+      },
+      {
+        id: 'att-3',
+        name: 'planning-Q1.xlsx',
+        type: 'spreadsheet',
+        mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        url: 'https://example.com/mock/planning.xlsx',
+        size: 95344,
+        createdAt: '2024-11-21T08:45:00Z',
+      },
     ],
   },
   {
@@ -56,6 +87,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     updatedAt: '2024-11-15T16:30:00Z',
     quickActions: [
       { actionType: 'RATING', uiHint: 'stars_1_to_5' },
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 100 } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
     customFields: [
@@ -99,6 +131,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:00:00Z',
     quickActions: [
+      { actionType: 'STATUS', uiHint: 'status_chip' },
       { actionType: 'CALENDAR', uiHint: 'calendar_picker' },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
@@ -117,6 +150,8 @@ export let MOCK_TASKS: RawTaskMock[] = [
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T11:00:00Z',
     quickActions: [
+      { actionType: 'STATUS', uiHint: 'status_chip' },
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 20 } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
   },
@@ -130,6 +165,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     updatedAt: '2024-11-16T09:15:00Z',
     quickActions: [
       { actionType: 'CHECKBOX', uiHint: 'simple_checkbox' },
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 30 } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
   },
@@ -169,6 +205,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     assigneeName: 'Julien',
     updatedAt: '2024-11-16T09:30:00Z',
     quickActions: [
+      { actionType: 'STATUS', uiHint: 'status_chip' },
       { actionType: 'SELECT', uiHint: 'dropdown_select', payload: { options: ['GitHub Actions', 'GitLab CI', 'Jenkins', 'CircleCI'] } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
@@ -201,6 +238,8 @@ export let MOCK_TASKS: RawTaskMock[] = [
     assigneeName: 'Julien',
     updatedAt: new Date().toISOString(),
     quickActions: [
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 75 } },
+      { actionType: 'RATING', uiHint: 'stars_1_to_5' },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
   },
@@ -217,6 +256,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     assigneeName: 'Julien',
     updatedAt: new Date().toISOString(),
     quickActions: [
+      { actionType: 'STATUS', uiHint: 'status_chip' },
       { actionType: 'CALENDAR', uiHint: 'calendar_picker' },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
@@ -235,6 +275,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     updatedAt: new Date().toISOString(),
     quickActions: [
       { actionType: 'SELECT', uiHint: 'dropdown_select', payload: { options: ['Migration progressive', 'Big bang', 'Par module', 'Par fonctionnalité'] } },
+      { actionType: 'PROGRESS', uiHint: 'progress_slider', payload: { value: 15 } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
   },
@@ -251,6 +292,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     assigneeName: 'Julien',
     updatedAt: new Date().toISOString(),
     quickActions: [
+      { actionType: 'STATUS', uiHint: 'status_chip' },
       { actionType: 'WEATHER', uiHint: 'weather_picker', payload: { options: ['sunny', 'cloudy', 'storm'] } },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
@@ -264,6 +306,7 @@ export let MOCK_TASKS: RawTaskMock[] = [
     updatedAt: new Date().toISOString(),
     quickActions: [
       { actionType: 'CHECKBOX', uiHint: 'simple_checkbox' },
+      { actionType: 'RATING', uiHint: 'stars_1_to_5' },
       { actionType: 'COMMENT', uiHint: 'comment_input' },
     ],
   },

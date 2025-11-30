@@ -6,26 +6,31 @@ import {
   TextInput,
   Pressable,
   Modal,
-  KeyboardAvoidingView,
-  Platform,
+  Alert,
+  Clipboard,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '@components/Screen';
+import { ScreenHeader } from '@components/layout/ScreenHeader';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviSwitch } from '@components/ui/SuiviSwitch';
 import { UserAvatar } from '@components/ui/UserAvatar';
 import { SuiviStatusPicker } from '@components/ui/SuiviStatusPicker';
+import { SegmentedControl } from '@components/ui/SegmentedControl';
+import { SuiviButton } from '@components/ui/SuiviButton';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTaskById } from '../tasks/useTaskById';
 import { useTasksContext } from '../tasks/TasksContext';
-import type { TaskStatus, TaskQuickAction } from '../types/task';
+import type { TaskStatus, TaskQuickAction, Attachment } from '../types/task';
 import { useTaskActivity } from '@hooks/useActivity';
 import { useUser } from '@hooks/useUser';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 import type { AppStackParamList } from '../navigation/types';
 import { QuickActionWeather } from '@components/tasks/quickactions/QuickActionWeather';
 import { QuickActionProgress } from '@components/tasks/quickactions/QuickActionProgress';
@@ -60,12 +65,9 @@ export function TaskDetailScreen() {
   const insets = useSafeAreaInsets();
   const { taskId } = route.params;
   
-  // Offset pour KeyboardAvoidingView (header + safe area)
-  const keyboardVerticalOffset = insets.top + 60; // ~60px pour le header "Task Overview"
-  
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
-  const { updateTask } = useTasksContext();
+  const { updateTask, deleteTaskInContext } = useTasksContext();
   
   const { data: user } = useUser();
   const { data: taskActivities = [] } = useTaskActivity(taskId);
@@ -76,8 +78,6 @@ export function TaskDetailScreen() {
   // Priorité actuelle de la tâche (dérivée du store)
   const taskPriority = task?.priority;
 
-  // Local activity history for Quick Actions (mock)
-  const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
 
   // États pour les modals/pickers d'édition
   const [statusPickerVisible, setStatusPickerVisible] = useState(false);
@@ -92,6 +92,26 @@ export function TaskDetailScreen() {
   const [customFieldEditModal, setCustomFieldEditModal] = useState<{ fieldId: string; type: string } | null>(null);
   const [customFieldInputValue, setCustomFieldInputValue] = useState<string>('');
   const [customFieldDateInput, setCustomFieldDateInput] = useState<string>('');
+
+  // États pour le nouveau header et onglets
+  const [optionsSheetVisible, setOptionsSheetVisible] = useState(false);
+  const initialTab = route.params?.openTab ?? 'overview';
+  const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'attachments'>(initialTab);
+
+  // Fusionner task.activities avec taskActivities (API), avec déduplication par id et tri par date DESC
+  const allActivities = [
+    ...(task?.activities || []),
+    ...taskActivities,
+  ]
+    .filter((activity, index, self) => 
+      // Dédupliquer par id (éviter les doublons entre task.activities et API)
+      index === self.findIndex(a => a.id === activity.id)
+    )
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // DESC
+    });
 
   // Synchroniser descriptionValue avec task.description quand task change
   React.useEffect(() => {
@@ -135,7 +155,7 @@ export function TaskDetailScreen() {
   }
 
   // Handle Quick Action completion (mock) - pour Approval et Comment uniquement
-  function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
+  async function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
     if (!task || !user) return;
 
     // Create a local activity entry
@@ -159,19 +179,28 @@ export function TaskDetailScreen() {
       },
     };
 
-    // Add to local activities state
-    setLocalActivities((prev) => [activityEntry, ...prev]);
+    // Ajouter l'activité via un appel atomique (pas de modification de champ, juste l'activité)
+    try {
+      await updateTask(task.id, {
+        activities: [activityEntry]
+      });
+    } catch (err) {
+      console.error('Error adding activity to task:', err);
+    }
   }
 
   // Handler pour mettre à jour le statut
   async function handleStatusChange(newStatus: TaskStatus) {
     if (!task) return;
     try {
-      await updateTask(task.id, { status: newStatus });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.status'), formatStatus(newStatus, t), formatStatus(task.status, t));
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec status ET activities
+      await updateTask(task.id, {
+        status: newStatus,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task status:', err);
     }
@@ -181,11 +210,14 @@ export function TaskDetailScreen() {
   async function handleDueDateChange(date: string) {
     if (!task) return;
     try {
-      await updateTask(task.id, { dueDate: date });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.dueDate'), formatDate(date), task.dueDate ? formatDate(task.dueDate) : undefined);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec dueDate ET activities
+      await updateTask(task.id, {
+        dueDate: date,
+        activities: activity ? [activity] : []
+      });
       setDueDatePickerVisible(false);
     } catch (err) {
       console.error('Error updating task due date:', err);
@@ -196,11 +228,14 @@ export function TaskDetailScreen() {
   async function handleAssigneeChange(selectedUser: { id: string; name: string; avatarUrl?: string }) {
     if (!task) return;
     try {
-      await updateTask(task.id, { assignee: selectedUser });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.assignee'), selectedUser.name, task.assignee?.name);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec assignee ET activities
+      await updateTask(task.id, {
+        assignee: selectedUser,
+        activities: activity ? [activity] : []
+      });
       setAssigneePickerVisible(false);
     } catch (err) {
       console.error('Error updating task assignee:', err);
@@ -211,11 +246,14 @@ export function TaskDetailScreen() {
   async function handlePriorityChange(newPriority: 'normal' | 'low' | 'high') {
     if (!task) return;
     try {
-      await updateTask(task.id, { priority: newPriority });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.priority'), t(`taskDetail.priority.${newPriority}`), task.priority ? t(`taskDetail.priority.${task.priority}`) : undefined);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec priority ET activities
+      await updateTask(task.id, {
+        priority: newPriority,
+        activities: activity ? [activity] : []
+      });
       setPriorityPickerVisible(false);
     } catch (err) {
       console.error('Error updating task priority:', err);
@@ -226,11 +264,14 @@ export function TaskDetailScreen() {
   async function handleDescriptionSave() {
     if (!task) return;
     try {
-      await updateTask(task.id, { description: descriptionValue });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.description'), descriptionValue, task.description);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec description ET activities
+      await updateTask(task.id, {
+        description: descriptionValue,
+        activities: activity ? [activity] : []
+      });
       setEditingDescription(false);
     } catch (err) {
       console.error('Error updating task description:', err);
@@ -241,11 +282,14 @@ export function TaskDetailScreen() {
   async function handleProgressChange(progress: number) {
     if (!task) return;
     try {
-      await updateTask(task.id, { progress });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.progress.title'), `${progress}%`, task.progress !== undefined ? `${task.progress}%` : undefined);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec progress ET activities
+      await updateTask(task.id, {
+        progress,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task progress:', err);
     }
@@ -265,11 +309,14 @@ export function TaskDetailScreen() {
   async function handleRatingChange(rating: number) {
     if (!task) return;
     try {
-      await updateTask(task.id, { rating });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.rating.title'), `${rating}`, task.rating !== undefined ? `${task.rating}` : undefined);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec rating ET activities
+      await updateTask(task.id, {
+        rating,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task rating:', err);
     }
@@ -279,11 +326,14 @@ export function TaskDetailScreen() {
   async function handleWeatherChange(weather: string) {
     if (!task) return;
     try {
-      await updateTask(task.id, { weather });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.weather.title'), weather, task.weather);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec weather ET activities
+      await updateTask(task.id, {
+        weather,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task weather:', err);
     }
@@ -293,11 +343,14 @@ export function TaskDetailScreen() {
   async function handleCheckboxChange(checked: boolean) {
     if (!task) return;
     try {
-      // Note: checkbox n'est pas un champ Task, on crée juste une activité
-      const activity = createActivityForTaskUpdate(t('quickActions.checkbox.title'), checked ? t('quickActions.checkbox.completed') : t('taskDetail.cancel'));
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      // Créer l'activité AVANT l'appel atomique
+      const activity = createActivityForTaskUpdate(t('quickActions.checkbox.title'), checked ? t('quickActions.checkbox.completed') : t('taskDetail.cancel'), task.checkboxValue !== undefined ? (task.checkboxValue ? t('quickActions.checkbox.completed') : t('taskDetail.cancel')) : undefined);
+      
+      // Un seul appel atomique avec checkboxValue ET activities
+      await updateTask(task.id, {
+        checkboxValue: checked,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task checkbox:', err);
     }
@@ -307,11 +360,14 @@ export function TaskDetailScreen() {
   async function handleSelectChange(selectedOption: string) {
     if (!task) return;
     try {
-      // Note: selectValue n'est pas un champ Task standard, on crée juste une activité
-      const activity = createActivityForTaskUpdate(t('quickActions.select.title'), selectedOption);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      // Créer l'activité AVANT l'appel atomique
+      const activity = createActivityForTaskUpdate(t('quickActions.select.title'), selectedOption, task.selectValue);
+      
+      // Un seul appel atomique avec selectValue ET activities
+      await updateTask(task.id, {
+        selectValue: selectedOption,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task select:', err);
     }
@@ -331,12 +387,14 @@ export function TaskDetailScreen() {
         cf.id === fieldId ? { ...cf, value: newValue } : cf
       );
 
-      await updateTask(task.id, { customFields: updatedCustomFields });
-      
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(field.label, String(newValue), oldValue ? String(oldValue) : undefined);
-      if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
-      }
+      
+      // Un seul appel atomique avec customFields ET activities
+      await updateTask(task.id, {
+        customFields: updatedCustomFields,
+        activities: activity ? [activity] : []
+      });
       
       setCustomFieldEditModal(null);
       setCustomFieldInputValue('');
@@ -346,19 +404,92 @@ export function TaskDetailScreen() {
     }
   }
 
+  // Handlers pour les options du bottom-sheet
+  async function handleShareTask() {
+    if (!task) return;
+    // Mock: TODO: Implémenter le partage réel avec expo-sharing ou Linking
+    console.log('Share task:', task.id);
+    Alert.alert(t('taskDetail.options.share'), `Task ID: ${task.id}`);
+    setOptionsSheetVisible(false);
+  }
+
+  async function handleCopyTaskId() {
+    if (!task) return;
+    try {
+      // Utiliser Clipboard API de React Native (disponible dans RN 0.81.5)
+      if (Clipboard && Clipboard.setString) {
+        Clipboard.setString(task.id);
+        Alert.alert(t('taskDetail.options.copyId'), 'Task ID copied to clipboard');
+      } else {
+        // Fallback si Clipboard n'est pas disponible
+        Alert.alert(t('taskDetail.options.copyId'), `Task ID: ${task.id}`);
+      }
+    } catch (err) {
+      // Fallback en cas d'erreur
+      Alert.alert(t('taskDetail.options.copyId'), `Task ID: ${task.id}`);
+    }
+    setOptionsSheetVisible(false);
+  }
+
+  async function handleToggleFavorite() {
+    if (!task) return;
+    try {
+      // Mock: TODO: Ajouter isFavorite au type Task et à l'API
+      const currentFavorite = (task as any).isFavorite || false;
+      await updateTask(task.id, { isFavorite: !currentFavorite } as any);
+      setOptionsSheetVisible(false);
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  }
+
+  async function handleDeleteTask() {
+    if (!task) return;
+    Alert.alert(
+      t('taskDetail.options.deleteConfirmTitle'),
+      t('taskDetail.options.deleteConfirmMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteTaskInContext(task.id);
+              setOptionsSheetVisible(false);
+              navigation.goBack();
+            } catch (err) {
+              console.error('Error deleting task:', err);
+              Alert.alert(t('common.error'), 'Failed to delete task');
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  // Handler pour sélectionner un document
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled) {
+        console.log('Selected file:', result);
+        // TODO: brancher au backend plus tard
+      }
+    } catch (err) {
+      console.error('Error picking document:', err);
+    }
+  };
+
   // Mock users pour le picker d'assignee
   const mockUsers = [
     { id: '1', name: 'Julien', avatarUrl: undefined },
     { id: '2', name: 'Alice', avatarUrl: undefined },
     { id: '3', name: 'Bob', avatarUrl: undefined },
   ];
-
-  // Merge API activities with local activities, sorted by createdAt DESC
-  const allActivities = [...localActivities, ...taskActivities].sort((a, b) => {
-    const dateA = new Date(a.createdAt).getTime();
-    const dateB = new Date(b.createdAt).getTime();
-    return dateB - dateA; // DESC
-  });
 
   // Render activity item (comment or system activity)
   function renderActivityItem(activity: SuiviActivityEvent) {
@@ -371,7 +502,7 @@ export function TaskDetailScreen() {
       
       // Render comment bubble
       return (
-        <View key={activity.id} style={[styles.commentContainer, { backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default }]}>
+        <View key={activity.id} style={[styles.commentContainer, { backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.variant }]}>
           <SuiviText variant="body" color="primary" style={styles.commentAuthor}>
             {activity.actor.name}
           </SuiviText>
@@ -451,7 +582,7 @@ export function TaskDetailScreen() {
           <QuickActionWeather
             key={index}
             task={task!}
-            payload={qa.payload}
+            payload={{ ...qa.payload, value: task?.weather ?? qa.payload?.value }}
             onActionComplete={(result) => {
               if (result.details.weather) {
                 handleWeatherChange(result.details.weather);
@@ -466,7 +597,7 @@ export function TaskDetailScreen() {
           <QuickActionProgress
             key={index}
             task={task!}
-            payload={qa.payload || { value: task?.progress || 0 }}
+            payload={{ ...qa.payload, value: task?.progress ?? qa.payload?.value ?? 0 }}
             onActionComplete={handleProgressAction}
           />
         );
@@ -475,6 +606,7 @@ export function TaskDetailScreen() {
           <QuickActionRating
             key={index}
             task={task!}
+            payload={{ value: task?.rating ?? undefined }}
             onActionComplete={(result) => {
               if (result.details.rating !== undefined) {
                 handleRatingChange(result.details.rating);
@@ -489,6 +621,7 @@ export function TaskDetailScreen() {
           <QuickActionCheckbox
             key={index}
             task={task!}
+            payload={{ value: task?.checkboxValue ?? undefined }}
             onActionComplete={(result) => {
               if (result.details.checked !== undefined) {
                 handleCheckboxChange(result.details.checked);
@@ -503,7 +636,7 @@ export function TaskDetailScreen() {
           <QuickActionSelect
             key={index}
             task={task!}
-            payload={qa.payload}
+            payload={{ ...qa.payload, value: task?.selectValue ?? qa.payload?.value }}
             onActionComplete={(result) => {
               if (result.details.selectedOption) {
                 handleSelectChange(result.details.selectedOption);
@@ -518,6 +651,7 @@ export function TaskDetailScreen() {
           <QuickActionCalendar
             key={index}
             task={task!}
+            payload={{ value: task?.dueDate ?? undefined }}
             onActionComplete={(result) => {
               if (result.details.date) {
                 handleDueDateChange(result.details.date);
@@ -563,87 +697,245 @@ export function TaskDetailScreen() {
   };
 
   return (
-    <Screen scrollable noTopBackground>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={keyboardVerticalOffset}
+    <Screen noTopBackground>
+      <KeyboardAwareScrollView
+        extraScrollHeight={80}
+        enableOnAndroid={true}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: tokens.spacing.xxl }}
+        showsVerticalScrollIndicator={false}
       >
         <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
-        {/* Header inline "Task Overview" avec bouton retour */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerRow}>
-            <Pressable onPress={() => navigation.goBack()} style={styles.backIcon}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color={tokens.colors.text.primary} />
+        {/* Header standardisé */}
+        <ScreenHeader
+          title={task.title}
+          showBackButton
+          onBack={() => navigation.goBack()}
+          spacing="xs"
+          rightAction={
+            <Pressable onPress={() => setOptionsSheetVisible(true)}>
+              <MaterialCommunityIcons
+                name="dots-horizontal"
+                size={24}
+                color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+              />
             </Pressable>
-            <View style={styles.headerTitleContainer}>
-              <SuiviText variant="h2" style={styles.headerTitle}>
-                {t('taskDetail.overviewTitle')}
-              </SuiviText>
-            </View>
-          </View>
-        </View>
+          }
+        />
 
-        {/* En-tête Monday-like : Titre + Breadcrumb + Badge Statut */}
-        <View style={styles.headerSection}>
-          {/* Breadcrumb */}
-          {formatBreadcrumb() && (
-            <View style={styles.breadcrumbContainer}>
-              <SuiviText variant="label" color="secondary" style={styles.breadcrumb}>
-                {formatBreadcrumb()}
-              </SuiviText>
-            </View>
-          )}
+        {/* Séparateur Top App Bar M3 style */}
+        <View
+          style={[
+            styles.headerSeparator,
+            {
+              backgroundColor: isDark
+                ? tokens.colors.border.darkMode.default
+                : tokens.colors.border.default,
+            },
+            getShadowStyle('sm', isDark),
+          ]}
+        />
 
-          {/* Titre de la tâche */}
-          <View style={styles.taskTitleContainer}>
-            <SuiviText variant="h1" style={styles.taskTitleText}>
-              {task.title}
-            </SuiviText>
-          </View>
+        {/* Status Picker Modal */}
+        <SuiviStatusPicker
+          visible={statusPickerVisible}
+          onClose={() => setStatusPickerVisible(false)}
+          currentStatus={taskStatus!}
+          onSelectStatus={handleStatusChange}
+        />
 
-          {/* Badge Statut inline (éditable) */}
-          <View style={styles.statusBadgeContainer}>
-            <Pressable onPress={() => setStatusPickerVisible(true)}>
-              <View
-                style={[
-                  styles.statusBadgeInline,
-                  {
-                    backgroundColor: statusColors.bg,
-                    borderColor: statusColors.border,
-                  },
-                ]}
-              >
-                <View style={styles.statusBadgeContent}>
-                  <SuiviText variant="label" style={{ color: statusColors.text, fontWeight: '600' }}>
-                    {formatStatus(taskStatus!, t)}
-                  </SuiviText>
-                  <MaterialCommunityIcons
-                    name="chevron-down"
-                    size={16}
-                    color={statusColors.text}
-                    style={styles.statusBadgeIcon}
-                  />
-                </View>
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Status Picker Modal */}
-          <SuiviStatusPicker
-            visible={statusPickerVisible}
-            onClose={() => setStatusPickerVisible(false)}
-            currentStatus={taskStatus!}
-            onSelectStatus={handleStatusChange}
+        {/* Onglets : Overview / Comments / Attachments */}
+        <View style={styles.tabsContainer}>
+          <SegmentedControl
+            options={[
+              { key: 'overview', label: t('taskDetail.tabs.overview') },
+              { key: 'comments', label: t('taskDetail.tabs.comments') },
+              { key: 'attachments', label: t('taskDetail.tabs.attachments') },
+            ]}
+            value={activeTab}
+            onChange={(value) => setActiveTab(value as 'overview' | 'comments' | 'attachments')}
+            variant="fullWidth"
           />
         </View>
 
-        {/* Bloc Informations principales */}
+        {/* Bottom-sheet d'options */}
+        <Modal
+          visible={optionsSheetVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setOptionsSheetVisible(false)}
+          statusBarTranslucent
+        >
+          <View style={styles.modalContainer}>
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => setOptionsSheetVisible(false)}
+            />
+            <View style={[
+              styles.optionsSheetContainer,
+              { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default },
+              { ...getShadowStyle('lg', isDark), shadowOffset: { width: 0, height: -2 } },
+            ]}>
+              <SafeAreaView edges={['bottom']}>
+                {/* Handle indicator */}
+                <View style={styles.handleContainer}>
+                  <View
+                    style={[
+                      styles.handleIndicator,
+                      {
+                        backgroundColor: isDark
+                          ? tokens.colors.neutral.medium
+                          : tokens.colors.neutral.light,
+                      },
+                    ]}
+                  />
+                </View>
+
+                {/* Options List */}
+                <View style={styles.optionsList}>
+                  {/* Share */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                        borderBottomColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                      },
+                    ]}
+                    onPress={handleShareTask}
+                  >
+                    <MaterialCommunityIcons
+                      name="share-variant"
+                      size={24}
+                      color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary }}>
+                      {t('taskDetail.options.share')}
+                    </SuiviText>
+                  </Pressable>
+
+                  {/* Copy ID */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                        borderBottomColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                      },
+                    ]}
+                    onPress={handleCopyTaskId}
+                  >
+                    <MaterialCommunityIcons
+                      name="content-copy"
+                      size={24}
+                      color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary }}>
+                      {t('taskDetail.options.copyId')}
+                    </SuiviText>
+                  </Pressable>
+
+                  {/* Favorite */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                        borderBottomColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                      },
+                    ]}
+                    onPress={handleToggleFavorite}
+                  >
+                    <MaterialCommunityIcons
+                      name={(task as any)?.isFavorite ? 'star' : 'star-outline'}
+                      size={24}
+                      color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary }}>
+                      {(task as any)?.isFavorite ? t('taskDetail.options.removeFavorite') : t('taskDetail.options.addFavorite')}
+                    </SuiviText>
+                  </Pressable>
+
+                  {/* Delete */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      styles.optionItemDelete,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={handleDeleteTask}
+                  >
+                    <MaterialCommunityIcons
+                      name="delete"
+                      size={24}
+                      color={tokens.colors.semantic.error}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: tokens.colors.semantic.error }}>
+                      {t('taskDetail.options.delete')}
+                    </SuiviText>
+                  </Pressable>
+                </View>
+              </SafeAreaView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Contenu conditionnel selon l'onglet actif */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Bloc Informations principales */}
         <View style={[styles.section, { marginBottom: tokens.spacing.xl }]}>
           <SuiviText variant="h2" style={styles.sectionTitle}>
             {t('taskDetail.information')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+            {/* Statut (éditable) */}
+            <View style={styles.metadataRow}>
+              <View style={styles.metadataLabelContainer}>
+                <MaterialCommunityIcons
+                  name="flag"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.status')}
+                </SuiviText>
+              </View>
+              <Pressable
+                onPress={() => setStatusPickerVisible(true)}
+                style={styles.metadataValueContainer}
+              >
+                <View
+                  style={[
+                    styles.statusBadgeCompact,
+                    {
+                      backgroundColor: statusColors.bg,
+                      borderColor: statusColors.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.statusBadgeContent}>
+                    <SuiviText variant="label" style={{ color: statusColors.text, fontWeight: '600' }}>
+                      {formatStatus(taskStatus!, t)}
+                    </SuiviText>
+                  </View>
+                </View>
+                <MaterialCommunityIcons
+                  name="chevron-down"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+              </Pressable>
+            </View>
+
             {/* Date d'échéance (éditable) */}
             <View style={styles.metadataRow}>
               <View style={styles.metadataLabelContainer}>
@@ -1319,13 +1611,15 @@ export function TaskDetailScreen() {
             {t('taskDetail.quickActions')}
           </SuiviText>
           
-          {/* Afficher toutes les quick actions disponibles, une par ligne */}
+          {/* Afficher toutes les quick actions disponibles, une par ligne (exclure comment_input de l'onglet overview) */}
           {task.quickActions && task.quickActions.length > 0 ? (
-            task.quickActions.map((qa, index) => (
-              <View key={index} style={{ marginBottom: tokens.spacing.md }}>
-                {renderQuickAction(qa, index)}
-              </View>
-            ))
+            task.quickActions
+              .filter((qa) => qa.uiHint !== 'comment_input')
+              .map((qa, index) => (
+                <View key={index} style={{ marginBottom: tokens.spacing.md }}>
+                  {renderQuickAction(qa, index)}
+                </View>
+              ))
           ) : (
             <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
               <SuiviText variant="body" color="secondary">
@@ -1334,8 +1628,189 @@ export function TaskDetailScreen() {
             </SuiviCard>
           )}
         </View>
-      </View>
-      </KeyboardAvoidingView>
+          </>
+        )}
+
+        {activeTab === 'comments' && (
+          <View style={[styles.section, { marginTop: tokens.spacing.md }]}>
+            {/* QuickActionComment en haut */}
+            {task.quickActions?.some(qa => qa.type === 'COMMENT') && (
+              <View style={{ marginBottom: tokens.spacing.md }}>
+                {task.quickActions
+                  .filter(qa => qa.type === 'COMMENT')
+                  .map((qa, index) => (
+                    <View key={index} style={{ marginBottom: tokens.spacing.md }}>
+                      {renderQuickAction(qa, index)}
+                    </View>
+                  ))}
+              </View>
+            )}
+
+            {/* Liste des commentaires filtrés */}
+            <SuiviText variant="h2" style={styles.sectionTitle}>
+              {t('taskDetail.tabs.comments')}
+            </SuiviText>
+            <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
+              {t('taskDetail.activitySubtitle')}
+            </SuiviText>
+            
+            {(() => {
+              const commentActivities = allActivities;
+              return commentActivities.length > 0 ? (
+                <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                  {commentActivities.map((activity) => renderActivityItem(activity))}
+                </SuiviCard>
+              ) : (
+                <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
+                  <SuiviText variant="body" color="secondary">
+                    {t('taskDetail.noActivity')}
+                  </SuiviText>
+                </SuiviCard>
+              );
+            })()}
+          </View>
+        )}
+
+        {activeTab === 'attachments' && (
+          <View style={styles.attachmentsContainer}>
+            {task?.attachments && task.attachments.length > 0 ? (
+              <>
+                <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                  {task.attachments.map((attachment, index) => {
+                    const isLast = index === task.attachments!.length - 1;
+                    return (
+                      <Pressable
+                        key={attachment.id}
+                        style={[
+                          styles.metadataRow,
+                          isLast && styles.metadataRowLast,
+                          {
+                            borderBottomColor: isDark
+                              ? tokens.colors.border.darkMode.default
+                              : tokens.colors.border.default,
+                          },
+                        ]}
+                        onPress={() => {
+                          // TODO: Ouvrir le fichier (Linking.openURL pour les URLs)
+                          console.log('Open attachment:', attachment.url);
+                        }}
+                      >
+                        <View style={styles.metadataLabelContainer}>
+                          <MaterialCommunityIcons
+                            name={getAttachmentIcon(attachment.type) as any}
+                            size={20}
+                            color={
+                              isDark
+                                ? tokens.colors.text.dark.primary
+                                : tokens.colors.text.primary
+                            }
+                            style={styles.metadataIcon}
+                          />
+                          <View style={{ flex: 1, marginLeft: tokens.spacing.sm }}>
+                            <SuiviText variant="body" color="primary" style={{ flexShrink: 1 }}>
+                              {attachment.name}
+                            </SuiviText>
+                            <SuiviText variant="body" color="secondary" style={{ marginTop: tokens.spacing.xs }}>
+                              {formatFileSize(attachment.size)}
+                            </SuiviText>
+                          </View>
+                        </View>
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={20}
+                          color={
+                            isDark
+                              ? tokens.colors.text.dark.secondary
+                              : tokens.colors.neutral.medium
+                          }
+                        />
+                      </Pressable>
+                    );
+                  })}
+                </SuiviCard>
+                {/* Optionnel : Drop zone pour ajouter de nouveaux fichiers */}
+                <View style={{ marginTop: tokens.spacing.lg }}>
+                  <View
+                    style={[
+                      styles.attachmentsDropZone,
+                      {
+                        borderColor: isDark
+                          ? tokens.colors.border.darkMode.default
+                          : tokens.colors.border.default,
+                        backgroundColor: isDark
+                          ? tokens.colors.surface.darkVariant
+                          : tokens.colors.background.default,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="file-upload"
+                      size={36}
+                      color={
+                        isDark
+                          ? tokens.colors.text.dark.secondary
+                          : tokens.colors.text.secondary
+                      }
+                      style={styles.attachmentsIcon}
+                    />
+                    <SuiviButton
+                      title={t('taskDetail.attachments.upload')}
+                      variant="primary"
+                      onPress={pickDocument}
+                      style={styles.attachmentsButton}
+                    />
+                  </View>
+                </View>
+              </>
+            ) : (
+              <View
+                style={[
+                  styles.attachmentsDropZone,
+                  {
+                    borderColor: isDark
+                      ? tokens.colors.border.darkMode.default
+                      : tokens.colors.border.default,
+                    backgroundColor: isDark
+                      ? tokens.colors.surface.darkVariant
+                      : tokens.colors.background.default,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="file-upload"
+                  size={48}
+                  color={
+                    isDark
+                      ? tokens.colors.text.dark.secondary
+                      : tokens.colors.text.secondary
+                  }
+                  style={styles.attachmentsIcon}
+                />
+                <SuiviText
+                  variant="h2"
+                  style={[
+                    styles.attachmentsTitle,
+                    {
+                      color: isDark
+                        ? tokens.colors.text.dark.primary
+                        : tokens.colors.text.primary,
+                    },
+                  ]}
+                >
+                  {t('taskDetail.attachments.empty')}
+                </SuiviText>
+                <SuiviButton
+                  title={t('taskDetail.attachments.upload')}
+                  variant="primary"
+                  onPress={pickDocument}
+                  style={styles.attachmentsButton}
+                />
+              </View>
+            )}
+          </View>
+        )}
+        </View>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }
@@ -1460,6 +1935,34 @@ function formatDate(dateString: string): string {
 }
 
 /**
+ * Retourne l'icône MaterialCommunityIcons pour un type d'attachment
+ */
+function getAttachmentIcon(type: Attachment['type']): string {
+  switch (type) {
+    case 'image':
+      return 'file-image';
+    case 'pdf':
+      return 'file-pdf-box';
+    case 'spreadsheet':
+      return 'file-excel';
+    case 'other':
+    default:
+      return 'file-outline';
+  }
+}
+
+/**
+ * Formate une taille de fichier en format lisible (KB, MB)
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+/**
  * Convertit un actionType en SuiviActivityEventType
  */
 function getEventTypeFromActionType(actionType: string): SuiviActivityEvent['eventType'] {
@@ -1566,7 +2069,74 @@ const styles = StyleSheet.create({
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
   },
-  // Header inline "Task Overview" (structure identique à ScreenHeader)
+  headerSeparator: {
+    height: 1,
+    marginBottom: tokens.spacing.lg,
+  },
+  tabsContainer: {
+    marginBottom: tokens.spacing.lg,
+  },
+  attachmentsContainer: {
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xl,
+  },
+  attachmentsDropZone: {
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    borderRadius: tokens.radius.xl,
+    padding: tokens.spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: tokens.spacing.xxl * 10, // 320px - hauteur minimale pour une drop zone visible
+  },
+  attachmentsIcon: {
+    marginBottom: tokens.spacing.md,
+  },
+  attachmentsTitle: {
+    marginBottom: tokens.spacing.sm,
+    textAlign: 'center',
+  },
+  attachmentsButton: {
+    marginTop: tokens.spacing.lg,
+  },
+  // Options Bottom Sheet
+  optionsSheetContainer: {
+    borderTopLeftRadius: tokens.radius.xl,
+    borderTopRightRadius: tokens.radius.xl,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingBottom: tokens.spacing.md,
+    maxHeight: '60%',
+  },
+  optionsList: {
+    paddingBottom: tokens.spacing.sm,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.md,
+    borderBottomWidth: 1,
+    marginBottom: tokens.spacing.xs,
+    borderRadius: tokens.radius.md,
+  },
+  optionItemDelete: {
+    borderBottomWidth: 0,
+    marginTop: tokens.spacing.sm,
+  },
+  optionIcon: {
+    marginRight: tokens.spacing.md,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingVertical: tokens.spacing.md,
+  },
+  handleIndicator: {
+    width: 40,
+    height: 4,
+    borderRadius: tokens.radius.xs,
+  },
+  // Header inline "Task Overview" (structure identique à ScreenHeader) - DEPRECATED
   headerContainer: {
     marginBottom: tokens.spacing.xl,
   },
@@ -1586,7 +2156,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-  // En-tête Monday-like
+  // En-tête Monday-like - DEPRECATED
   headerSection: {
     marginBottom: tokens.spacing.xl,
   },
@@ -1615,6 +2185,14 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
     minHeight: 32,
+    justifyContent: 'center',
+  },
+  statusBadgeCompact: {
+    paddingHorizontal: tokens.spacing.xs,
+    paddingVertical: tokens.spacing.xs / 2,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    minHeight: 28,
     justifyContent: 'center',
   },
   // Sections
@@ -1692,7 +2270,7 @@ const styles = StyleSheet.create({
   activityDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: tokens.radius.xs,
     backgroundColor: tokens.colors.brand.primary,
     marginRight: tokens.spacing.sm,
     marginTop: tokens.spacing.xs,
@@ -1807,3 +2385,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.md,
   },
 });
+

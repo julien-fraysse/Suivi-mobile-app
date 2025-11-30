@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     right: -8,
     minWidth: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: tokens.radius.sm,
     backgroundColor: '#FF3B30', // Rouge Suivi pour le badge
     alignItems: 'center',
     justifyContent: 'center',
@@ -149,13 +149,13 @@ const styles = StyleSheet.create({
   badgeLarge: {
     minWidth: 20,
     height: 18,
-    borderRadius: 9,
+    borderRadius: tokens.radius.sm,
     paddingHorizontal: 5,
   },
   badgeDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: tokens.radius.xs,
     backgroundColor: '#FFFFFF',
   },
   badgeText: {

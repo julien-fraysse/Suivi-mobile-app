@@ -17,9 +17,9 @@
  *   - Gérer loading/error states correctement
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, ReactNode } from 'react';
 import type { Task, TaskStatus, TasksContextValue, TaskFilter } from './tasks.types';
-import { loadMockTasks, updateMockTaskStatus } from '../mocks/tasks/mockTaskHelpers';
+import * as tasksAPI from '../api/tasks';
 import { normalizeTask } from '../types/task';
 import type { TaskUpdatePayload } from './tasks.types';
 import { applyTaskDependencies } from './taskRules';
@@ -69,27 +69,23 @@ export function TasksProvider({ children }: TasksProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Verrou pour empêcher les appels multiples de loadTasks
+  const isLoadingRef = useRef(false);
+
   /**
    * Charger les tâches depuis le store (mock pour le MVP)
    * 
    * TODO: Remplacer par GET /api/tasks avec authentification
    */
   const loadTasks = useCallback(async () => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+
     try {
       setIsLoading(true);
       setError(null);
-      // TODO: Remplacer par un appel API réel
-      // const response = await api.get('/api/tasks', { headers: { Authorization: `Bearer ${token}` } });
-      // setTasks(response.data);
-      const normalizedTasks = await loadMockTasks();
-      // loadMockTasks() retourne déjà des Task[] normalisés, pas besoin de re-normaliser
-      console.log("QA-DIAG: Tasks loaded from mockTasks.ts →", normalizedTasks);
-      console.log("TEST-TASKS", normalizedTasks);
-      if (normalizedTasks.length > 0) {
-        console.log("TEST-FIRST-TASK quickActions =", normalizedTasks[0].quickActions);
-        console.log("TEST-FIRST-TASK customFields =", normalizedTasks[0].customFields);
-      }
-      setTasks(normalizedTasks);
+      const tasks = await tasksAPI.getTasks();
+      setTasks(tasks);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load tasks');
       setError(error);
@@ -98,6 +94,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
       setTasks([]);
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
   }, []);
 
@@ -106,7 +103,8 @@ export function TasksProvider({ children }: TasksProviderProps) {
    */
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * Récupérer une tâche par son ID
@@ -180,9 +178,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
       );
 
       try {
-        // TODO: Remplacer par un appel API réel
-        // await api.patch(`/api/tasks/${id}/status`, { status: newStatus }, { headers: { Authorization: `Bearer ${token}` } });
-        await updateMockTaskStatus(id, newStatus);
+        await tasksAPI.updateTaskStatus(id, newStatus);
         // Si succès, la tâche est déjà mise à jour dans l'état local
       } catch (err) {
         // Rollback en cas d'erreur
@@ -232,19 +228,102 @@ export function TasksProvider({ children }: TasksProviderProps) {
         mergedCustomFields = updates.customFields;
       }
 
+      // Gérer le merge spécial des activities (ajouter les nouvelles activités)
+      let mergedActivities = existingTask.activities || [];
+      if (updates.activities !== undefined) {
+        // updates.activities peut être un tableau d'activités ou une seule activité
+        const newActivities = Array.isArray(updates.activities) ? updates.activities : [updates.activities];
+        // Fusionner et dédupliquer par id
+        const existingIds = new Set(mergedActivities.map(a => a.id));
+        const uniqueNewActivities = newActivities.filter(a => !existingIds.has(a.id));
+        mergedActivities = [...mergedActivities, ...uniqueNewActivities].sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA; // DESC
+        });
+      }
+
+      // Mettre à jour le payload des quickActions selon le champ modifié
+      let updatedQuickActions = existingTask.quickActions;
+      if (updatedQuickActions) {
+        updatedQuickActions = updatedQuickActions.map((qa) => {
+          // PROGRESS : synchroniser payload.value avec task.progress
+          if (qa.type === 'PROGRESS' && updates.progress !== undefined) {
+            return {
+              ...qa,
+              payload: {
+                ...qa.payload,
+                value: updates.progress,
+              },
+            };
+          }
+          // WEATHER : synchroniser payload.value avec task.weather
+          if (qa.type === 'WEATHER' && updates.weather !== undefined) {
+            return {
+              ...qa,
+              payload: {
+                ...qa.payload,
+                value: updates.weather,
+              },
+            };
+          }
+          // RATING : synchroniser payload.value avec task.rating
+          if (qa.type === 'RATING' && updates.rating !== undefined) {
+            return {
+              ...qa,
+              payload: {
+                ...qa.payload,
+                value: updates.rating,
+              },
+            };
+          }
+          // CALENDAR : synchroniser payload.value avec task.dueDate
+          if (qa.type === 'CALENDAR' && updates.dueDate !== undefined) {
+            return {
+              ...qa,
+              payload: {
+                ...qa.payload,
+                value: updates.dueDate,
+              },
+            };
+          }
+          // SELECT : synchroniser payload.value avec task.selectValue
+          if (qa.type === 'SELECT' && updates.selectValue !== undefined) {
+            return {
+              ...qa,
+              payload: {
+                ...qa.payload,
+                value: updates.selectValue,
+              },
+            };
+          }
+          // CHECKBOX : synchroniser payload.value avec task.checkboxValue
+          if (qa.type === 'CHECKBOX' && updates.checkboxValue !== undefined) {
+            return {
+              ...qa,
+              payload: {
+                ...qa.payload,
+                value: updates.checkboxValue,
+              },
+            };
+          }
+          return qa;
+        });
+      }
+
       const mergedTask = {
         ...existingTask,
         ...updates,
         customFields: mergedCustomFields,
+        quickActions: updatedQuickActions,
+        activities: mergedActivities,
         updatedAt: new Date().toISOString(),
       };
 
-      // Normaliser la tâche mise à jour (défensif)
-      const normalizedTask = normalizeTask(mergedTask);
-
       // Appliquer les dépendances automatiques (règles métier)
       // Passer updates pour que les règles ne s'appliquent que sur les champs modifiés
-      const finalTask = applyTaskDependencies(normalizedTask, updates);
+      // IMPORTANT : Ne pas normaliser après merge pour éviter d'écraser les valeurs des quick actions
+      const finalTask = applyTaskDependencies(mergedTask, updates);
 
       // Mise à jour optimiste (UI immédiate)
       setTasks((prevTasks) =>
@@ -254,18 +333,30 @@ export function TasksProvider({ children }: TasksProviderProps) {
       );
 
       try {
-        // TODO: Remplacer par un appel API réel
-        // await api.patch(`/api/tasks/${id}`, updates, { headers: { Authorization: `Bearer ${token}` } });
-        // Pour l'instant, on utilise updateMockTaskStatus si c'est un statut, sinon on fait rien (mock)
-        if (updates.status) {
-          await updateMockTaskStatus(id, updates.status);
-        }
-        // Si succès, la tâche est déjà mise à jour dans l'état local (mise à jour optimiste)
+        // Synchroniser avec le backend (mock ou API réelle)
+        // On passe tous les champs mergés pour garantir la cohérence
+        const updatedTaskFromBackend = await tasksAPI.updateTask(id, {
+          ...updates,
+          customFields: mergedCustomFields,
+          quickActions: updatedQuickActions,
+          activities: mergedActivities,
+        });
+        
+        // Utiliser la réponse du backend pour mettre à jour le cache
+        // Cela garantit la synchronisation entre cache React et backend
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? updatedTaskFromBackend : task
+          )
+        );
       } catch (err) {
-        // Rollback en cas d'erreur
+        // Rollback ciblé : restaurer uniquement la tâche concernée, pas tout le cache
         console.error('Error updating task:', err);
-        // Recharger les tâches pour récupérer l'état correct du serveur
-        await loadTasks();
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? existingTask : task
+          )
+        );
         // TODO: Afficher une notification d'erreur à l'utilisateur
         throw err;
       }
@@ -273,17 +364,49 @@ export function TasksProvider({ children }: TasksProviderProps) {
     [tasks, loadTasks]
   );
 
-  const value: TasksContextValue = {
-    tasks,
-    isLoading,
-    error,
-    getTaskById,
-    getTaskByIdStrict,
-    getTasksByStatus,
-    updateTaskStatus,
-    updateTask,
-    refreshTasks,
-  };
+  /**
+   * Supprimer une tâche (mise à jour optimiste)
+   * 
+   * Mise à jour optimiste : supprime la tâche de l'UI immédiatement,
+   * puis synchronise avec le backend (mock pour le MVP).
+   * 
+   * TODO: Remplacer par DELETE /api/tasks/:id avec rollback en cas d'erreur
+   */
+  const deleteTaskInContext = useCallback(
+    async (id: string): Promise<void> => {
+      // Mise à jour optimiste (UI immédiate)
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+
+      try {
+        await tasksAPI.deleteTask(id);
+        // Si succès, la tâche est déjà supprimée de l'état local (mise à jour optimiste)
+      } catch (err) {
+        // Rollback en cas d'erreur
+        console.error('Error deleting task:', err);
+        // Recharger les tâches pour récupérer l'état correct du serveur
+        await loadTasks();
+        // TODO: Afficher une notification d'erreur à l'utilisateur
+        throw err;
+      }
+    },
+    [loadTasks]
+  );
+
+  const value: TasksContextValue = useMemo(
+    () => ({
+      tasks,
+      isLoading,
+      error,
+      getTaskById,
+      getTaskByIdStrict,
+      getTasksByStatus,
+      updateTaskStatus,
+      updateTask,
+      deleteTaskInContext,
+      refreshTasks,
+    }),
+    [tasks, isLoading, error, getTaskById, getTaskByIdStrict, getTasksByStatus, updateTaskStatus, updateTask, deleteTaskInContext, refreshTasks]
+  );
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
 }

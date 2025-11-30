@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { View, Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { tokens } from '@theme';
 
@@ -10,6 +10,7 @@ export interface SuiviCardProps {
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   variant?: 'default' | 'outlined';
+  noShadow?: boolean;
 }
 
 /**
@@ -31,11 +32,22 @@ export function SuiviCard({
   style,
   onPress,
   variant = 'default',
+  noShadow = false,
 }: SuiviCardProps) {
   const theme = useTheme();
   const isDark = theme.dark;
 
   const getShadowStyle = () => {
+    // Si noShadow est activé, retourner un style sans shadow
+    if (noShadow) {
+      return {
+        shadowColor: 'transparent',
+        elevation: 0,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+      };
+    }
     // En dark mode, on n'utilise pas de shadow (matte black style)
     if (variant === 'outlined' || isDark) {
       return {};
@@ -68,39 +80,59 @@ export function SuiviCard({
     ? tokens.colors.surface.darkElevated // #242424 en dark mode (surfaceElevated)
     : '#FFFFFF'; // Blanc en light mode
 
-  const cardStyle = [
-    styles.card,
+  // shadowWrapper : shadow uniquement, pas d'overflow
+  const shadowWrapperStyle = [
+    styles.shadowWrapper,
     {
-      backgroundColor,
-      padding: tokens.spacing[padding],
-      borderRadius: tokens.radius.lg, // 16px par défaut
+      borderRadius: tokens.radius.lg, // Pour éviter les coins carrés de la shadow
       ...getShadowStyle(),
+    },
+    style, // Le style passé en prop est appliqué au shadowWrapper
+  ];
+
+  // roundedWrapper : borderRadius + overflow: 'hidden', backgroundColor, pas de shadow
+  const roundedWrapperStyle = [
+    styles.roundedWrapper,
+    {
+      borderRadius: tokens.radius.lg,
+      backgroundColor,
       ...getBorderStyle(),
     },
-    style,
   ];
+
+  const cardContent = (
+    <View style={shadowWrapperStyle}>
+      <View style={roundedWrapperStyle}>
+        <View style={{ padding: tokens.spacing[padding] }}>
+          {children}
+        </View>
+      </View>
+    </View>
+  );
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={cardStyle}
+      <Pressable
+        style={({ pressed }) => [
+          pressed && { opacity: 0.7 },
+        ]}
         onPress={onPress}
-        activeOpacity={0.7}
       >
-        {children}
-      </TouchableOpacity>
+        {cardContent}
+      </Pressable>
     );
   }
 
-  return (
-    <View style={cardStyle}>
-      {children}
-    </View>
-  );
+  return cardContent;
 }
 
 const styles = StyleSheet.create({
-  card: {
+  shadowWrapper: {
+    backgroundColor: 'transparent',
+    // Pas d'overflow ici - la shadow doit pouvoir dépasser
+  },
+  roundedWrapper: {
     overflow: 'hidden',
+    // borderRadius et backgroundColor appliqués dynamiquement
   },
 });

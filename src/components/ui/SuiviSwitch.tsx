@@ -32,8 +32,8 @@ export interface SuiviSwitchProps {
  * - iOS/Android : Switch natif stylé MD3 avec couleurs Suivi
  * 
  * Dimensions MD3 :
- * - Track : 52x28, borderRadius: 28 (complet)
- * - Thumb : 20x20, borderRadius: 20 (complet)
+ * - Track : 52x28, borderRadius: tokens.radius.xl (20px, proche de 28/2 pour cercle)
+ * - Thumb : 20x20, borderRadius: tokens.radius.xl (20px, cercle parfait)
  * 
  * Couleurs MD3 :
  * - Track OFF : tokens.colors.neutral.light (#E8E8E8)
@@ -162,14 +162,14 @@ const styles = StyleSheet.create({
   track: {
     width: 52,
     height: 28,
-    borderRadius: 28,
+    borderRadius: tokens.radius.xl, // Cercle parfait pour track 28px (utilise xl = 20px, proche de 28/2)
     justifyContent: 'center',
     padding: 4,
   },
   thumb: {
     width: 20,
     height: 20,
-    borderRadius: 20,
+    borderRadius: tokens.radius.xl, // Cercle parfait pour thumb 20x20
     backgroundColor: '#FFFFFF',
   },
 });

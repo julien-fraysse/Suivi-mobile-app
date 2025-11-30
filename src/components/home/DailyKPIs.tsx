@@ -75,7 +75,7 @@ export function DailyKPIs({ data = mockKPIs, style }: DailyKPIsProps) {
             color="#4F5DFF"
           />
         </View>
-        <SuiviText variant="body2" style={styles.kpiText}>
+        <SuiviText variant="body" style={styles.kpiText}>
           {kpisData.openTasks} {kpisData.openTasks === 1 ? 'tâche ouverte' : 'tâches ouvertes'}
         </SuiviText>
       </View>
@@ -89,7 +89,7 @@ export function DailyKPIs({ data = mockKPIs, style }: DailyKPIsProps) {
             color="#FFC63A"
           />
         </View>
-        <SuiviText variant="body2" style={styles.kpiText}>
+        <SuiviText variant="body" style={styles.kpiText}>
           {kpisData.dueToday} {kpisData.dueToday === 1 ? 'échéance' : 'échéances'}
         </SuiviText>
       </View>
@@ -103,7 +103,7 @@ export function DailyKPIs({ data = mockKPIs, style }: DailyKPIsProps) {
             color="#FF3B30"
           />
         </View>
-        <SuiviText variant="body2" style={styles.kpiText}>
+        <SuiviText variant="body" style={styles.kpiText}>
           {kpisData.overdue} {kpisData.overdue === 1 ? 'en retard' : 'en retard'}
         </SuiviText>
       </View>
@@ -122,14 +122,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 34,
-    borderRadius: 10,
+    borderRadius: tokens.radius.md,
     paddingHorizontal: 10,
     gap: 8,
   },
   iconCircle: {
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: tokens.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -30,6 +30,7 @@ export type AppStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   TaskDetail: {
     taskId: string;
+    openTab?: 'overview' | 'comments' | 'attachments';
   };
   ActivityDetail: {
     eventId: string;
@@ -42,7 +43,7 @@ export type AppStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   MyTasks: {
-    initialFilter?: 'all' | 'active' | 'completed';
+    initialFilter?: 'active' | 'completed';
   } | undefined;
   Notifications: undefined;
   More: undefined;

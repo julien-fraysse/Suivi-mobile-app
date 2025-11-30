@@ -19,13 +19,13 @@
  * - Réponse : Array<SuiviActivityEvent> (JSON)
  * 
  * Migration vers le backend :
- * 1. Mettre USE_MOCK_API = false dans src/config/environment.ts
+ * 1. Mettre API_MODE = 'api' dans src/config/apiMode.ts
  * 2. Implémenter l'appel HTTP avec apiFetch() dans getRecentActivity()
  * 3. Adapter les paramètres de requête selon l'API Suivi réelle
  * 4. Gérer les erreurs et la pagination si nécessaire
  */
 
-import { USE_MOCK_API } from '../config/environment';
+import { API_MODE } from '../config/apiMode';
 import { apiFetch } from './client';
 import { getMockRecentActivity } from '../mocks/data/activity';
 import type { SuiviActivityEvent } from '../types/activity';
@@ -61,7 +61,7 @@ export async function getRecentActivity(
   options: GetRecentActivityOptions = {},
 ): Promise<SuiviActivityEvent[]> {
   // Mode mock : retourner les données mockées
-  if (USE_MOCK_API) {
+  if (API_MODE === 'mock') {
     // Simuler un délai réseau
     await new Promise((resolve) => setTimeout(resolve, 200));
     
@@ -110,9 +110,9 @@ export async function getRecentActivity(
   //   method: 'GET',
   // }, accessToken);
 
-  // Pour l'instant, retourner les mocks même si USE_MOCK_API = false
+  // Pour l'instant, retourner les mocks même si API_MODE = 'api'
   // (sera remplacé par l'implémentation ci-dessus)
-  throw new Error('Real API implementation not yet available. Please use USE_MOCK_API = true.');
+  throw new Error('Real API implementation not yet available. Please use API_MODE = "mock".');
 }
 
 /**
@@ -131,27 +131,27 @@ export async function getTaskActivity(
   taskId: string,
   accessToken?: string | null,
 ): Promise<SuiviActivityEvent[]> {
-  // Mode mock : retourner les données mockées filtrées par taskId
-  if (USE_MOCK_API) {
-    // Simuler un délai réseau
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    
-    // Récupérer toutes les activités mockées
-    let activities = getMockRecentActivity();
-    
-    // Filtrer les événements où taskInfo.taskId correspond à taskId
-    const taskActivities = activities.filter(
+  // Mode mock : utiliser le mock backend
+  if (API_MODE === 'mock') {
+    const response = await mockBackend.handleGetTaskActivities(taskId);
+    if (response.status !== 200) {
+      throw new ApiError(response.status, response.error || `Failed to get activities for task "${taskId}"`);
+    }
+    // Fusionner avec les activités du feed global (pour compatibilité)
+    const feedActivities = getMockRecentActivity().filter(
       (activity) => activity.taskInfo?.taskId === taskId,
     );
-    
-    // Trier par createdAt DESC (plus récent en premier)
-    const sortedActivities = taskActivities.sort((a, b) => {
+    const taskActivities = response.data || [];
+    // Dédupliquer par id
+    const allActivities = [...taskActivities, ...feedActivities];
+    const uniqueActivities = allActivities.filter((activity, index, self) =>
+      index === self.findIndex(a => a.id === activity.id)
+    );
+    return uniqueActivities.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
       return dateB - dateA; // DESC
     });
-    
-    return sortedActivities;
   }
 
   // Mode production : appeler l'API Suivi réelle
@@ -165,9 +165,9 @@ export async function getTaskActivity(
   //   method: 'GET',
   // }, accessToken);
 
-  // Pour l'instant, retourner un tableau vide si USE_MOCK_API = false
+  // Pour l'instant, retourner un tableau vide si API_MODE = 'api'
   // (sera remplacé par l'implémentation ci-dessus)
-  throw new Error('Real API implementation not yet available. Please use USE_MOCK_API = true.');
+  throw new Error('Real API implementation not yet available. Please use API_MODE = "mock".');
 }
 
 

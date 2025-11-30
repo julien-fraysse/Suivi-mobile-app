@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   modal: {
     width: '100%',
     maxWidth: '90%',
-    borderRadius: 24,
+    borderRadius: tokens.radius.xl,
     padding: 24,
   },
   title: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.sm,
   },
   input: {
-    borderRadius: 12,
+    borderRadius: tokens.radius.md,
     padding: tokens.spacing.md,
     fontSize: 16,
     fontFamily: tokens.typography.body.fontFamily,

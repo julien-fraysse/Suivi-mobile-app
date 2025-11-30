@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Modal, SafeAreaView } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { SuiviText } from './SuiviText';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 import type { TaskStatus } from '../../tasks/tasks.types';
 
 export interface SuiviStatusPickerProps {
@@ -107,7 +107,11 @@ export function SuiviStatusPicker({
         />
 
         {/* Bottom Sheet Panel */}
-        <View style={[styles.sheetContainer, { backgroundColor }]}>
+        <View style={[
+          styles.sheetContainer,
+          { backgroundColor },
+          { ...getShadowStyle('lg', isDark), shadowOffset: { width: 0, height: -2 } },
+        ]}>
           <SafeAreaView edges={['bottom']}>
             {/* Handle indicator */}
             <View style={styles.handleContainer}>
@@ -214,14 +218,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.lg,
     paddingBottom: tokens.spacing.md,
     maxHeight: '60%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   handleContainer: {
     alignItems: 'center',
@@ -230,7 +226,7 @@ const styles = StyleSheet.create({
   handleIndicator: {
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: tokens.radius.xs,
   },
   header: {
     marginBottom: tokens.spacing.lg,
@@ -256,7 +252,7 @@ const styles = StyleSheet.create({
   statusIndicator: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: tokens.radius.sm,
     marginRight: tokens.spacing.md,
   },
   statusText: {

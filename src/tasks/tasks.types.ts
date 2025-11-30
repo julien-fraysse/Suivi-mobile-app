@@ -64,6 +64,9 @@ export interface TasksContextValue {
   /** Mettre à jour une tâche (champs partiels) */
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   
+  /** Supprimer une tâche (mise à jour optimiste) */
+  deleteTaskInContext: (id: string) => Promise<void>;
+  
   /** Rafraîchir la liste des tâches */
   refreshTasks: () => Promise<void>;
 }

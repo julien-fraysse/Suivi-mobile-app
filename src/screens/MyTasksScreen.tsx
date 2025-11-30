@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -24,7 +24,7 @@ import type { Task } from '../types/task';
 import type { SectionName } from '../hooks/useMyWork';
 import { tokens } from '@theme';
 
-type FilterOption = 'all' | 'active' | 'completed';
+type FilterOption = 'active' | 'completed';
 
 type MyTasksNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type MyTasksRouteProp = RouteProp<MainTabParamList, 'MyTasks'>;
@@ -33,7 +33,7 @@ type MyTasksRouteProp = RouteProp<MainTabParamList, 'MyTasks'>;
  * MyTasksScreen (TasksScreen)
  * 
  * Liste des tâches avec :
- * - Filtres : All / Active / Completed
+ * - Filtres : Active / Completed
  * - Liste des tâches depuis useMyWork() (hook canonique)
  * - Empty State quand aucune tâche
  */
@@ -43,7 +43,7 @@ export function MyTasksScreen() {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const isDark = theme.dark;
-  const initialFilter: FilterOption = route.params?.initialFilter ?? 'all';
+  const initialFilter: FilterOption = route.params?.initialFilter ?? 'active';
   const [filter, setFilter] = useState<FilterOption>(initialFilter);
 
   // Source unique de vérité pour les tâches - utilise le hook canonique useMyWork()
@@ -76,8 +76,8 @@ export function MyTasksScreen() {
       return 'today';
     }
     
-    // Overdue (strictement avant aujourd'hui)
-    if (taskDate < today) {
+    // Overdue (strictement avant aujourd'hui, excluant les tâches "done")
+    if (taskDate < today && task.status !== 'done') {
       return 'overdue';
     }
     
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     marginHorizontal: tokens.spacing.lg,
   },
   sectionContent: {
-    paddingHorizontal: tokens.spacing.lg,
+    // paddingHorizontal supprimé car déjà géré par scrollContent
     paddingTop: tokens.spacing.sm,
   },
   taskCard: {

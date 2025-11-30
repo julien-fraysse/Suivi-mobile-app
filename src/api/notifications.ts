@@ -1,4 +1,4 @@
-import { USE_MOCK_API } from '../config/environment';
+import { API_MODE } from '../config/apiMode';
 import { apiFetch } from './client';
 import * as mockNotifications from './notificationsApi.mock';
 
@@ -17,7 +17,7 @@ export type Notification = {
  * Récupère toutes les notifications
  */
 export async function getNotifications(_accessToken?: string | null): Promise<Notification[]> {
-  if (USE_MOCK_API) {
+  if (API_MODE === 'mock') {
     return mockNotifications.getNotifications();
   }
 
@@ -33,7 +33,7 @@ export async function markNotificationAsRead(
   notificationId: string,
   _accessToken?: string | null,
 ): Promise<void> {
-  if (USE_MOCK_API) {
+  if (API_MODE === 'mock') {
     return mockNotifications.markNotificationRead(notificationId);
   }
 
@@ -52,7 +52,7 @@ export async function markNotificationAsRead(
  * Marque toutes les notifications comme lues
  */
 export async function markAllNotificationsRead(_accessToken?: string | null): Promise<void> {
-  if (USE_MOCK_API) {
+  if (API_MODE === 'mock') {
     return mockNotifications.markAllNotificationsRead();
   }
 

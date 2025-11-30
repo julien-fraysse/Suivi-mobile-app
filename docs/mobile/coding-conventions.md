@@ -1461,6 +1461,73 @@ export const MyComponent: React.FC<MyComponentProps> = (props) => {
 
 ---
 
+## Task Deletion & Refresh
+
+### Principe
+
+- **Delete = update optimiste du TasksContext** + appel au service (`tasksService.deleteTask`)
+- Les écrans de liste ne doivent **PAS** déclencher de refresh en boucle sur `focus`
+- Le refresh global doit être soit :
+  - Manuel (pull-to-refresh), soit
+  - Déclenché explicitement par une action utilisateur claire
+
+### Flux de suppression
+
+1. L'utilisateur confirme la suppression dans TaskDetailScreen
+2. `deleteTaskInContext(id)` est appelé depuis TasksContext
+3. Mise à jour optimiste : `setTasks(prev => prev.filter(...))`
+4. Appel au service : `tasksService.deleteTask(id)` pour synchroniser le mock store
+5. Navigation retour → MyTasksScreen affiche immédiatement la liste sans la tâche supprimée
+
+### Règles
+
+- ❌ Ne jamais utiliser `useFocusEffect` pour déclencher un refresh automatique
+- ✅ Utiliser les méthodes optimistes du TasksContext (`deleteTaskInContext`, `updateTask`, etc.)
+- ✅ Le pull-to-refresh reste disponible pour un refresh manuel explicite
+
+### Implementation technique
+
+#### TasksContext
+
+La méthode `deleteTaskInContext` :
+- Met à jour l'UI immédiatement (mise à jour optimiste)
+- Appelle `tasksService.deleteTask(id)` pour synchroniser le mock store
+- Rollback automatique en cas d'erreur (recharge depuis le store)
+
+#### TaskDetailScreen
+
+Le handler `handleDeleteTask` :
+- Affiche un modal de confirmation
+- Appelle `deleteTaskInContext(task.id)` depuis le contexte
+- Navigue vers l'écran précédent après succès
+- Affiche une erreur en cas d'échec
+
+#### MyTasksScreen
+
+- **Pas de `useFocusEffect`** : Le contexte se met à jour automatiquement
+- **Pull-to-refresh uniquement** : Refresh manuel via `RefreshControl`
+- La liste se met à jour automatiquement grâce au contexte partagé
+
+### Future API implementation
+
+Quand l'API sera branchée :
+- `deleteTaskInContext` appellera `DELETE /api/tasks/:id`
+- En cas de succès : la mise à jour optimiste reste valide
+- En cas d'erreur : rollback automatique + notification d'erreur
+- Les queries React Query seront invalidées automatiquement
+
+### Soft delete vs Hard delete
+
+Pour l'instant :
+- les mocks utilisent un hard delete
+- l'API utilisera un soft delete (`deleted: true`)
+
+Les écrans doivent toujours filtrer les tâches supprimées :
+
+`tasks.filter(t => !t.deleted && !t.archived)`
+
+---
+
 ## Outils recommandés
 
 ### Linter

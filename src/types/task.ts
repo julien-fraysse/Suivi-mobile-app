@@ -8,6 +8,8 @@
  * TODO: Migration progressive des autres définitions Task vers ce modèle central.
  */
 
+import type { SuiviActivityEvent } from './activity';
+
 /**
  * Task Status
  * 
@@ -72,6 +74,21 @@ export interface CustomField {
 }
 
 /**
+ * Attachment
+ * 
+ * Pièce jointe associée à une tâche.
+ */
+export interface Attachment {
+  id: string;
+  name: string;
+  type: 'image' | 'pdf' | 'spreadsheet' | 'other';
+  mime: string;
+  url: string;
+  size: number;
+  createdAt: string;
+}
+
+/**
  * Task Interface
  * 
  * Représente une tâche dans l'application Suivi.
@@ -108,6 +125,12 @@ export interface Task {
   /** Note/évaluation (1-5) pour les tâches avec notation */
   rating?: number | null;
   
+  /** Valeur sélectionnée pour les quick actions de type SELECT */
+  selectValue?: string | null;
+  
+  /** Valeur de checkbox pour les quick actions de type CHECKBOX */
+  checkboxValue?: boolean | null;
+  
   /** Indicateur de lecture (pour les notifications/tâches) */
   isRead?: boolean;
   
@@ -118,16 +141,22 @@ export interface Task {
   description?: string;
   
   /** Date de dernière mise à jour (format ISO 8601) */
-  updatedAt?: string;
+  updatedAt?: string | null;
   
   /** Date de création (format ISO 8601, optionnelle) */
   createdAt?: string;
+  
+  /** Historique des activités et commentaires associés à la tâche */
+  activities?: SuiviActivityEvent[];
   
   /** Priorité de la tâche */
   priority?: 'normal' | 'low' | 'high';
   
   /** Champs personnalisés (compatible API Suivi Desktop) */
   customFields?: CustomField[];
+  
+  /** Pièces jointes associées à la tâche */
+  attachments?: Attachment[];
 }
 
 /**
@@ -251,10 +280,13 @@ export function normalizeTask(raw: unknown): Task {
     progress: typeof r.progress === 'number' ? r.progress : r.progress === null ? null : undefined,
     weather: typeof r.weather === 'string' ? r.weather : r.weather === null ? null : undefined,
     rating: typeof r.rating === 'number' ? r.rating : r.rating === null ? null : undefined,
+    selectValue: typeof r.selectValue === 'string' ? r.selectValue : r.selectValue === null ? null : undefined,
+    checkboxValue: typeof r.checkboxValue === 'boolean' ? r.checkboxValue : r.checkboxValue === null ? null : undefined,
     isRead: typeof r.isRead === 'boolean' ? r.isRead : false,
+    activities: Array.isArray(r.activities) ? r.activities : undefined,
     projectName: typeof r.projectName === 'string' ? r.projectName : undefined,
     description: typeof r.description === 'string' ? r.description : undefined,
-    updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : undefined,
+    updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : null,
     createdAt: typeof r.createdAt === 'string' ? r.createdAt : undefined,
     priority:
       r.priority === 'normal' ||
@@ -278,6 +310,7 @@ export function normalizeTask(raw: unknown): Task {
             };
           })
       : undefined,
+    attachments: Array.isArray(r.attachments) ? r.attachments : undefined,
   };
 }
 

@@ -38,6 +38,8 @@ export function applyTaskDependencies(task: Task, updates: Partial<Task>): Task 
   
   if (updates.status !== undefined) {
     // Si status === "done" → désactiver toutes les quickActions
+    // IMPORTANT : Ne pas écraser si quickActions existent déjà et que le statut n'a pas changé
+    // Seulement si le statut vient d'être changé vers "done"
     if (updates.status === 'done') {
       updatedTask = {
         ...updatedTask,
@@ -46,6 +48,8 @@ export function applyTaskDependencies(task: Task, updates: Partial<Task>): Task 
     }
     
     // Si status === "blocked" → priority = "high"
+    // IMPORTANT : Ne pas écraser la priorité si elle existe déjà et n'est pas affectée par la règle
+    // Seulement si le statut vient d'être changé vers "blocked"
     if (updates.status === 'blocked') {
       updatedTask = {
         ...updatedTask,

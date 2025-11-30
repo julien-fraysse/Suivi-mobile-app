@@ -9,8 +9,7 @@
 
 import type { Task, TaskStatus } from '../../types/task';
 import type { TaskUpdatePayload } from '../../tasks/tasks.types';
-import { loadTasks, TASKS as MOCK_TASKS } from '../suiviData';
-import { normalizeTask } from '../../types/task';
+import * as backendStore from '../backend/store';
 
 /**
  * Simule un délai réseau
@@ -22,62 +21,50 @@ function delay(ms: number = 200): Promise<void> {
 /**
  * Charger toutes les tâches (mock)
  * 
+ * Lit depuis le store unique TASKS_STORE.
+ * Les tâches sont déjà normalisées au boot, pas besoin de re-normaliser.
+ * 
  * TODO: Remplacer par GET /api/tasks
  */
 export async function loadMockTasks(): Promise<Task[]> {
-  // Utilise loadTasks() depuis suiviData.ts (source unique de vérité)
-  const rawTasks = await loadTasks();
-  // Normaliser toutes les tâches vers le type Task central
-  const normalizedTasks = rawTasks.map((rawTask) => normalizeTask(rawTask));
-  console.log("QA-DIAG: loadMockTasks() returning", normalizedTasks);
-  return normalizedTasks;
+  await delay(200);
+  // Lire depuis le store unifié du mock backend
+  const tasks = backendStore.getTasksStore();
+  console.log("QA-DIAG: loadMockTasks() returning", tasks);
+  return tasks;
 }
 
 /**
  * Charger une tâche par ID (mock)
  * 
+ * Lit depuis le store unique TASKS_STORE.
+ * 
  * TODO: Remplacer par GET /api/tasks/:id
  */
 export async function loadMockTaskById(id: string): Promise<Task | undefined> {
   await delay(200);
-  const rawTask = MOCK_TASKS.find((task) => task.id === id);
-  if (!rawTask) {
-    return undefined;
-  }
-  // Normaliser la tâche vers le type Task central
-  return normalizeTask(rawTask);
+  return backendStore.getTaskFromStore(id);
 }
 
 /**
  * Mettre à jour une tâche (mock)
  * 
- * Modifie directement MOCK_TASKS pour simuler une mise à jour en base.
+ * Modifie le store unique TASKS_STORE.
  * 
  * TODO: Remplacer par PATCH /api/tasks/:id
  */
 export async function updateMockTask(
   id: string,
-  updates: TaskUpdatePayload
+  updates: Partial<Task>
 ): Promise<Task> {
   await delay(200);
   
-  const taskIndex = MOCK_TASKS.findIndex((task) => task.id === id);
-  if (taskIndex === -1) {
+  const updatedTask = backendStore.updateTaskInStore(id, updates);
+  if (!updatedTask) {
     throw new Error(`Task with id ${id} not found`);
   }
   
-  const rawTask = MOCK_TASKS[taskIndex];
-  const updatedRawTask = {
-    ...rawTask,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  
-  // Mettre à jour dans le tableau mock
-  MOCK_TASKS[taskIndex] = updatedRawTask;
-  
-  // Normaliser la tâche vers le type Task central
-  return normalizeTask(updatedRawTask);
+  return updatedTask;
 }
 
 /**

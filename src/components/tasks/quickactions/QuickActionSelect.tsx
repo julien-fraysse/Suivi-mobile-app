@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '@components/ui/SuiviCard';
@@ -25,23 +25,54 @@ export interface QuickActionSelectProps {
 export function QuickActionSelect({ task, payload, onActionComplete }: QuickActionSelectProps) {
   console.log("QA-TEST: QuickActionSelect", task.id);
   const { t } = useTranslation();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  // Initialiser avec task.selectValue comme source de vérité (fallback sur payload.value puis null)
+  const initialValue = task?.selectValue ?? payload?.value ?? null;
+  const [selectedOption, setSelectedOption] = useState<string | null>(initialValue);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   const options = payload?.options || ['Option A', 'Option B', 'Option C'];
+  
+  // Flag pour éviter la réécrasure du state local pendant la mise à jour optimiste
+  const isUpdatingRef = useRef(false);
+  const pendingValueRef = useRef<string | null>(null);
+
+  // Synchroniser selectedOption avec task.selectValue
+  // IMPORTANT : Ne pas réécraser si une mise à jour est en cours pour éviter le double clignotement
+  useEffect(() => {
+    if (isUpdatingRef.current) {
+      // Si la valeur backend correspond à notre valeur en attente, synchronisation réussie
+      if (task?.selectValue === pendingValueRef.current) {
+        isUpdatingRef.current = false;
+        pendingValueRef.current = null;
+      }
+      // Ne pas réécraser pendant la mise à jour
+      return;
+    }
+    
+    // Synchronisation normale (valeur backend différente de locale sans mise à jour en cours)
+    if (task?.selectValue !== undefined && task.selectValue !== selectedOption) {
+      setSelectedOption(task.selectValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.selectValue]);
 
   const handleSelect = (option: string) => {
     setSelectedOption(option);
     setIsDropdownOpen(false);
+    // Pas d'appel à onActionComplete ici - uniquement mise à jour locale
   };
 
   const handleSubmit = () => {
     if (selectedOption) {
+      // Marquer la mise à jour en cours
+      isUpdatingRef.current = true;
+      pendingValueRef.current = selectedOption;
       onActionComplete({
         actionType: 'SELECT',
         details: { selectedOption },
       });
-      setSelectedOption(null);
+      // Ne pas réinitialiser selectedOption immédiatement - attendre la confirmation backend
+      // setSelectedOption(null); // SUPPRIMÉ - sera géré par le useEffect après confirmation
     }
   };
 

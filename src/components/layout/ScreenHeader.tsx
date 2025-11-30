@@ -10,6 +10,7 @@ export interface ScreenHeaderProps {
   onBack?: () => void;
   rightAction?: React.ReactNode;
   showBackButton?: boolean;
+  spacing?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
 }
 
 /**
@@ -25,11 +26,29 @@ export function ScreenHeader({
   onBack,
   rightAction,
   showBackButton = false,
+  spacing = 'lg',
 }: ScreenHeaderProps) {
   const theme = useTheme();
 
+  const getMarginBottom = () => {
+    switch (spacing) {
+      case 'none':
+        return 0;
+      case 'xs':
+        return tokens.spacing.xs;
+      case 'sm':
+        return tokens.spacing.sm;
+      case 'md':
+        return tokens.spacing.md;
+      case 'lg':
+        return tokens.spacing.lg;
+      default:
+        return tokens.spacing.lg;
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { marginBottom: getMarginBottom() }]}>
       <View style={styles.headerRow}>
         {showBackButton && onBack && (
           <TouchableOpacity
@@ -84,7 +103,7 @@ export function ScreenHeader({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: tokens.spacing.lg,
+    // marginBottom géré dynamiquement via prop spacing
   },
   headerRow: {
     flexDirection: 'row',

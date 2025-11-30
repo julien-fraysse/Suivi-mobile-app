@@ -16,6 +16,7 @@ import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '@components/Screen';
+import { ScreenHeader } from '@components/layout/ScreenHeader';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviSwitch } from '@components/ui/SuiviSwitch';
@@ -705,68 +706,35 @@ export function TaskDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
-        {/* Nouveau Header : Retour + Titre (ellipsé) + Bouton "..." */}
-        <View style={[
-          styles.newHeaderContainer,
-          {
-            borderBottomWidth: 1,
-            borderBottomColor: isDark ? tokens.colors.border.darkMode.light : tokens.colors.border.light,
-          },
-        ]}>
-          <View style={styles.newHeaderTitleRow}>
-            <Pressable onPress={() => navigation.goBack()} style={styles.backIcon}>
-              <MaterialCommunityIcons 
-                name="arrow-left" 
-                size={24} 
-                color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary} 
+        {/* Header standardisé */}
+        <ScreenHeader
+          title={task.title}
+          showBackButton
+          onBack={() => navigation.goBack()}
+          spacing="xs"
+          rightAction={
+            <Pressable onPress={() => setOptionsSheetVisible(true)}>
+              <MaterialCommunityIcons
+                name="dots-horizontal"
+                size={24}
+                color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
               />
             </Pressable>
-            <View style={styles.newHeaderTitleContainer}>
-              <SuiviText 
-                variant="h2" 
-                style={styles.newHeaderTitle}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {task.title}
-              </SuiviText>
-            </View>
-            <Pressable onPress={() => setOptionsSheetVisible(true)} style={styles.optionsButton}>
-              <MaterialCommunityIcons 
-                name="dots-horizontal" 
-                size={24} 
-                color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary} 
-              />
-            </Pressable>
-          </View>
-          
-          {/* Badge Statut sous le titre */}
-          <View style={styles.newHeaderStatusRow}>
-            <Pressable onPress={() => setStatusPickerVisible(true)}>
-              <View
-                style={[
-                  styles.statusBadgeInline,
-                  {
-                    backgroundColor: statusColors.bg,
-                    borderColor: statusColors.border,
-                  },
-                ]}
-              >
-                <View style={styles.statusBadgeContent}>
-                  <SuiviText variant="label" style={{ color: statusColors.text, fontWeight: '600' }}>
-                    {formatStatus(taskStatus!, t)}
-                  </SuiviText>
-                  <MaterialCommunityIcons
-                    name="chevron-down"
-                    size={16}
-                    color={statusColors.text}
-                    style={styles.statusBadgeIcon}
-                  />
-                </View>
-              </View>
-            </Pressable>
-          </View>
-        </View>
+          }
+        />
+
+        {/* Séparateur Top App Bar M3 style */}
+        <View
+          style={[
+            styles.headerSeparator,
+            {
+              backgroundColor: isDark
+                ? tokens.colors.border.darkMode.default
+                : tokens.colors.border.default,
+            },
+            getShadowStyle('sm', isDark),
+          ]}
+        />
 
         {/* Status Picker Modal */}
         <SuiviStatusPicker
@@ -927,6 +895,47 @@ export function TaskDetailScreen() {
             {t('taskDetail.information')}
           </SuiviText>
           <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+            {/* Statut (éditable) */}
+            <View style={styles.metadataRow}>
+              <View style={styles.metadataLabelContainer}>
+                <MaterialCommunityIcons
+                  name="flag"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.status')}
+                </SuiviText>
+              </View>
+              <Pressable
+                onPress={() => setStatusPickerVisible(true)}
+                style={styles.metadataValueContainer}
+              >
+                <View
+                  style={[
+                    styles.statusBadgeCompact,
+                    {
+                      backgroundColor: statusColors.bg,
+                      borderColor: statusColors.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.statusBadgeContent}>
+                    <SuiviText variant="label" style={{ color: statusColors.text, fontWeight: '600' }}>
+                      {formatStatus(taskStatus!, t)}
+                    </SuiviText>
+                  </View>
+                </View>
+                <MaterialCommunityIcons
+                  name="chevron-down"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+              </Pressable>
+            </View>
+
             {/* Date d'échéance (éditable) */}
             <View style={styles.metadataRow}>
               <View style={styles.metadataLabelContainer}>
@@ -2060,28 +2069,9 @@ const styles = StyleSheet.create({
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
   },
-  // Nouveau Header
-  newHeaderContainer: {
-    paddingVertical: tokens.spacing.md,
+  headerSeparator: {
+    height: 1,
     marginBottom: tokens.spacing.lg,
-  },
-  newHeaderTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-  },
-  newHeaderTitleContainer: {
-    flex: 1,
-    marginHorizontal: tokens.spacing.md,
-  },
-  newHeaderTitle: {
-    fontWeight: 'bold',
-  },
-  newHeaderStatusRow: {
-    marginTop: tokens.spacing.sm,
-  },
-  optionsButton: {
-    padding: tokens.spacing.sm,
   },
   tabsContainer: {
     marginBottom: tokens.spacing.lg,
@@ -2195,6 +2185,14 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
     minHeight: 32,
+    justifyContent: 'center',
+  },
+  statusBadgeCompact: {
+    paddingHorizontal: tokens.spacing.xs,
+    paddingVertical: tokens.spacing.xs / 2,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    minHeight: 28,
     justifyContent: 'center',
   },
   // Sections
@@ -2387,3 +2385,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.md,
   },
 });
+

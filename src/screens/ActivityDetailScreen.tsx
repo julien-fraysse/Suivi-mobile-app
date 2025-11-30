@@ -22,7 +22,7 @@ import { SuiviButton } from '@components/ui/SuiviButton';
 import { UserAvatar } from '@components/ui/UserAvatar';
 import { Screen } from '@components/Screen';
 import { ScreenHeader } from '@components/layout/ScreenHeader';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 import { getRecentActivity } from '../api/activity';
 import { useActivityFeed } from '@hooks/useActivity';
 import type { AppStackParamList } from '../navigation/types';
@@ -257,12 +257,27 @@ export function ActivityDetailScreen() {
   return (
     <Screen scrollable noTopBackground>
       <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
-        {/* Screen Header avec bouton retour */}
-        <ScreenHeader 
-          title={t('activityDetail.overview')} 
-          showBackButton 
-          onBack={() => navigation.goBack()} 
+        {/* Header standardisé */}
+        <ScreenHeader
+          title={t('activityDetail.overview')}
+          showBackButton
+          onBack={() => navigation.goBack()}
+          spacing="xs"
         />
+
+        {/* Séparateur Top App Bar M3 style */}
+        <View
+          style={[
+            styles.headerSeparator,
+            {
+              backgroundColor: isDark
+                ? tokens.colors.border.darkMode.default
+                : tokens.colors.border.default,
+            },
+            getShadowStyle('sm', isDark),
+          ]}
+        />
+
         {/* Icône */}
         <View style={styles.iconSection}>
           <View
@@ -552,6 +567,10 @@ const styles = StyleSheet.create({
   },
   buttonSection: {
     marginTop: tokens.spacing.xl,
+    marginBottom: tokens.spacing.lg,
+  },
+  headerSeparator: {
+    height: 1,
     marginBottom: tokens.spacing.lg,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '@components/ui/SuiviCard';
@@ -25,14 +25,25 @@ export interface QuickActionSelectProps {
 export function QuickActionSelect({ task, payload, onActionComplete }: QuickActionSelectProps) {
   console.log("QA-TEST: QuickActionSelect", task.id);
   const { t } = useTranslation();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  // Initialiser avec task.selectValue comme source de vérité (fallback sur payload.value puis null)
+  const initialValue = task?.selectValue ?? payload?.value ?? null;
+  const [selectedOption, setSelectedOption] = useState<string | null>(initialValue);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   const options = payload?.options || ['Option A', 'Option B', 'Option C'];
 
+  // Synchroniser selectedOption avec task.selectValue
+  useEffect(() => {
+    if (task?.selectValue !== undefined && task.selectValue !== selectedOption) {
+      setSelectedOption(task.selectValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.selectValue]);
+
   const handleSelect = (option: string) => {
     setSelectedOption(option);
     setIsDropdownOpen(false);
+    // Pas d'appel à onActionComplete ici - uniquement mise à jour locale
   };
 
   const handleSubmit = () => {

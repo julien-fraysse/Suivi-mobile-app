@@ -1,10 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
-  PanResponder,
-  LayoutChangeEvent,
 } from 'react-native';
+import { Slider } from '@miblanchard/react-native-slider';
 import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '@components/ui/SuiviCard';
 import { SuiviText } from '@components/ui/SuiviText';
@@ -26,7 +25,7 @@ export interface QuickActionProgressProps {
  * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
  * Les mêmes clés i18n seront utilisées pour l'API backend.
  */
-export function QuickActionProgress({
+function QuickActionProgressComponent({
   task,
   payload,
   onActionComplete,
@@ -35,43 +34,38 @@ export function QuickActionProgress({
   const min = payload?.min ?? 0;
   const max = payload?.max ?? 100;
 
-  const [progress, setProgress] = useState(min);
-  const trackWidth = useRef(1);
+  // Initialiser avec task.progress comme source de vérité (fallback sur payload.value puis min)
+  const initialValue = task?.progress ?? payload?.value ?? min;
+  const [progress, setProgress] = useState(initialValue);
+  const [isSliding, setIsSliding] = useState(false);
 
-  const handleMove = (x: number) => {
-    if (trackWidth.current <= 0) return;
-    const relative = Math.max(0, Math.min(x, trackWidth.current));
-    const percent = relative / trackWidth.current;
-    const newValue = Math.round(min + percent * (max - min));
-    setProgress(newValue);
+  // Synchroniser progress avec task.progress uniquement si l'utilisateur n'est pas en train de glisser
+  useEffect(() => {
+    if (!isSliding && task?.progress !== undefined && task.progress !== progress) {
+      setProgress(task.progress);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.progress, isSliding]);
+
+  // Handler pour onValueChange : mise à jour locale uniquement
+  const handleValueChange = (value: number) => {
+    setIsSliding(true);
+    setProgress(value);
   };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        handleMove(evt.nativeEvent.locationX);
-      },
-      onPanResponderMove: (evt) => {
-        handleMove(evt.nativeEvent.locationX);
-      },
-      onPanResponderRelease: () => {},
-    })
-  ).current;
-
-  const handleTrackLayout = (e: LayoutChangeEvent) => {
-    trackWidth.current = e.nativeEvent.layout.width;
+  // Handler pour onSlidingComplete : mise à jour locale uniquement (pas d'appel à onActionComplete)
+  const handleSlidingComplete = (value: number) => {
+    setIsSliding(false);
+    setProgress(value);
   };
 
   const handleSubmit = () => {
+    // Le bouton reste disponible pour une confirmation manuelle si nécessaire
     onActionComplete({
       actionType: 'PROGRESS',
       details: { progress, min, max },
     });
   };
-
-  const progressPercent = ((progress - min) / (max - min)) * 100;
 
   return (
     <SuiviCard padding="md" elevation="sm" variant="default" style={styles.container}>
@@ -79,14 +73,18 @@ export function QuickActionProgress({
         {t('quickActions.progress.label', { min, max })}
       </SuiviText>
       
-      <View
-        style={styles.track}
-        onLayout={handleTrackLayout}
-        {...panResponder.panHandlers}
-      >
-        <View style={[styles.filled, { width: `${progressPercent}%` }]} />
-        <View style={[styles.thumb, { left: `${progressPercent}%`, marginLeft: -12 }]} />
-      </View>
+      <Slider
+        value={progress}
+        minimumValue={min}
+        maximumValue={max}
+        step={1}
+        minimumTrackTintColor={tokens.colors.brand.primary}
+        maximumTrackTintColor={tokens.colors.surface.variant}
+        thumbTintColor={tokens.colors.brand.primary}
+        onValueChange={handleValueChange}
+        onSlidingComplete={handleSlidingComplete}
+        style={styles.slider}
+      />
 
       <SuiviText variant="body" color="primary" style={styles.value}>
         {progress}%
@@ -110,32 +108,10 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: tokens.spacing.sm,
   },
-  track: {
-    height: 8,
-    backgroundColor: tokens.colors.neutral.light,
-    borderRadius: tokens.radius.xs,
+  slider: {
     width: '100%',
-    justifyContent: 'center',
+    height: 32,
     marginBottom: tokens.spacing.sm,
-    position: 'relative',
-  },
-  filled: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    height: 8,
-    backgroundColor: tokens.colors.brand.primary,
-    borderRadius: tokens.radius.xs,
-  },
-  thumb: {
-    position: 'absolute',
-    top: -8,
-    width: 24,
-    height: 24,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.brand.primary,
-    borderWidth: 2,
-    borderColor: tokens.colors.background.default,
   },
   value: {
     textAlign: 'center',
@@ -146,3 +122,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
 });
+
+// Stabiliser le composant avec React.memo pour éviter les re-renders inutiles
+export const QuickActionProgress = React.memo(QuickActionProgressComponent);

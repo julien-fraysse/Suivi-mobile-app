@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -25,7 +25,17 @@ export function QuickActionWeather({ task, payload, onActionComplete }: QuickAct
   console.log("QA-TEST: QuickActionWeather", task.id);
   const { t } = useTranslation();
   const options = payload?.options ?? ['sunny', 'cloudy', 'storm'];
-  const [selected, setSelected] = useState<string | null>(null);
+  // Initialiser avec task.weather comme source de vérité (fallback sur payload.value puis null)
+  const initialValue = task?.weather ?? payload?.value ?? null;
+  const [selected, setSelected] = useState<string | null>(initialValue);
+
+  // Synchroniser selected avec task.weather
+  useEffect(() => {
+    if (task?.weather !== undefined && task.weather !== selected) {
+      setSelected(task.weather);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.weather]);
 
   const handleSelect = (option: string) => {
     setSelected(option);

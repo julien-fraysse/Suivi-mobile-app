@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SuiviCard } from '@components/ui/SuiviCard';
@@ -9,6 +9,7 @@ import { tokens } from '@theme';
 
 export interface QuickActionCalendarProps {
   task: Task;
+  payload?: Record<string, any>;
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
@@ -20,10 +21,20 @@ export interface QuickActionCalendarProps {
  * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
  * Les mêmes clés i18n seront utilisées pour l'API backend.
  */
-export function QuickActionCalendar({ task, onActionComplete }: QuickActionCalendarProps) {
+export function QuickActionCalendar({ task, payload, onActionComplete }: QuickActionCalendarProps) {
   console.log("QA-TEST: QuickActionCalendar", task.id);
   const { t } = useTranslation();
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  // Initialiser avec task.dueDate comme source de vérité (fallback sur payload.value puis null)
+  const initialValue = task?.dueDate ?? payload?.value ?? null;
+  const [selectedDate, setSelectedDate] = useState<string | null>(initialValue);
+
+  // Synchroniser selectedDate avec task.dueDate
+  useEffect(() => {
+    if (task?.dueDate !== undefined && task.dueDate !== selectedDate) {
+      setSelectedDate(task.dueDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.dueDate]);
 
   const handleDateSelect = () => {
     // Pour un vrai calendrier, utiliser react-native-date-picker ou DateTimePicker

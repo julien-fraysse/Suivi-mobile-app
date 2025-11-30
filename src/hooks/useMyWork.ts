@@ -17,7 +17,7 @@
  *   const activeTasks = tasksByStatus('active');
  */
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth';
 import { API_MODE } from '../config/apiMode';
@@ -94,6 +94,12 @@ export function useMyWork(options: UseMyWorkOptions = {}) {
   // Utiliser TasksContext en mode mock (source unique de vérité)
   const tasksContext = API_MODE === 'mock' ? useTasksContext() : null;
 
+  // Mémoriser refreshTasks dans une ref pour éviter les recréations
+  const refreshTasksRef = useRef(tasksContext?.refreshTasks);
+  if (tasksContext?.refreshTasks) {
+    refreshTasksRef.current = tasksContext.refreshTasks;
+  }
+
   // React Query pour le mode API
   const query = useInfiniteQuery({
     queryKey: ['myWork', initialStatus],
@@ -127,12 +133,12 @@ export function useMyWork(options: UseMyWorkOptions = {}) {
     if (API_MODE === 'api') {
       await query.refetch();
     } else {
-      // En mode mock, utiliser TasksContext.refreshTasks() pour synchroniser
-      if (tasksContext) {
-        await tasksContext.refreshTasks();
+      // En mode mock, utiliser la ref au lieu de tasksContext directement
+      if (refreshTasksRef.current) {
+        await refreshTasksRef.current();
       }
     }
-  }, [query, tasksContext]);
+  }, [query]);
 
   // Tâches normalisées (depuis React Query ou TasksContext)
   const tasks: Task[] = useMemo(() => {

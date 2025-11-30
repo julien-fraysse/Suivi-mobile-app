@@ -2,7 +2,9 @@
   "common": {
     "loading": "Loading...",
     "error": "Error",
-    "back": "Back"
+    "back": "Back",
+    "delete": "Delete",
+    "cancel": "Cancel"
   },
   "home": {
     "title": "Home",
@@ -126,7 +128,25 @@
     "cancel": "Cancel",
     "customFields": "Custom Fields",
     "noValue": "No value",
-    "enterValue": "Enter a value"
+    "enterValue": "Enter a value",
+    "tabs": {
+      "overview": "Overview",
+      "comments": "Comments",
+      "attachments": "Attachments"
+    },
+    "options": {
+      "share": "Share task link",
+      "copyId": "Copy task ID",
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete this task?",
+      "deleteConfirmMessage": "This action is irreversible."
+    },
+    "attachments": {
+      "empty": "No attachments",
+      "upload": "Upload a file"
+    }
   },
   "activityDetail": {
     "overview": "Activity overview",

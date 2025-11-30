@@ -2,7 +2,9 @@
   "common": {
     "loading": "Chargement...",
     "error": "Erreur",
-    "back": "Retour"
+    "back": "Retour",
+    "delete": "Supprimer",
+    "cancel": "Annuler"
   },
   "home": {
     "title": "Accueil",
@@ -126,7 +128,25 @@
     "cancel": "Annuler",
     "customFields": "Champs personnalisés",
     "noValue": "Aucune valeur",
-    "enterValue": "Entrer une valeur"
+    "enterValue": "Entrer une valeur",
+    "tabs": {
+      "overview": "Aperçu",
+      "comments": "Commentaires",
+      "attachments": "Pièces jointes"
+    },
+    "options": {
+      "share": "Partager le lien",
+      "copyId": "Copier l'ID",
+      "addFavorite": "Ajouter aux favoris",
+      "removeFavorite": "Retirer des favoris",
+      "delete": "Supprimer",
+      "deleteConfirmTitle": "Supprimer cette tâche ?",
+      "deleteConfirmMessage": "Cette action est irréversible."
+    },
+    "attachments": {
+      "empty": "Aucune pièce jointe",
+      "upload": "Télécharger un fichier"
+    }
   },
   "activityDetail": {
     "overview": "Aperçu de l'activité",

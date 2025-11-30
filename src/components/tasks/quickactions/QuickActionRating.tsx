@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { tokens } from '@theme';
 
 export interface QuickActionRatingProps {
   task: Task;
+  payload?: Record<string, any>;
   onActionComplete: (result: { actionType: string; details: Record<string, any> }) => void;
 }
 
@@ -20,10 +21,20 @@ export interface QuickActionRatingProps {
  * @see docs/mobile/ai_pulse_and_kpi_api.md pour le contrat API complet
  * Les mêmes clés i18n seront utilisées pour l'API backend.
  */
-export function QuickActionRating({ task, onActionComplete }: QuickActionRatingProps) {
+export function QuickActionRating({ task, payload, onActionComplete }: QuickActionRatingProps) {
   console.log("QA-TEST: QuickActionRating", task.id);
   const { t } = useTranslation();
-  const [rating, setRating] = useState(0);
+  // Initialiser avec task.rating comme source de vérité (fallback sur payload.value puis 0)
+  const initialValue = task?.rating ?? payload?.value ?? 0;
+  const [rating, setRating] = useState(initialValue);
+
+  // Synchroniser rating avec task.rating
+  useEffect(() => {
+    if (task?.rating !== undefined && task.rating !== rating) {
+      setRating(task.rating);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.rating]);
 
   const handleRatingSelect = (value: number) => {
     setRating(value);

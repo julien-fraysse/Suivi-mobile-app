@@ -6,12 +6,14 @@ import {
   TextInput,
   Pressable,
   Modal,
+  Alert,
+  Clipboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '@components/Screen';
 import { SuiviCard } from '@components/ui/SuiviCard';
@@ -19,12 +21,15 @@ import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviSwitch } from '@components/ui/SuiviSwitch';
 import { UserAvatar } from '@components/ui/UserAvatar';
 import { SuiviStatusPicker } from '@components/ui/SuiviStatusPicker';
+import { SegmentedControl } from '@components/ui/SegmentedControl';
+import { SuiviButton } from '@components/ui/SuiviButton';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTaskById } from '../tasks/useTaskById';
 import { useTasksContext } from '../tasks/TasksContext';
 import type { TaskStatus, TaskQuickAction } from '../types/task';
 import { useTaskActivity } from '@hooks/useActivity';
 import { useUser } from '@hooks/useUser';
-import { tokens } from '@theme';
+import { tokens, getShadowStyle } from '@theme';
 import type { AppStackParamList } from '../navigation/types';
 import { QuickActionWeather } from '@components/tasks/quickactions/QuickActionWeather';
 import { QuickActionProgress } from '@components/tasks/quickactions/QuickActionProgress';
@@ -61,7 +66,7 @@ export function TaskDetailScreen() {
   
   // Source unique de vérité pour les tâches - TODO: Replace with real Suivi API
   const { task, isLoading: isLoadingTask, error: taskError } = useTaskById(taskId);
-  const { updateTask } = useTasksContext();
+  const { updateTask, deleteTaskInContext } = useTasksContext();
   
   const { data: user } = useUser();
   const { data: taskActivities = [] } = useTaskActivity(taskId);
@@ -72,8 +77,6 @@ export function TaskDetailScreen() {
   // Priorité actuelle de la tâche (dérivée du store)
   const taskPriority = task?.priority;
 
-  // Local activity history for Quick Actions (mock)
-  const [localActivities, setLocalActivities] = useState<SuiviActivityEvent[]>([]);
 
   // États pour les modals/pickers d'édition
   const [statusPickerVisible, setStatusPickerVisible] = useState(false);
@@ -88,6 +91,26 @@ export function TaskDetailScreen() {
   const [customFieldEditModal, setCustomFieldEditModal] = useState<{ fieldId: string; type: string } | null>(null);
   const [customFieldInputValue, setCustomFieldInputValue] = useState<string>('');
   const [customFieldDateInput, setCustomFieldDateInput] = useState<string>('');
+
+  // États pour le nouveau header et onglets
+  const [optionsSheetVisible, setOptionsSheetVisible] = useState(false);
+  const initialTab = route.params?.openTab ?? 'overview';
+  const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'attachments'>(initialTab);
+
+  // Fusionner task.activities avec taskActivities (API), avec déduplication par id et tri par date DESC
+  const allActivities = [
+    ...(task?.activities || []),
+    ...taskActivities,
+  ]
+    .filter((activity, index, self) => 
+      // Dédupliquer par id (éviter les doublons entre task.activities et API)
+      index === self.findIndex(a => a.id === activity.id)
+    )
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // DESC
+    });
 
   // Synchroniser descriptionValue avec task.description quand task change
   React.useEffect(() => {
@@ -130,6 +153,20 @@ export function TaskDetailScreen() {
     return activityEntry;
   }
 
+  // Helper pour ajouter une activité à la tâche (persistée dans task.activities)
+  async function addActivityToTask(activity: SuiviActivityEvent) {
+    if (!task) return;
+    try {
+      // Ajouter l'activité à task.activities via updateTask
+      const currentActivities = task.activities || [];
+      await updateTask(task.id, {
+        activities: [...currentActivities, activity],
+      });
+    } catch (err) {
+      console.error('Error adding activity to task:', err);
+    }
+  }
+
   // Handle Quick Action completion (mock) - pour Approval et Comment uniquement
   function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
     if (!task || !user) return;
@@ -155,8 +192,8 @@ export function TaskDetailScreen() {
       },
     };
 
-    // Add to local activities state
-    setLocalActivities((prev) => [activityEntry, ...prev]);
+    // Add to task activities (persisted)
+    addActivityToTask(activityEntry);
   }
 
   // Handler pour mettre à jour le statut
@@ -166,7 +203,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { status: newStatus });
       const activity = createActivityForTaskUpdate(t('taskDetail.status'), formatStatus(newStatus, t), formatStatus(task.status, t));
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
     } catch (err) {
       console.error('Error updating task status:', err);
@@ -180,7 +217,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { dueDate: date });
       const activity = createActivityForTaskUpdate(t('taskDetail.dueDate'), formatDate(date), task.dueDate ? formatDate(task.dueDate) : undefined);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
       setDueDatePickerVisible(false);
     } catch (err) {
@@ -195,7 +232,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { assignee: selectedUser });
       const activity = createActivityForTaskUpdate(t('taskDetail.assignee'), selectedUser.name, task.assignee?.name);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
       setAssigneePickerVisible(false);
     } catch (err) {
@@ -210,7 +247,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { priority: newPriority });
       const activity = createActivityForTaskUpdate(t('taskDetail.priority'), t(`taskDetail.priority.${newPriority}`), task.priority ? t(`taskDetail.priority.${task.priority}`) : undefined);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
       setPriorityPickerVisible(false);
     } catch (err) {
@@ -225,7 +262,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { description: descriptionValue });
       const activity = createActivityForTaskUpdate(t('taskDetail.description'), descriptionValue, task.description);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
       setEditingDescription(false);
     } catch (err) {
@@ -240,7 +277,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { progress });
       const activity = createActivityForTaskUpdate(t('quickActions.progress.title'), `${progress}%`, task.progress !== undefined ? `${task.progress}%` : undefined);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
     } catch (err) {
       console.error('Error updating task progress:', err);
@@ -264,7 +301,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { rating });
       const activity = createActivityForTaskUpdate(t('quickActions.rating.title'), `${rating}`, task.rating !== undefined ? `${task.rating}` : undefined);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
     } catch (err) {
       console.error('Error updating task rating:', err);
@@ -278,7 +315,7 @@ export function TaskDetailScreen() {
       await updateTask(task.id, { weather });
       const activity = createActivityForTaskUpdate(t('quickActions.weather.title'), weather, task.weather);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
     } catch (err) {
       console.error('Error updating task weather:', err);
@@ -289,10 +326,10 @@ export function TaskDetailScreen() {
   async function handleCheckboxChange(checked: boolean) {
     if (!task) return;
     try {
-      // Note: checkbox n'est pas un champ Task, on crée juste une activité
-      const activity = createActivityForTaskUpdate(t('quickActions.checkbox.title'), checked ? t('quickActions.checkbox.completed') : t('taskDetail.cancel'));
+      await updateTask(task.id, { checkboxValue: checked });
+      const activity = createActivityForTaskUpdate(t('quickActions.checkbox.title'), checked ? t('quickActions.checkbox.completed') : t('taskDetail.cancel'), task.checkboxValue !== undefined ? (task.checkboxValue ? t('quickActions.checkbox.completed') : t('taskDetail.cancel')) : undefined);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
     } catch (err) {
       console.error('Error updating task checkbox:', err);
@@ -303,10 +340,10 @@ export function TaskDetailScreen() {
   async function handleSelectChange(selectedOption: string) {
     if (!task) return;
     try {
-      // Note: selectValue n'est pas un champ Task standard, on crée juste une activité
-      const activity = createActivityForTaskUpdate(t('quickActions.select.title'), selectedOption);
+      await updateTask(task.id, { selectValue: selectedOption });
+      const activity = createActivityForTaskUpdate(t('quickActions.select.title'), selectedOption, task.selectValue);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
     } catch (err) {
       console.error('Error updating task select:', err);
@@ -331,7 +368,7 @@ export function TaskDetailScreen() {
       
       const activity = createActivityForTaskUpdate(field.label, String(newValue), oldValue ? String(oldValue) : undefined);
       if (activity) {
-        setLocalActivities((prev) => [activity, ...prev]);
+        addActivityToTask(activity);
       }
       
       setCustomFieldEditModal(null);
@@ -342,19 +379,92 @@ export function TaskDetailScreen() {
     }
   }
 
+  // Handlers pour les options du bottom-sheet
+  async function handleShareTask() {
+    if (!task) return;
+    // Mock: TODO: Implémenter le partage réel avec expo-sharing ou Linking
+    console.log('Share task:', task.id);
+    Alert.alert(t('taskDetail.options.share'), `Task ID: ${task.id}`);
+    setOptionsSheetVisible(false);
+  }
+
+  async function handleCopyTaskId() {
+    if (!task) return;
+    try {
+      // Utiliser Clipboard API de React Native (disponible dans RN 0.81.5)
+      if (Clipboard && Clipboard.setString) {
+        Clipboard.setString(task.id);
+        Alert.alert(t('taskDetail.options.copyId'), 'Task ID copied to clipboard');
+      } else {
+        // Fallback si Clipboard n'est pas disponible
+        Alert.alert(t('taskDetail.options.copyId'), `Task ID: ${task.id}`);
+      }
+    } catch (err) {
+      // Fallback en cas d'erreur
+      Alert.alert(t('taskDetail.options.copyId'), `Task ID: ${task.id}`);
+    }
+    setOptionsSheetVisible(false);
+  }
+
+  async function handleToggleFavorite() {
+    if (!task) return;
+    try {
+      // Mock: TODO: Ajouter isFavorite au type Task et à l'API
+      const currentFavorite = (task as any).isFavorite || false;
+      await updateTask(task.id, { isFavorite: !currentFavorite } as any);
+      setOptionsSheetVisible(false);
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  }
+
+  async function handleDeleteTask() {
+    if (!task) return;
+    Alert.alert(
+      t('taskDetail.options.deleteConfirmTitle'),
+      t('taskDetail.options.deleteConfirmMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteTaskInContext(task.id);
+              setOptionsSheetVisible(false);
+              navigation.goBack();
+            } catch (err) {
+              console.error('Error deleting task:', err);
+              Alert.alert(t('common.error'), 'Failed to delete task');
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  // Handler pour sélectionner un document
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled) {
+        console.log('Selected file:', result);
+        // TODO: brancher au backend plus tard
+      }
+    } catch (err) {
+      console.error('Error picking document:', err);
+    }
+  };
+
   // Mock users pour le picker d'assignee
   const mockUsers = [
     { id: '1', name: 'Julien', avatarUrl: undefined },
     { id: '2', name: 'Alice', avatarUrl: undefined },
     { id: '3', name: 'Bob', avatarUrl: undefined },
   ];
-
-  // Merge API activities with local activities, sorted by createdAt DESC
-  const allActivities = [...localActivities, ...taskActivities].sort((a, b) => {
-    const dateA = new Date(a.createdAt).getTime();
-    const dateB = new Date(b.createdAt).getTime();
-    return dateB - dateA; // DESC
-  });
 
   // Render activity item (comment or system activity)
   function renderActivityItem(activity: SuiviActivityEvent) {
@@ -447,7 +557,7 @@ export function TaskDetailScreen() {
           <QuickActionWeather
             key={index}
             task={task!}
-            payload={qa.payload}
+            payload={{ ...qa.payload, value: task?.weather ?? qa.payload?.value }}
             onActionComplete={(result) => {
               if (result.details.weather) {
                 handleWeatherChange(result.details.weather);
@@ -462,7 +572,7 @@ export function TaskDetailScreen() {
           <QuickActionProgress
             key={index}
             task={task!}
-            payload={qa.payload || { value: task?.progress || 0 }}
+            payload={{ ...qa.payload, value: task?.progress ?? qa.payload?.value ?? 0 }}
             onActionComplete={handleProgressAction}
           />
         );
@@ -471,6 +581,7 @@ export function TaskDetailScreen() {
           <QuickActionRating
             key={index}
             task={task!}
+            payload={{ value: task?.rating ?? undefined }}
             onActionComplete={(result) => {
               if (result.details.rating !== undefined) {
                 handleRatingChange(result.details.rating);
@@ -485,6 +596,7 @@ export function TaskDetailScreen() {
           <QuickActionCheckbox
             key={index}
             task={task!}
+            payload={{ value: task?.checkboxValue ?? undefined }}
             onActionComplete={(result) => {
               if (result.details.checked !== undefined) {
                 handleCheckboxChange(result.details.checked);
@@ -499,7 +611,7 @@ export function TaskDetailScreen() {
           <QuickActionSelect
             key={index}
             task={task!}
-            payload={qa.payload}
+            payload={{ ...qa.payload, value: task?.selectValue ?? qa.payload?.value }}
             onActionComplete={(result) => {
               if (result.details.selectedOption) {
                 handleSelectChange(result.details.selectedOption);
@@ -514,6 +626,7 @@ export function TaskDetailScreen() {
           <QuickActionCalendar
             key={index}
             task={task!}
+            payload={{ value: task?.dueDate ?? undefined }}
             onActionComplete={(result) => {
               if (result.details.date) {
                 handleDueDateChange(result.details.date);
@@ -568,40 +681,43 @@ export function TaskDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.pagePadding, { paddingTop: insets.top + tokens.spacing.md }]}>
-        {/* Header inline "Task Overview" avec bouton retour */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerRow}>
+        {/* Nouveau Header : Retour + Titre (ellipsé) + Bouton "..." */}
+        <View style={[
+          styles.newHeaderContainer,
+          {
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? tokens.colors.border.darkMode.light : tokens.colors.border.light,
+          },
+        ]}>
+          <View style={styles.newHeaderTitleRow}>
             <Pressable onPress={() => navigation.goBack()} style={styles.backIcon}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color={tokens.colors.text.primary} />
+              <MaterialCommunityIcons 
+                name="arrow-left" 
+                size={24} 
+                color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary} 
+              />
             </Pressable>
-            <View style={styles.headerTitleContainer}>
-              <SuiviText variant="h2" style={styles.headerTitle}>
-                {t('taskDetail.overviewTitle')}
+            <View style={styles.newHeaderTitleContainer}>
+              <SuiviText 
+                variant="h2" 
+                style={styles.newHeaderTitle}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {task.title}
               </SuiviText>
             </View>
+            <Pressable onPress={() => setOptionsSheetVisible(true)} style={styles.optionsButton}>
+              <MaterialCommunityIcons 
+                name="dots-horizontal" 
+                size={24} 
+                color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary} 
+              />
+            </Pressable>
           </View>
-        </View>
-
-        {/* En-tête Monday-like : Titre + Breadcrumb + Badge Statut */}
-        <View style={styles.headerSection}>
-          {/* Breadcrumb */}
-          {formatBreadcrumb() && (
-            <View style={styles.breadcrumbContainer}>
-              <SuiviText variant="label" color="secondary" style={styles.breadcrumb}>
-                {formatBreadcrumb()}
-              </SuiviText>
-            </View>
-          )}
-
-          {/* Titre de la tâche */}
-          <View style={styles.taskTitleContainer}>
-            <SuiviText variant="h1" style={styles.taskTitleText}>
-              {task.title}
-            </SuiviText>
-          </View>
-
-          {/* Badge Statut inline (éditable) */}
-          <View style={styles.statusBadgeContainer}>
+          
+          {/* Badge Statut sous le titre */}
+          <View style={styles.newHeaderStatusRow}>
             <Pressable onPress={() => setStatusPickerVisible(true)}>
               <View
                 style={[
@@ -626,17 +742,162 @@ export function TaskDetailScreen() {
               </View>
             </Pressable>
           </View>
+        </View>
 
-          {/* Status Picker Modal */}
-          <SuiviStatusPicker
-            visible={statusPickerVisible}
-            onClose={() => setStatusPickerVisible(false)}
-            currentStatus={taskStatus!}
-            onSelectStatus={handleStatusChange}
+        {/* Status Picker Modal */}
+        <SuiviStatusPicker
+          visible={statusPickerVisible}
+          onClose={() => setStatusPickerVisible(false)}
+          currentStatus={taskStatus!}
+          onSelectStatus={handleStatusChange}
+        />
+
+        {/* Onglets : Overview / Comments / Attachments */}
+        <View style={styles.tabsContainer}>
+          <SegmentedControl
+            options={[
+              { key: 'overview', label: t('taskDetail.tabs.overview') },
+              { key: 'comments', label: t('taskDetail.tabs.comments') },
+              { key: 'attachments', label: t('taskDetail.tabs.attachments') },
+            ]}
+            value={activeTab}
+            onChange={(value) => setActiveTab(value as 'overview' | 'comments' | 'attachments')}
+            variant="fullWidth"
           />
         </View>
 
-        {/* Bloc Informations principales */}
+        {/* Bottom-sheet d'options */}
+        <Modal
+          visible={optionsSheetVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setOptionsSheetVisible(false)}
+          statusBarTranslucent
+        >
+          <View style={styles.modalContainer}>
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => setOptionsSheetVisible(false)}
+            />
+            <View style={[
+              styles.optionsSheetContainer,
+              { backgroundColor: isDark ? tokens.colors.surface.darkElevated : tokens.colors.background.default },
+              { ...getShadowStyle('lg', isDark), shadowOffset: { width: 0, height: -2 } },
+            ]}>
+              <SafeAreaView edges={['bottom']}>
+                {/* Handle indicator */}
+                <View style={styles.handleContainer}>
+                  <View
+                    style={[
+                      styles.handleIndicator,
+                      {
+                        backgroundColor: isDark
+                          ? tokens.colors.neutral.medium
+                          : tokens.colors.neutral.light,
+                      },
+                    ]}
+                  />
+                </View>
+
+                {/* Options List */}
+                <View style={styles.optionsList}>
+                  {/* Share */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                        borderBottomColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                      },
+                    ]}
+                    onPress={handleShareTask}
+                  >
+                    <MaterialCommunityIcons
+                      name="share-variant"
+                      size={24}
+                      color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary }}>
+                      {t('taskDetail.options.share')}
+                    </SuiviText>
+                  </Pressable>
+
+                  {/* Copy ID */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                        borderBottomColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                      },
+                    ]}
+                    onPress={handleCopyTaskId}
+                  >
+                    <MaterialCommunityIcons
+                      name="content-copy"
+                      size={24}
+                      color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary }}>
+                      {t('taskDetail.options.copyId')}
+                    </SuiviText>
+                  </Pressable>
+
+                  {/* Favorite */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                        borderBottomColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
+                      },
+                    ]}
+                    onPress={handleToggleFavorite}
+                  >
+                    <MaterialCommunityIcons
+                      name={(task as any)?.isFavorite ? 'star' : 'star-outline'}
+                      size={24}
+                      color={isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary }}>
+                      {(task as any)?.isFavorite ? t('taskDetail.options.removeFavorite') : t('taskDetail.options.addFavorite')}
+                    </SuiviText>
+                  </Pressable>
+
+                  {/* Delete */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.optionItem,
+                      styles.optionItemDelete,
+                      {
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={handleDeleteTask}
+                  >
+                    <MaterialCommunityIcons
+                      name="delete"
+                      size={24}
+                      color={tokens.colors.semantic.error}
+                      style={styles.optionIcon}
+                    />
+                    <SuiviText variant="body" style={{ color: tokens.colors.semantic.error }}>
+                      {t('taskDetail.options.delete')}
+                    </SuiviText>
+                  </Pressable>
+                </View>
+              </SafeAreaView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Contenu conditionnel selon l'onglet actif */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Bloc Informations principales */}
         <View style={[styles.section, { marginBottom: tokens.spacing.xl }]}>
           <SuiviText variant="h2" style={styles.sectionTitle}>
             {t('taskDetail.information')}
@@ -1317,13 +1578,15 @@ export function TaskDetailScreen() {
             {t('taskDetail.quickActions')}
           </SuiviText>
           
-          {/* Afficher toutes les quick actions disponibles, une par ligne */}
+          {/* Afficher toutes les quick actions disponibles, une par ligne (exclure comment_input de l'onglet overview) */}
           {task.quickActions && task.quickActions.length > 0 ? (
-            task.quickActions.map((qa, index) => (
-              <View key={index} style={{ marginBottom: tokens.spacing.md }}>
-                {renderQuickAction(qa, index)}
-              </View>
-            ))
+            task.quickActions
+              .filter((qa) => qa.uiHint !== 'comment_input')
+              .map((qa, index) => (
+                <View key={index} style={{ marginBottom: tokens.spacing.md }}>
+                  {renderQuickAction(qa, index)}
+                </View>
+              ))
           ) : (
             <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
               <SuiviText variant="body" color="secondary">
@@ -1332,28 +1595,70 @@ export function TaskDetailScreen() {
             </SuiviCard>
           )}
         </View>
+          </>
+        )}
 
-        {/* Bloc History & Comments */}
-        <View style={[styles.section, { marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.xl }]}>
-          <SuiviText variant="h2" style={styles.sectionTitle}>
-            {t('taskDetail.activityTimeline')}
-          </SuiviText>
-          <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
-            {t('taskDetail.activitySubtitle')}
-          </SuiviText>
-          
-          {allActivities.length > 0 ? (
-            <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
-              {allActivities.map((activity) => renderActivityItem(activity))}
-            </SuiviCard>
-          ) : (
-            <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
-              <SuiviText variant="body" color="secondary">
-                {t('taskDetail.noActivity')}
+        {activeTab === 'comments' && (
+          <View style={[styles.section, { marginTop: tokens.spacing.md }]}>
+            {/* QuickActionComment en haut */}
+            {task.quickActions?.some(qa => qa.type === 'COMMENT') && (
+              <View style={{ marginBottom: tokens.spacing.md }}>
+                {task.quickActions
+                  .filter(qa => qa.type === 'COMMENT')
+                  .map((qa, index) => (
+                    <View key={index} style={{ marginBottom: tokens.spacing.md }}>
+                      {renderQuickAction(qa, index)}
+                    </View>
+                  ))}
+              </View>
+            )}
+
+            {/* Liste des commentaires filtrés */}
+            <SuiviText variant="h2" style={styles.sectionTitle}>
+              {t('taskDetail.tabs.comments')}
+            </SuiviText>
+            <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
+              {t('taskDetail.activitySubtitle')}
+            </SuiviText>
+            
+            {(() => {
+              const commentActivities = allActivities;
+              return commentActivities.length > 0 ? (
+                <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                  {commentActivities.map((activity) => renderActivityItem(activity))}
+                </SuiviCard>
+              ) : (
+                <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
+                  <SuiviText variant="body" color="secondary">
+                    {t('taskDetail.noActivity')}
+                  </SuiviText>
+                </SuiviCard>
+              );
+            })()}
+          </View>
+        )}
+
+        {activeTab === 'attachments' && (
+          <View style={styles.attachmentsEmptyWrapper}>
+            <SuiviCard variant="outlined" padding="lg" elevation="sm" style={styles.attachmentsEmptyCard}>
+              <MaterialCommunityIcons
+                name="file-outline"
+                size={32}
+                color={tokens.colors.text.secondary}
+                style={{ marginBottom: tokens.spacing.sm }}
+              />
+              <SuiviText variant="body" color="secondary" style={{ textAlign: 'center' }}>
+                {t('taskDetail.attachments.empty')}
               </SuiviText>
+              <SuiviButton
+                title={t('taskDetail.attachments.upload')}
+                variant="primary"
+                onPress={pickDocument}
+                style={{ marginTop: tokens.spacing.md }}
+              />
             </SuiviCard>
-          )}
-        </View>
+          </View>
+        )}
         </View>
       </KeyboardAwareScrollView>
     </Screen>
@@ -1586,7 +1891,86 @@ const styles = StyleSheet.create({
   pagePadding: {
     paddingHorizontal: tokens.spacing.lg,
   },
-  // Header inline "Task Overview" (structure identique à ScreenHeader)
+  // Nouveau Header
+  newHeaderContainer: {
+    paddingVertical: tokens.spacing.md,
+    marginBottom: tokens.spacing.lg,
+  },
+  newHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+  },
+  newHeaderTitleContainer: {
+    flex: 1,
+    marginHorizontal: tokens.spacing.md,
+  },
+  newHeaderTitle: {
+    fontWeight: 'bold',
+  },
+  newHeaderStatusRow: {
+    marginTop: tokens.spacing.sm,
+  },
+  optionsButton: {
+    padding: tokens.spacing.sm,
+  },
+  tabsContainer: {
+    marginBottom: tokens.spacing.lg,
+  },
+  attachmentsEmptyContainer: {
+    marginTop: tokens.spacing.lg,
+    paddingHorizontal: tokens.spacing.lg,
+    alignItems: 'center',
+  },
+  attachmentsEmptyWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: tokens.spacing.lg,
+  },
+  attachmentsEmptyCard: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Options Bottom Sheet
+  optionsSheetContainer: {
+    borderTopLeftRadius: tokens.radius.xl,
+    borderTopRightRadius: tokens.radius.xl,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingBottom: tokens.spacing.md,
+    maxHeight: '60%',
+  },
+  optionsList: {
+    paddingBottom: tokens.spacing.sm,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.md,
+    borderBottomWidth: 1,
+    marginBottom: tokens.spacing.xs,
+    borderRadius: tokens.radius.md,
+  },
+  optionItemDelete: {
+    borderBottomWidth: 0,
+    marginTop: tokens.spacing.sm,
+  },
+  optionIcon: {
+    marginRight: tokens.spacing.md,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingVertical: tokens.spacing.md,
+  },
+  handleIndicator: {
+    width: 40,
+    height: 4,
+    borderRadius: tokens.radius.xs,
+  },
+  // Header inline "Task Overview" (structure identique à ScreenHeader) - DEPRECATED
   headerContainer: {
     marginBottom: tokens.spacing.xl,
   },
@@ -1606,7 +1990,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-  // En-tête Monday-like
+  // En-tête Monday-like - DEPRECATED
   headerSection: {
     marginBottom: tokens.spacing.xl,
   },

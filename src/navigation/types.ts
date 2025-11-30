@@ -30,6 +30,7 @@ export type AppStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   TaskDetail: {
     taskId: string;
+    openTab?: 'overview' | 'comments' | 'attachments';
   };
   ActivityDetail: {
     eventId: string;

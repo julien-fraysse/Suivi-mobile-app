@@ -118,7 +118,11 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
     }
     
     // 4. Navigation directe vers TaskDetailScreen (la tâche existe)
-    navigation.navigate('TaskDetail', { taskId });
+    // Ouvrir l'onglet "comments" pour les notifications de commentaires
+    const openTab = (notification.type === 'comment' || notification.type === 'mention_in_comment') 
+      ? 'comments' 
+      : 'overview';
+    navigation.navigate('TaskDetail', { taskId, openTab });
   };
   
   // Map des icônes MaterialIcons par type de notification (pour événements système uniquement)

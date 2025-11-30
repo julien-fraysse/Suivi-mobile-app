@@ -19,11 +19,10 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, ReactNode } from 'react';
 import type { Task, TaskStatus, TasksContextValue, TaskFilter } from './tasks.types';
-import { loadMockTasks, updateMockTaskStatus, updateMockTask } from '../mocks/tasks/mockTaskHelpers';
+import * as tasksAPI from '../api/tasks';
 import { normalizeTask } from '../types/task';
 import type { TaskUpdatePayload } from './tasks.types';
 import { applyTaskDependencies } from './taskRules';
-import { deleteTask } from '../services/tasksService';
 
 const TasksContext = createContext<TasksContextValue | undefined>(undefined);
 
@@ -85,11 +84,8 @@ export function TasksProvider({ children }: TasksProviderProps) {
     try {
       setIsLoading(true);
       setError(null);
-      // TODO: Remplacer par un appel API réel
-      // const response = await api.get('/api/tasks', { headers: { Authorization: `Bearer ${token}` } });
-      // setTasks(response.data);
-      const tasksFromStore = await loadMockTasks();
-      setTasks(tasksFromStore);
+      const tasks = await tasksAPI.getTasks();
+      setTasks(tasks);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load tasks');
       setError(error);
@@ -182,9 +178,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
       );
 
       try {
-        // TODO: Remplacer par un appel API réel
-        // await api.patch(`/api/tasks/${id}/status`, { status: newStatus }, { headers: { Authorization: `Bearer ${token}` } });
-        await updateMockTaskStatus(id, newStatus);
+        await tasksAPI.updateTaskStatus(id, newStatus);
         // Si succès, la tâche est déjà mise à jour dans l'état local
       } catch (err) {
         // Rollback en cas d'erreur
@@ -326,12 +320,10 @@ export function TasksProvider({ children }: TasksProviderProps) {
         updatedAt: new Date().toISOString(),
       };
 
-      // Normaliser la tâche mise à jour (défensif)
-      const normalizedTask = normalizeTask(mergedTask);
-
       // Appliquer les dépendances automatiques (règles métier)
       // Passer updates pour que les règles ne s'appliquent que sur les champs modifiés
-      const finalTask = applyTaskDependencies(normalizedTask, updates);
+      // IMPORTANT : Ne pas normaliser après merge pour éviter d'écraser les valeurs des quick actions
+      const finalTask = applyTaskDependencies(mergedTask, updates);
 
       // Mise à jour optimiste (UI immédiate)
       setTasks((prevTasks) =>
@@ -341,22 +333,30 @@ export function TasksProvider({ children }: TasksProviderProps) {
       );
 
       try {
-        // TODO: Remplacer par un appel API réel
-        // await api.patch(`/api/tasks/${id}`, updates, { headers: { Authorization: `Bearer ${token}` } });
-        // Synchroniser avec le store mock (pour persistance)
+        // Synchroniser avec le backend (mock ou API réelle)
         // On passe tous les champs mergés pour garantir la cohérence
-        await updateMockTask(id, {
+        const updatedTaskFromBackend = await tasksAPI.updateTask(id, {
           ...updates,
           customFields: mergedCustomFields,
           quickActions: updatedQuickActions,
           activities: mergedActivities,
         });
-        // Si succès, la tâche est déjà mise à jour dans l'état local (mise à jour optimiste)
+        
+        // Utiliser la réponse du backend pour mettre à jour le cache
+        // Cela garantit la synchronisation entre cache React et backend
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? updatedTaskFromBackend : task
+          )
+        );
       } catch (err) {
-        // Rollback en cas d'erreur
+        // Rollback ciblé : restaurer uniquement la tâche concernée, pas tout le cache
         console.error('Error updating task:', err);
-        // Recharger les tâches pour récupérer l'état correct du serveur
-        await loadTasks();
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? existingTask : task
+          )
+        );
         // TODO: Afficher une notification d'erreur à l'utilisateur
         throw err;
       }
@@ -378,9 +378,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
       setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
 
       try {
-        // TODO: Remplacer par un appel API réel
-        // await api.delete(`/api/tasks/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-        await deleteTask(id);
+        await tasksAPI.deleteTask(id);
         // Si succès, la tâche est déjà supprimée de l'état local (mise à jour optimiste)
       } catch (err) {
         // Rollback en cas d'erreur

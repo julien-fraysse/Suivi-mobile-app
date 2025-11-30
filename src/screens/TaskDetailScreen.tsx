@@ -153,22 +153,8 @@ export function TaskDetailScreen() {
     return activityEntry;
   }
 
-  // Helper pour ajouter une activité à la tâche (persistée dans task.activities)
-  async function addActivityToTask(activity: SuiviActivityEvent) {
-    if (!task) return;
-    try {
-      // Ajouter l'activité à task.activities via updateTask
-      const currentActivities = task.activities || [];
-      await updateTask(task.id, {
-        activities: [...currentActivities, activity],
-      });
-    } catch (err) {
-      console.error('Error adding activity to task:', err);
-    }
-  }
-
   // Handle Quick Action completion (mock) - pour Approval et Comment uniquement
-  function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
+  async function handleMockAction(result: { actionType: string; details: Record<string, any> }) {
     if (!task || !user) return;
 
     // Create a local activity entry
@@ -192,19 +178,28 @@ export function TaskDetailScreen() {
       },
     };
 
-    // Add to task activities (persisted)
-    addActivityToTask(activityEntry);
+    // Ajouter l'activité via un appel atomique (pas de modification de champ, juste l'activité)
+    try {
+      await updateTask(task.id, {
+        activities: [activityEntry]
+      });
+    } catch (err) {
+      console.error('Error adding activity to task:', err);
+    }
   }
 
   // Handler pour mettre à jour le statut
   async function handleStatusChange(newStatus: TaskStatus) {
     if (!task) return;
     try {
-      await updateTask(task.id, { status: newStatus });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.status'), formatStatus(newStatus, t), formatStatus(task.status, t));
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec status ET activities
+      await updateTask(task.id, {
+        status: newStatus,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task status:', err);
     }
@@ -214,11 +209,14 @@ export function TaskDetailScreen() {
   async function handleDueDateChange(date: string) {
     if (!task) return;
     try {
-      await updateTask(task.id, { dueDate: date });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.dueDate'), formatDate(date), task.dueDate ? formatDate(task.dueDate) : undefined);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec dueDate ET activities
+      await updateTask(task.id, {
+        dueDate: date,
+        activities: activity ? [activity] : []
+      });
       setDueDatePickerVisible(false);
     } catch (err) {
       console.error('Error updating task due date:', err);
@@ -229,11 +227,14 @@ export function TaskDetailScreen() {
   async function handleAssigneeChange(selectedUser: { id: string; name: string; avatarUrl?: string }) {
     if (!task) return;
     try {
-      await updateTask(task.id, { assignee: selectedUser });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.assignee'), selectedUser.name, task.assignee?.name);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec assignee ET activities
+      await updateTask(task.id, {
+        assignee: selectedUser,
+        activities: activity ? [activity] : []
+      });
       setAssigneePickerVisible(false);
     } catch (err) {
       console.error('Error updating task assignee:', err);
@@ -244,11 +245,14 @@ export function TaskDetailScreen() {
   async function handlePriorityChange(newPriority: 'normal' | 'low' | 'high') {
     if (!task) return;
     try {
-      await updateTask(task.id, { priority: newPriority });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.priority'), t(`taskDetail.priority.${newPriority}`), task.priority ? t(`taskDetail.priority.${task.priority}`) : undefined);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec priority ET activities
+      await updateTask(task.id, {
+        priority: newPriority,
+        activities: activity ? [activity] : []
+      });
       setPriorityPickerVisible(false);
     } catch (err) {
       console.error('Error updating task priority:', err);
@@ -259,11 +263,14 @@ export function TaskDetailScreen() {
   async function handleDescriptionSave() {
     if (!task) return;
     try {
-      await updateTask(task.id, { description: descriptionValue });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('taskDetail.description'), descriptionValue, task.description);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec description ET activities
+      await updateTask(task.id, {
+        description: descriptionValue,
+        activities: activity ? [activity] : []
+      });
       setEditingDescription(false);
     } catch (err) {
       console.error('Error updating task description:', err);
@@ -274,11 +281,14 @@ export function TaskDetailScreen() {
   async function handleProgressChange(progress: number) {
     if (!task) return;
     try {
-      await updateTask(task.id, { progress });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.progress.title'), `${progress}%`, task.progress !== undefined ? `${task.progress}%` : undefined);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec progress ET activities
+      await updateTask(task.id, {
+        progress,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task progress:', err);
     }
@@ -298,11 +308,14 @@ export function TaskDetailScreen() {
   async function handleRatingChange(rating: number) {
     if (!task) return;
     try {
-      await updateTask(task.id, { rating });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.rating.title'), `${rating}`, task.rating !== undefined ? `${task.rating}` : undefined);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec rating ET activities
+      await updateTask(task.id, {
+        rating,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task rating:', err);
     }
@@ -312,11 +325,14 @@ export function TaskDetailScreen() {
   async function handleWeatherChange(weather: string) {
     if (!task) return;
     try {
-      await updateTask(task.id, { weather });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.weather.title'), weather, task.weather);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec weather ET activities
+      await updateTask(task.id, {
+        weather,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task weather:', err);
     }
@@ -326,11 +342,14 @@ export function TaskDetailScreen() {
   async function handleCheckboxChange(checked: boolean) {
     if (!task) return;
     try {
-      await updateTask(task.id, { checkboxValue: checked });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.checkbox.title'), checked ? t('quickActions.checkbox.completed') : t('taskDetail.cancel'), task.checkboxValue !== undefined ? (task.checkboxValue ? t('quickActions.checkbox.completed') : t('taskDetail.cancel')) : undefined);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec checkboxValue ET activities
+      await updateTask(task.id, {
+        checkboxValue: checked,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task checkbox:', err);
     }
@@ -340,11 +359,14 @@ export function TaskDetailScreen() {
   async function handleSelectChange(selectedOption: string) {
     if (!task) return;
     try {
-      await updateTask(task.id, { selectValue: selectedOption });
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(t('quickActions.select.title'), selectedOption, task.selectValue);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec selectValue ET activities
+      await updateTask(task.id, {
+        selectValue: selectedOption,
+        activities: activity ? [activity] : []
+      });
     } catch (err) {
       console.error('Error updating task select:', err);
     }
@@ -364,12 +386,14 @@ export function TaskDetailScreen() {
         cf.id === fieldId ? { ...cf, value: newValue } : cf
       );
 
-      await updateTask(task.id, { customFields: updatedCustomFields });
-      
+      // Créer l'activité AVANT l'appel atomique
       const activity = createActivityForTaskUpdate(field.label, String(newValue), oldValue ? String(oldValue) : undefined);
-      if (activity) {
-        addActivityToTask(activity);
-      }
+      
+      // Un seul appel atomique avec customFields ET activities
+      await updateTask(task.id, {
+        customFields: updatedCustomFields,
+        activities: activity ? [activity] : []
+      });
       
       setCustomFieldEditModal(null);
       setCustomFieldInputValue('');

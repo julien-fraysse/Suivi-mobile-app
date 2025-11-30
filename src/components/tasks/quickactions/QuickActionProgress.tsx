@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -38,9 +38,36 @@ function QuickActionProgressComponent({
   const initialValue = task?.progress ?? payload?.value ?? min;
   const [progress, setProgress] = useState(initialValue);
   const [isSliding, setIsSliding] = useState(false);
+  
+  // Flag pour éviter la réécrasure du state local pendant la mise à jour optimiste
+  const isUpdatingRef = useRef(false);
+  const pendingValueRef = useRef<number | null>(null);
+  
+  // Flag pour empêcher la synchronisation juste après handleSlidingComplete (avant handleSubmit)
+  const justFinishedSlidingRef = useRef(false);
 
   // Synchroniser progress avec task.progress uniquement si l'utilisateur n'est pas en train de glisser
+  // IMPORTANT : Ne pas réécraser si une mise à jour est en cours pour éviter le double clignotement
+  // IMPORTANT : Ne pas réécraser juste après handleSlidingComplete (avant handleSubmit) pour éviter le rollback
   useEffect(() => {
+    if (isUpdatingRef.current) {
+      // Si la valeur backend correspond à notre valeur en attente, synchronisation réussie
+      if (task?.progress === pendingValueRef.current) {
+        isUpdatingRef.current = false;
+        pendingValueRef.current = null;
+      }
+      // Ne pas réécraser pendant la mise à jour
+      return;
+    }
+    
+    // Ne pas synchroniser si on vient juste de finir le glissement (avant handleSubmit)
+    // Cela évite le rollback de la valeur locale avec l'ancienne valeur de task.progress
+    if (justFinishedSlidingRef.current) {
+      return;
+    }
+    
+    // Synchronisation normale (valeur backend différente de locale sans mise à jour en cours)
+    // ET seulement si l'utilisateur n'est pas en train de glisser
     if (!isSliding && task?.progress !== undefined && task.progress !== progress) {
       setProgress(task.progress);
     }
@@ -51,15 +78,27 @@ function QuickActionProgressComponent({
   const handleValueChange = (value: number) => {
     setIsSliding(true);
     setProgress(value);
+    // Réinitialiser le flag si l'utilisateur recommence à glisser
+    // (après avoir fini un glissement précédent sans sauvegarder)
+    justFinishedSlidingRef.current = false;
   };
 
   // Handler pour onSlidingComplete : mise à jour locale uniquement (pas d'appel à onActionComplete)
   const handleSlidingComplete = (value: number) => {
     setIsSliding(false);
     setProgress(value);
+    // Marquer qu'on vient de finir le glissement pour empêcher le useEffect de synchroniser
+    // avec l'ancienne valeur de task.progress avant que handleSubmit ne soit appelé
+    justFinishedSlidingRef.current = true;
   };
 
   const handleSubmit = () => {
+    // Réinitialiser le flag de fin de glissement (on va maintenant sauvegarder)
+    justFinishedSlidingRef.current = false;
+    
+    // Marquer la mise à jour en cours
+    isUpdatingRef.current = true;
+    pendingValueRef.current = progress;
     // Le bouton reste disponible pour une confirmation manuelle si nécessaire
     onActionComplete({
       actionType: 'PROGRESS',

@@ -1,66 +1,63 @@
 /**
  * Tasks Service
  * 
+ * @deprecated Utiliser directement src/api/tasks.ts à la place
+ * 
  * Service API pour les tâches avec sélection automatique mock/API.
  * Utilise API_MODE pour basculer entre les mocks et les endpoints réels.
  * 
- * TODO: align this with central Task type from src/types/task.ts
+ * MIGRATION :
+ * - Remplacer fetchTasks() par getTasks() depuis src/api/tasks.ts
+ * - Remplacer fetchTaskById() par getTaskById() depuis src/api/tasks.ts
+ * - Remplacer createTask() par createTask() depuis src/api/tasks.ts
+ * - Remplacer updateTask() par updateTask() depuis src/api/tasks.ts
+ * - Remplacer deleteTask() par deleteTask() depuis src/api/tasks.ts
  */
 
-import { API_MODE } from '../config/apiMode';
-import { apiGet, apiPost } from './api';
-import { getMockTasks, deleteMockTask, updateMockTask, setMockTasks } from '../mocks/tasksMock';
+import * as tasksAPI from '../api/tasks';
 import type { Task } from '../api/tasks';
 
+/**
+ * @deprecated Utiliser tasksAPI.getTasks() à la place
+ */
 export async function fetchTasks(): Promise<Task[]> {
-  if (API_MODE === 'mock') {
-    return getMockTasks();
-  }
-  return apiGet('/tasks');
+  return tasksAPI.getTasks();
 }
 
+/**
+ * @deprecated Utiliser tasksAPI.getTaskById() à la place
+ */
 export async function fetchTaskById(id: string): Promise<Task | undefined> {
-  if (API_MODE === 'mock') {
-    const tasks = getMockTasks();
-    return tasks.find((task) => task.id === id);
+  try {
+    return await tasksAPI.getTaskById(id);
+  } catch {
+    return undefined;
   }
-  return apiGet(`/tasks/${id}`);
 }
 
-export async function createTask(task: any) {
-  if (API_MODE === 'mock') {
-    // Mock: ajouter la tâche au store
-    const newTask: Task = {
-      ...task,
-      id: `task-${Date.now()}`,
-      updatedAt: new Date().toISOString(),
-    };
-    const currentTasks = getMockTasks();
-    setMockTasks([...currentTasks, newTask]);
-    return newTask;
-  }
-  return apiPost('/tasks', task);
+/**
+ * @deprecated Utiliser tasksAPI.createTask() à la place
+ */
+export async function createTask(task: any): Promise<Task> {
+  return tasksAPI.createTask(task);
 }
 
-export async function updateTask(id: string, task: any) {
-  if (API_MODE === 'mock') {
-    // Mock: mettre à jour la tâche dans le store
-    const updatedTask = updateMockTask(id, task);
-    if (!updatedTask) {
-      throw new Error(`Task with id ${id} not found`);
-    }
-    return updatedTask;
-  }
-  return apiPost(`/tasks/${id}`, task);
+/**
+ * @deprecated Utiliser tasksAPI.updateTask() à la place
+ */
+export async function updateTask(id: string, task: any): Promise<Task> {
+  return tasksAPI.updateTask(id, task);
 }
 
+/**
+ * @deprecated Utiliser tasksAPI.deleteTask() à la place
+ */
 export async function deleteTask(taskId: string): Promise<{ success: boolean }> {
-  if (API_MODE === 'mock') {
-    // Mock: supprimer la tâche du store unique
-    const deleted = deleteMockTask(taskId);
-    return { success: deleted };
+  try {
+    await tasksAPI.deleteTask(taskId);
+    return { success: true };
+  } catch {
+    return { success: false };
   }
-  // TODO: API réelle
-  return apiPost(`/tasks/${taskId}/delete`, {});
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -27,9 +27,25 @@ export function QuickActionRating({ task, payload, onActionComplete }: QuickActi
   // Initialiser avec task.rating comme source de vérité (fallback sur payload.value puis 0)
   const initialValue = task?.rating ?? payload?.value ?? 0;
   const [rating, setRating] = useState(initialValue);
+  
+  // Flag pour éviter la réécrasure du state local pendant la mise à jour optimiste
+  const isUpdatingRef = useRef(false);
+  const pendingValueRef = useRef<number | null>(null);
 
   // Synchroniser rating avec task.rating
+  // IMPORTANT : Ne pas réécraser si une mise à jour est en cours pour éviter le double clignotement
   useEffect(() => {
+    if (isUpdatingRef.current) {
+      // Si la valeur backend correspond à notre valeur en attente, synchronisation réussie
+      if (task?.rating === pendingValueRef.current) {
+        isUpdatingRef.current = false;
+        pendingValueRef.current = null;
+      }
+      // Ne pas réécraser pendant la mise à jour
+      return;
+    }
+    
+    // Synchronisation normale (valeur backend différente de locale sans mise à jour en cours)
     if (task?.rating !== undefined && task.rating !== rating) {
       setRating(task.rating);
     }
@@ -37,6 +53,9 @@ export function QuickActionRating({ task, payload, onActionComplete }: QuickActi
   }, [task?.rating]);
 
   const handleRatingSelect = (value: number) => {
+    // Marquer la mise à jour en cours
+    isUpdatingRef.current = true;
+    pendingValueRef.current = value;
     setRating(value);
     onActionComplete({
       actionType: 'RATING',

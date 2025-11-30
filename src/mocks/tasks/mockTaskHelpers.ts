@@ -9,7 +9,7 @@
 
 import type { Task, TaskStatus } from '../../types/task';
 import type { TaskUpdatePayload } from '../../tasks/tasks.types';
-import { getMockTasks, updateMockTask as updateMockTaskInStore, deleteMockTask as deleteMockTaskInStore } from '../tasksMock';
+import * as backendStore from '../backend/store';
 
 /**
  * Simule un délai réseau
@@ -28,8 +28,8 @@ function delay(ms: number = 200): Promise<void> {
  */
 export async function loadMockTasks(): Promise<Task[]> {
   await delay(200);
-  // Lire depuis le store unique (déjà normalisé)
-  const tasks = getMockTasks();
+  // Lire depuis le store unifié du mock backend
+  const tasks = backendStore.getTasksStore();
   console.log("QA-DIAG: loadMockTasks() returning", tasks);
   return tasks;
 }
@@ -43,8 +43,7 @@ export async function loadMockTasks(): Promise<Task[]> {
  */
 export async function loadMockTaskById(id: string): Promise<Task | undefined> {
   await delay(200);
-  const tasks = getMockTasks();
-  return tasks.find((task) => task.id === id);
+  return backendStore.getTaskFromStore(id);
 }
 
 /**
@@ -60,7 +59,7 @@ export async function updateMockTask(
 ): Promise<Task> {
   await delay(200);
   
-  const updatedTask = updateMockTaskInStore(id, updates);
+  const updatedTask = backendStore.updateTaskInStore(id, updates);
   if (!updatedTask) {
     throw new Error(`Task with id ${id} not found`);
   }

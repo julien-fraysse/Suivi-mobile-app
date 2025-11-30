@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -27,9 +27,25 @@ export function QuickActionCheckbox({ task, payload, onActionComplete }: QuickAc
   // Initialiser avec task.checkboxValue comme source de vérité (fallback sur payload.value puis false)
   const initialValue = task?.checkboxValue ?? payload?.value ?? false;
   const [isChecked, setIsChecked] = useState(initialValue);
+  
+  // Flag pour éviter la réécrasure du state local pendant la mise à jour optimiste
+  const isUpdatingRef = useRef(false);
+  const pendingValueRef = useRef<boolean | null>(null);
 
   // Synchroniser isChecked avec task.checkboxValue
+  // IMPORTANT : Ne pas réécraser si une mise à jour est en cours pour éviter le double clignotement
   useEffect(() => {
+    if (isUpdatingRef.current) {
+      // Si la valeur backend correspond à notre valeur en attente, synchronisation réussie
+      if (task?.checkboxValue === pendingValueRef.current) {
+        isUpdatingRef.current = false;
+        pendingValueRef.current = null;
+      }
+      // Ne pas réécraser pendant la mise à jour
+      return;
+    }
+    
+    // Synchronisation normale (valeur backend différente de locale sans mise à jour en cours)
     if (task?.checkboxValue !== undefined && task.checkboxValue !== isChecked) {
       setIsChecked(task.checkboxValue);
     }
@@ -38,6 +54,9 @@ export function QuickActionCheckbox({ task, payload, onActionComplete }: QuickAc
 
   const handleToggle = () => {
     const newValue = !isChecked;
+    // Marquer la mise à jour en cours
+    isUpdatingRef.current = true;
+    pendingValueRef.current = newValue;
     setIsChecked(newValue);
     onActionComplete({
       actionType: 'CHECKBOX',

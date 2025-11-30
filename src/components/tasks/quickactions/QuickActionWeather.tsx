@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -28,9 +28,25 @@ export function QuickActionWeather({ task, payload, onActionComplete }: QuickAct
   // Initialiser avec task.weather comme source de vérité (fallback sur payload.value puis null)
   const initialValue = task?.weather ?? payload?.value ?? null;
   const [selected, setSelected] = useState<string | null>(initialValue);
+  
+  // Flag pour éviter la réécrasure du state local pendant la mise à jour optimiste
+  const isUpdatingRef = useRef(false);
+  const pendingValueRef = useRef<string | null>(null);
 
   // Synchroniser selected avec task.weather
+  // IMPORTANT : Ne pas réécraser si une mise à jour est en cours pour éviter le double clignotement
   useEffect(() => {
+    if (isUpdatingRef.current) {
+      // Si la valeur backend correspond à notre valeur en attente, synchronisation réussie
+      if (task?.weather === pendingValueRef.current) {
+        isUpdatingRef.current = false;
+        pendingValueRef.current = null;
+      }
+      // Ne pas réécraser pendant la mise à jour
+      return;
+    }
+    
+    // Synchronisation normale (valeur backend différente de locale sans mise à jour en cours)
     if (task?.weather !== undefined && task.weather !== selected) {
       setSelected(task.weather);
     }
@@ -38,6 +54,9 @@ export function QuickActionWeather({ task, payload, onActionComplete }: QuickAct
   }, [task?.weather]);
 
   const handleSelect = (option: string) => {
+    // Marquer la mise à jour en cours
+    isUpdatingRef.current = true;
+    pendingValueRef.current = option;
     setSelected(option);
     onActionComplete({
       actionType: 'WEATHER',

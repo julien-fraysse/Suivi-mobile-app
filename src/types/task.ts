@@ -40,6 +40,17 @@ export interface TaskLocation {
 }
 
 /**
+ * Suivi Tag
+ * 
+ * Tag associé à une tâche pour la catégorisation.
+ */
+export interface SuiviTag {
+  id: string;
+  name: string;
+  color: string; // Couleur DS Suivi uniquement (tokens.colors.*)
+}
+
+/**
  * Task Quick Action
  * 
  * Action rapide associée à la tâche (commentaire, approbation, notation, etc.).
@@ -151,6 +162,9 @@ export interface Task {
   
   /** Priorité de la tâche */
   priority?: 'normal' | 'low' | 'high';
+  
+  /** Tags associés à la tâche (0-2 tags max) */
+  tags?: SuiviTag[];
   
   /** Champs personnalisés (compatible API Suivi Desktop) */
   customFields?: CustomField[];
@@ -294,6 +308,18 @@ export function normalizeTask(raw: unknown): Task {
       r.priority === 'high'
         ? (r.priority as 'normal' | 'low' | 'high')
         : undefined,
+    tags: Array.isArray(r.tags)
+      ? r.tags
+          .filter((tag) => tag && typeof tag === 'object')
+          .map((tag) => {
+            const t = tag as Record<string, unknown>;
+            return {
+              id: String(t.id ?? ''),
+              name: String(t.name ?? ''),
+              color: String(t.color ?? ''),
+            };
+          })
+      : undefined,
     customFields: Array.isArray(r.customFields)
       ? r.customFields
           .filter((cf) => cf && typeof cf === 'object')

@@ -6,6 +6,7 @@
  */
 
 import { NavigatorScreenParams } from '@react-navigation/native';
+import type { SuiviTag } from '../types/task';
 
 /**
  * Paramètres pour la navigation principale (Root)
@@ -34,6 +35,10 @@ export type AppStackParamList = {
   };
   ActivityDetail: {
     eventId: string;
+  };
+  TagEditModal: {
+    mode: 'create' | 'edit';
+    tag?: SuiviTag; // présent en mode 'edit'
   };
 };
 

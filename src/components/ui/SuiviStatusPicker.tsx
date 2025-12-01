@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
-import { View, StyleSheet, Pressable, Modal, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { SuiviText } from './SuiviText';
-import { tokens, getShadowStyle } from '@theme';
+import { BottomSheet } from './BottomSheet';
+import { tokens } from '@theme';
 import type { TaskStatus } from '../../tasks/tasks.types';
 
 export interface SuiviStatusPickerProps {
@@ -91,146 +92,73 @@ export function SuiviStatusPicker({
     : tokens.colors.border.default;
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+      onClose={onClose}
+      title={t('tasks.selectStatus')}
     >
-      <View style={styles.modalContainer}>
-        {/* Backdrop semi-transparent */}
-        <Pressable
-          style={styles.backdrop}
-          onPress={onClose}
-          activeOpacity={1}
-        />
+      <View style={styles.statusList}>
+        {statuses.map((status) => {
+          const isSelected = status === currentStatus;
+          const statusColor = getStatusColor(status);
+          const itemBackgroundColor = isSelected
+            ? (isDark
+                ? tokens.colors.surface.darkVariant
+                : tokens.colors.neutral.light)
+            : 'transparent';
 
-        {/* Bottom Sheet Panel */}
-        <View style={[
-          styles.sheetContainer,
-          { backgroundColor },
-          { ...getShadowStyle('lg', isDark), shadowOffset: { width: 0, height: -2 } },
-        ]}>
-          <SafeAreaView edges={['bottom']}>
-            {/* Handle indicator */}
-            <View style={styles.handleContainer}>
-              <View
-                style={[
-                  styles.handleIndicator,
-                  {
-                    backgroundColor: isDark
-                      ? tokens.colors.neutral.medium
-                      : tokens.colors.neutral.light,
-                  },
-                ]}
-              />
-            </View>
-
-            {/* Header */}
-            <View style={styles.header}>
-              <SuiviText variant="h1" style={{ color: textColorPrimary }}>
-                {t('tasks.selectStatus')}
-              </SuiviText>
-            </View>
-
-            {/* Status List */}
-            <View style={styles.statusList}>
-              {statuses.map((status) => {
-                const isSelected = status === currentStatus;
-                const statusColor = getStatusColor(status);
-                const itemBackgroundColor = isSelected
-                  ? (isDark
-                      ? tokens.colors.surface.darkVariant
-                      : tokens.colors.neutral.light)
-                  : 'transparent';
-
-                return (
-                  <Pressable
-                    key={status}
-                    style={({ pressed }) => [
-                      styles.statusItem,
-                      {
-                        backgroundColor: itemBackgroundColor,
-                        borderBottomColor: borderColor,
-                        opacity: pressed ? 0.7 : 1,
-                      },
-                    ]}
-                    onPress={() => handleSelectStatus(status)}
-                  >
-                    <View style={styles.statusItemContent}>
-                      <View
-                        style={[
-                          styles.statusIndicator,
-                          { backgroundColor: statusColor },
-                        ]}
-                      />
-                      <SuiviText
-                        variant="body"
-                        style={[
-                          styles.statusText,
-                          {
-                            color: isSelected
-                              ? textColorPrimary
-                              : textColorSecondary,
-                            fontWeight: isSelected ? '600' : '400',
-                          },
-                        ]}
-                      >
-                        {formatStatus(status)}
-                      </SuiviText>
-                    </View>
-                    {isSelected && (
-                      <SuiviText
-                        variant="body"
-                        style={{ color: tokens.colors.brand.primary }}
-                      >
-                        ✓
-                      </SuiviText>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </SafeAreaView>
-        </View>
+          return (
+            <Pressable
+              key={status}
+              style={({ pressed }) => [
+                styles.statusItem,
+                {
+                  backgroundColor: itemBackgroundColor,
+                  borderBottomColor: borderColor,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+              onPress={() => handleSelectStatus(status)}
+            >
+              <View style={styles.statusItemContent}>
+                <View
+                  style={[
+                    styles.statusIndicator,
+                    { backgroundColor: statusColor },
+                  ]}
+                />
+                <SuiviText
+                  variant="body"
+                  style={[
+                    styles.statusText,
+                    {
+                      color: isSelected
+                        ? textColorPrimary
+                        : textColorSecondary,
+                      fontWeight: isSelected ? '600' : '400',
+                    },
+                  ]}
+                >
+                  {formatStatus(status)}
+                </SuiviText>
+              </View>
+              {isSelected && (
+                <SuiviText
+                  variant="body"
+                  style={{ color: tokens.colors.brand.primary }}
+                >
+                  ✓
+                </SuiviText>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  sheetContainer: {
-    borderTopLeftRadius: tokens.radius.xl,
-    borderTopRightRadius: tokens.radius.xl,
-    paddingHorizontal: tokens.spacing.lg,
-    paddingBottom: tokens.spacing.md,
-    maxHeight: '60%',
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingVertical: tokens.spacing.md,
-  },
-  handleIndicator: {
-    width: 40,
-    height: 4,
-    borderRadius: tokens.radius.xs,
-  },
-  header: {
-    marginBottom: tokens.spacing.lg,
-  },
   statusList: {
     paddingBottom: tokens.spacing.sm,
   },

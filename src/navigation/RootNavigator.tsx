@@ -6,6 +6,7 @@ import { LoginScreen } from '@screens/LoginScreen';
 import { MainTabNavigator } from './MainTabNavigator';
 import { TaskDetailScreen } from '@screens/TaskDetailScreen';
 import { ActivityDetailScreen } from '@screens/ActivityDetailScreen';
+import { TagEditModal } from '@screens/TagEditModal';
 import type { RootStackParamList, AuthStackParamList, AppStackParamList } from './types';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +50,11 @@ function AppNavigator() {
       <AppStack.Screen
         name="ActivityDetail"
         component={ActivityDetailScreen}
+      />
+      <AppStack.Screen
+        name="TagEditModal"
+        component={TagEditModal}
+        options={{ presentation: 'fullScreenModal', headerShown: false }}
       />
     </AppStack.Navigator>
   );

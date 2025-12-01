@@ -4,7 +4,8 @@
     "error": "Error",
     "back": "Back",
     "delete": "Delete",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "home": {
     "title": "Home",
@@ -116,6 +117,17 @@
     "priority.normal": "Normal",
     "priority.high": "High",
     "priority.low": "Low",
+    "tags": "Tags",
+    "addTag": "Add tag",
+    "createTag": "Create tag",
+    "editTag": "Edit tag",
+    "deleteTag": "Delete tag",
+    "confirmDeleteTag": "Confirm deletion",
+    "chooseATag": "Choose a tag",
+    "tagName": "Tag name",
+    "tagColor": "Color",
+    "moreTags": "+{{count}} tag",
+    "moreTags_plural": "+{{count}} tags",
     "comments": "Comments / Activity",
     "activity": "Activity",
     "activitySubtitle": "History of actions and comments",

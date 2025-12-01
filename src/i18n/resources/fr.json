@@ -4,7 +4,8 @@
     "error": "Erreur",
     "back": "Retour",
     "delete": "Supprimer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "save": "Enregistrer"
   },
   "home": {
     "title": "Accueil",
@@ -116,6 +117,17 @@
     "priority.normal": "Normal",
     "priority.high": "Haute",
     "priority.low": "Basse",
+    "tags": "Tags",
+    "addTag": "Ajouter un tag",
+    "createTag": "Créer un tag",
+    "editTag": "Modifier le tag",
+    "deleteTag": "Supprimer le tag",
+    "confirmDeleteTag": "Confirmer la suppression",
+    "chooseATag": "Choisir un tag",
+    "tagName": "Nom du tag",
+    "tagColor": "Couleur",
+    "moreTags": "+{{count}} tag",
+    "moreTags_plural": "+{{count}} tags",
     "comments": "Commentaires / Activité",
     "activity": "Activité",
     "activitySubtitle": "Historique des actions et commentaires",

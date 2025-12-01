@@ -13,6 +13,7 @@
 
 import type { Task, TaskStatus } from '../types/task';
 import { normalizeTask } from '../types/task';
+import { assignRandomTags } from './tagsMock';
 
 /**
  * Type intermédiaire pour les mocks (accepte les deux formats : ancien et nouveau)
@@ -202,7 +203,13 @@ const rawTasks: RawTaskMock[] = [
 ];
 
 // Normaliser toutes les tâches vers le type Task central
-export const tasks: Task[] = rawTasks.map((rawTask) => normalizeTask(rawTask));
+// Ajouter les tags à chaque tâche avant normalisation
+const rawTasksWithTags = rawTasks.map((rawTask) => ({
+  ...rawTask,
+  tags: assignRandomTags(rawTask.id),
+}));
+
+export const tasks: Task[] = rawTasksWithTags.map((rawTask) => normalizeTask(rawTask));
 
 const MOCK_PROJECTS: Project[] = [
   {

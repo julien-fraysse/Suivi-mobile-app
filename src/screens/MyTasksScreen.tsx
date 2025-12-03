@@ -3,19 +3,18 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  Pressable,
   RefreshControl,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '@components/Screen';
 import { AppHeader } from '@components/AppHeader';
 import { TasksFilterControl } from '@components/ui/TasksFilterControl';
 import { SuiviText } from '@components/ui/SuiviText';
+import { TaskSectionHeader } from '@components/ui/TaskSectionHeader';
 import { SwipeableTaskItem } from '@components/tasks/SwipeableTaskItem';
 import { AiBriefingButton } from '@components/ui/AiBriefingButton';
 import { useMyWork } from '../hooks/useMyWork';
@@ -200,31 +199,13 @@ export function MyTasksScreen() {
     
     return (
       <View key={sectionName}>
-        {/* Header de section */}
-        <Pressable
-          onPress={() => toggleSection(sectionName)}
-          style={styles.sectionHeader}
-        >
-          <SuiviText variant="h2" style={styles.sectionTitle}>
-            {SECTION_LABELS[sectionName]}
-          </SuiviText>
-          <MaterialCommunityIcons
-            name={isCollapsed ? 'chevron-down' : 'chevron-up'}
-            size={24}
-            color={tokens.colors.text.secondary}
-          />
-        </Pressable>
-        
-        {/* Séparateur */}
-        <View
-          style={[
-            styles.sectionSeparator,
-            {
-              backgroundColor: isDark
-                ? tokens.colors.border.darkMode.default
-                : tokens.colors.border.default,
-            },
-          ]}
+        {/* Header de section avec icône, badge et couleur */}
+        <TaskSectionHeader
+          sectionName={sectionName}
+          label={SECTION_LABELS[sectionName]}
+          count={sectionTasks.length}
+          isCollapsed={isCollapsed}
+          onToggle={() => toggleSection(sectionName)}
         />
         
         {/* Tâches de la section (si non collapsed) */}
@@ -339,20 +320,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.lg,
     paddingBottom: tokens.spacing.md,
     flexGrow: 1,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.lg,
-  },
-  sectionTitle: {
-    flex: 1,
-  },
-  sectionSeparator: {
-    height: 1,
-    marginHorizontal: tokens.spacing.lg,
   },
   sectionContent: {
     // paddingHorizontal supprimé car déjà géré par scrollContent

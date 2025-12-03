@@ -19,11 +19,11 @@ export interface TaskItemProps {
  * 
  * Design :
  * - Utilise SuiviCard avec elevation="none" (pas de shadow)
- * - Liseret gauche via borderLeftWidth (4px) avec couleur selon le statut
+ * - Liseret gauche via borderLeftWidth (5px) avec couleur selon le statut
  * - Radius : tokens.radius.lg (16px) - géré par SuiviCard
  * - Padding : tokens.spacing.md (12px) - géré par SuiviCard
  * - Typography Suivi (body pour titre, label pour projet)
- * - Project name en texte secondaire
+ * - Project name avec dot coloré (même couleur que le liseret)
  * 
  * Utilise EXCLUSIVEMENT les tokens Suivi.
  */
@@ -39,7 +39,7 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
       style={[
         styles.card,
         {
-          borderLeftWidth: 4,
+          borderLeftWidth: 5,
           borderLeftColor: statusColor,
         },
         style,
@@ -51,13 +51,15 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
             {task.title}
           </SuiviText>
           {task.projectName && (
-            <SuiviText
-              variant="label"
-              color="secondary"
-              style={styles.projectText}
-            >
-              {task.projectName}
-            </SuiviText>
+            <View style={styles.projectRow}>
+              <View style={[styles.projectDot, { backgroundColor: statusColor }]} />
+              <SuiviText
+                variant="label"
+                color="secondary"
+              >
+                {task.projectName}
+              </SuiviText>
+            </View>
           )}
         </View>
 
@@ -133,8 +135,16 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: tokens.spacing.sm,
   },
-  projectText: {
+  projectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: tokens.spacing.xs / 2,
+  },
+  projectDot: {
+    width: 6,
+    height: 6,
+    borderRadius: tokens.radius.full,
+    marginRight: tokens.spacing.xs,
   },
 });
 

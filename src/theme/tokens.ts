@@ -89,6 +89,17 @@ export const colors = {
     darkVariant: '#2C2C2C', // Variante de surface sombre
   },
   
+  // Section colors (for task section headers)
+  // Map vers les couleurs existantes pour les headers de section MyTasks
+  section: {
+    overdue: '#D32F2F',      // semantic.error
+    today: '#4F5DFF',        // brand.primary
+    thisWeek: '#98928C',     // neutral.medium
+    nextWeek: '#98928C',     // neutral.medium
+    later: '#98928C',        // neutral.medium
+    noDate: '#98928C',       // neutral.medium
+  },
+  
   // Avatar colors (for avatars without photo)
   avatar: {
     blue: '#5465FF',

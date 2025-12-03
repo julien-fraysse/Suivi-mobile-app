@@ -8,7 +8,10 @@ import {
   Modal,
   Alert,
   Clipboard,
+  Platform,
+  Linking,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRoute, RouteProp, useNavigation, StackNavigationProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -162,6 +165,9 @@ export function TaskDetailScreen() {
   const [editingDescription, setEditingDescription] = useState(false);
   const [descriptionValue, setDescriptionValue] = useState(task?.description || '');
   const [dueDateInput, setDueDateInput] = useState(task?.dueDate || '');
+  const [datePickerDate, setDatePickerDate] = useState<Date>(
+    task?.dueDate ? new Date(task.dueDate) : new Date()
+  );
   
   // États pour les custom fields
   const [customFieldEditModal, setCustomFieldEditModal] = useState<{ fieldId: string; type: string } | null>(null);
@@ -171,7 +177,7 @@ export function TaskDetailScreen() {
   // États pour le nouveau header et onglets
   const [optionsSheetVisible, setOptionsSheetVisible] = useState(false);
   const initialTab = route.params?.openTab ?? 'overview';
-  const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'attachments'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'history' | 'attachments'>(initialTab);
 
   // Fusionner task.activities avec taskActivities (API), avec déduplication par id et tri par date DESC
   const allActivities = [
@@ -199,6 +205,7 @@ export function TaskDetailScreen() {
   React.useEffect(() => {
     if (task?.dueDate !== undefined) {
       setDueDateInput(task.dueDate);
+      setDatePickerDate(new Date(task.dueDate));
     }
   }, [task?.dueDate]);
 
@@ -640,15 +647,15 @@ export function TaskDetailScreen() {
       // Extract comment text from title (format: "{prefix} : {comment}" - FR/EN agnostic)
       const commentText = activity.title.split(':').slice(1).join(':').trim() || activity.title;
       
-      // Render comment bubble
+      // Render comment bubble with formatted text (URLs, bold, italic, mentions)
       return (
         <View key={activity.id} style={[styles.commentContainer, { backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.variant }]}>
           <SuiviText variant="body" color="primary" style={styles.commentAuthor}>
             {activity.actor.name}
           </SuiviText>
-          <SuiviText variant="body" color="primary" style={styles.commentText}>
-            {commentText}
-          </SuiviText>
+          <View style={styles.commentTextContainer}>
+            {renderFormattedComment(commentText)}
+          </View>
           <SuiviText variant="body" color="secondary" style={styles.commentTimestamp}>
             {formatActivityDate(activity.createdAt, t)}
           </SuiviText>
@@ -668,6 +675,356 @@ export function TaskDetailScreen() {
             {formatActivityDate(activity.createdAt, t)}
           </SuiviText>
         </View>
+      </View>
+    );
+  }
+
+  // Render history item (system log with icon)
+  function renderHistoryItem(activity: SuiviActivityEvent) {
+    return (
+      <View key={activity.id} style={styles.activityRow}>
+        <MaterialCommunityIcons
+          name={getHistoryIcon(activity) as any}
+          size={16}
+          color={tokens.colors.neutral.medium}
+          style={styles.metadataIcon}
+        />
+        <View style={styles.activityContent}>
+          <SuiviText variant="body" color="secondary" style={styles.activityText}>
+            {activity.title}
+          </SuiviText>
+          <SuiviText variant="body" color="secondary" style={styles.activityTimestamp}>
+            {formatActivityDate(activity.createdAt, t)}
+          </SuiviText>
+        </View>
+      </View>
+    );
+  }
+
+  /**
+   * Parse un fragment de texte pour détecter les URLs, *bold*, _italic_, ~~strikethrough~~, `code`, @mentions
+   * Pipeline : URL → bold → italic → strikethrough → code → mentions
+   */
+  type ParsedFragment = 
+    | { type: 'text'; content: string }
+    | { type: 'url'; content: string }
+    | { type: 'bold'; content: string }
+    | { type: 'italic'; content: string }
+    | { type: 'strikethrough'; content: string }
+    | { type: 'code'; content: string }
+    | { type: 'mention'; content: string };
+
+  function parseFragment(text: string): ParsedFragment[] {
+    if (!text) return [];
+
+    // Étape 1: Découper par URL
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urlParts = text.split(urlRegex);
+    const afterUrl: ParsedFragment[] = [];
+
+    for (const part of urlParts) {
+      if (urlRegex.test(part)) {
+        // Reset regex lastIndex
+        urlRegex.lastIndex = 0;
+        afterUrl.push({ type: 'url', content: part });
+      } else if (part) {
+        afterUrl.push({ type: 'text', content: part });
+      }
+    }
+
+    // Étape 2: Parser *bold* dans les fragments texte
+    const afterBold: ParsedFragment[] = [];
+    const boldRegex = /\*([^*]+)\*/g;
+
+    for (const fragment of afterUrl) {
+      if (fragment.type !== 'text') {
+        afterBold.push(fragment);
+        continue;
+      }
+
+      let lastIndex = 0;
+      let match;
+      const content = fragment.content;
+      boldRegex.lastIndex = 0;
+
+      while ((match = boldRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+          afterBold.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+        }
+        afterBold.push({ type: 'bold', content: match[1] });
+        lastIndex = boldRegex.lastIndex;
+      }
+
+      if (lastIndex < content.length) {
+        afterBold.push({ type: 'text', content: content.slice(lastIndex) });
+      }
+    }
+
+    // Étape 3: Parser _italic_ dans les fragments texte restants
+    const afterItalic: ParsedFragment[] = [];
+    const italicRegex = /_([^_]+)_/g;
+
+    for (const fragment of afterBold) {
+      if (fragment.type !== 'text') {
+        afterItalic.push(fragment);
+        continue;
+      }
+
+      let lastIndex = 0;
+      let match;
+      const content = fragment.content;
+      italicRegex.lastIndex = 0;
+
+      while ((match = italicRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+          afterItalic.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+        }
+        afterItalic.push({ type: 'italic', content: match[1] });
+        lastIndex = italicRegex.lastIndex;
+      }
+
+      if (lastIndex < content.length) {
+        afterItalic.push({ type: 'text', content: content.slice(lastIndex) });
+      }
+    }
+
+    // Étape 4: Parser ~~strikethrough~~ dans les fragments texte restants
+    const afterStrikethrough: ParsedFragment[] = [];
+    const strikethroughRegex = /~~([^~]+)~~/g;
+
+    for (const fragment of afterItalic) {
+      if (fragment.type !== 'text') {
+        afterStrikethrough.push(fragment);
+        continue;
+      }
+
+      let lastIndex = 0;
+      let match;
+      const content = fragment.content;
+      strikethroughRegex.lastIndex = 0;
+
+      while ((match = strikethroughRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+          afterStrikethrough.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+        }
+        afterStrikethrough.push({ type: 'strikethrough', content: match[1] });
+        lastIndex = strikethroughRegex.lastIndex;
+      }
+
+      if (lastIndex < content.length) {
+        afterStrikethrough.push({ type: 'text', content: content.slice(lastIndex) });
+      }
+    }
+
+    // Étape 5: Parser `inline code` dans les fragments texte restants
+    const afterCode: ParsedFragment[] = [];
+    const codeRegex = /`([^`]+)`/g;
+
+    for (const fragment of afterStrikethrough) {
+      if (fragment.type !== 'text') {
+        afterCode.push(fragment);
+        continue;
+      }
+
+      let lastIndex = 0;
+      let match;
+      const content = fragment.content;
+      codeRegex.lastIndex = 0;
+
+      while ((match = codeRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+          afterCode.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+        }
+        afterCode.push({ type: 'code', content: match[1] });
+        lastIndex = codeRegex.lastIndex;
+      }
+
+      if (lastIndex < content.length) {
+        afterCode.push({ type: 'text', content: content.slice(lastIndex) });
+      }
+    }
+
+    // Étape 6: Parser @mentions dans les fragments texte restants
+    const afterMention: ParsedFragment[] = [];
+    const mentionRegex = /@(\w+)/g;
+
+    for (const fragment of afterCode) {
+      if (fragment.type !== 'text') {
+        afterMention.push(fragment);
+        continue;
+      }
+
+      let lastIndex = 0;
+      let match;
+      const content = fragment.content;
+      mentionRegex.lastIndex = 0;
+
+      while ((match = mentionRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+          afterMention.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+        }
+        afterMention.push({ type: 'mention', content: match[0] });
+        lastIndex = mentionRegex.lastIndex;
+      }
+
+      if (lastIndex < content.length) {
+        afterMention.push({ type: 'text', content: content.slice(lastIndex) });
+      }
+    }
+
+    return afterMention;
+  }
+
+  /**
+   * Détecte si une ligne est un élément de liste
+   * Retourne le type de liste, le marqueur à afficher, et le contenu
+   */
+  function detectListItem(line: string): { type: 'bullet' | 'numbered' | 'none'; marker: string; content: string } {
+    // Détection bullet: "- texte" ou "* texte"
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+    if (bulletMatch) {
+      return { type: 'bullet', marker: '•', content: bulletMatch[1] };
+    }
+    
+    // Détection numérotée: "1. texte", "2. texte", etc.
+    const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numberedMatch) {
+      return { type: 'numbered', marker: `${numberedMatch[1]}.`, content: numberedMatch[2] };
+    }
+    
+    return { type: 'none', marker: '', content: line };
+  }
+
+  /**
+   * Rend un commentaire formaté avec support multi-ligne et listes automatiques
+   * Chaque ligne est un View indépendant (vertical stacking)
+   * Détection automatique des listes: "- item" → • item, "1. item" → 1. item
+   */
+  function renderFormattedComment(text: string) {
+    // Étape 1: split par retour à la ligne
+    const lines = text.split('\n');
+
+    return (
+      <View style={styles.formattedCommentContainer}>
+        {lines.map((line, lineIndex) => {
+          // Détection des listes
+          const listInfo = detectListItem(line);
+          const contentToRender = listInfo.type !== 'none' ? listInfo.content : line;
+          const fragments = parseFragment(contentToRender);
+
+          // Style conditionnel pour les éléments de liste
+          const lineStyle = listInfo.type !== 'none' 
+            ? [styles.formattedCommentLine, styles.listItemLine]
+            : styles.formattedCommentLine;
+
+          return (
+            <View key={lineIndex} style={lineStyle}>
+              {/* Marqueur de liste (bullet ou numéro) */}
+              {listInfo.type !== 'none' && (
+                <SuiviText 
+                  variant="body" 
+                  color="primary" 
+                  style={styles.listMarker}
+                >
+                  {listInfo.marker}
+                </SuiviText>
+              )}
+              {/* Contenu de la ligne */}
+              {fragments.map((fragment, fragmentIndex) => {
+                const key = `${lineIndex}-${fragmentIndex}`;
+
+                switch (fragment.type) {
+                  case 'url':
+                    return (
+                      <Pressable
+                        key={key}
+                        onPress={() => Linking.openURL(fragment.content)}
+                        style={styles.urlPressable}
+                      >
+                        <SuiviText
+                          variant="body"
+                          color="primary"
+                          style={styles.urlText}
+                        >
+                          {fragment.content}
+                        </SuiviText>
+                      </Pressable>
+                    );
+
+                  case 'bold':
+                    return (
+                      <SuiviText
+                        key={key}
+                        variant="body"
+                        color="primary"
+                        style={styles.boldText}
+                      >
+                        {fragment.content}
+                      </SuiviText>
+                    );
+
+                  case 'italic':
+                    return (
+                      <SuiviText
+                        key={key}
+                        variant="body"
+                        color="primary"
+                        style={styles.italicText}
+                      >
+                        {fragment.content}
+                      </SuiviText>
+                    );
+
+                  case 'strikethrough':
+                    return (
+                      <SuiviText
+                        key={key}
+                        variant="body"
+                        color="primary"
+                        style={styles.strikethroughText}
+                      >
+                        {fragment.content}
+                      </SuiviText>
+                    );
+
+                  case 'code':
+                    return (
+                      <SuiviText
+                        key={key}
+                        variant="mono"
+                        style={styles.codeText}
+                      >
+                        {fragment.content}
+                      </SuiviText>
+                    );
+
+                  case 'mention':
+                    return (
+                      <SuiviText
+                        key={key}
+                        variant="body"
+                        style={styles.mentionText}
+                      >
+                        {fragment.content}
+                      </SuiviText>
+                    );
+
+                  case 'text':
+                  default:
+                    return (
+                      <SuiviText
+                        key={key}
+                        variant="body"
+                        color="primary"
+                      >
+                        {fragment.content}
+                      </SuiviText>
+                    );
+                }
+              })}
+            </View>
+          );
+        })}
       </View>
     );
   }
@@ -884,16 +1241,17 @@ export function TaskDetailScreen() {
           onSelectStatus={handleStatusChange}
         />
 
-        {/* Onglets : Overview / Comments / Attachments */}
+        {/* Onglets : Overview / Comments / History / Attachments */}
         <View style={styles.tabsContainer}>
           <SegmentedControl
             options={[
               { key: 'overview', label: t('taskDetail.tabs.overview') },
               { key: 'comments', label: t('taskDetail.tabs.comments') },
+              { key: 'history', label: t('taskDetail.tabs.history') },
               { key: 'attachments', label: t('taskDetail.tabs.attachments') },
             ]}
             value={activeTab}
-            onChange={(value) => setActiveTab(value as 'overview' | 'comments' | 'attachments')}
+            onChange={(value) => setActiveTab(value as 'overview' | 'comments' | 'history' | 'attachments')}
             variant="fullWidth"
           />
         </View>
@@ -1057,26 +1415,44 @@ export function TaskDetailScreen() {
                   {t('taskDetail.dueDate')}
                 </SuiviText>
               </View>
-              {task.dueDate ? (
+              <View style={styles.metadataValueContainer}>
+                {task.dueDate ? (
+                  <Pressable onPress={() => setDueDatePickerVisible(true)}>
+                    <SuiviText variant="body" color="primary" style={styles.metadataValue}>
+                      {formatDate(task.dueDate)}
+                    </SuiviText>
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={() => setDueDatePickerVisible(true)}>
+                    <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                      {t('taskDetail.editDueDate')}
+                    </SuiviText>
+                  </Pressable>
+                )}
                 <Pressable onPress={() => setDueDatePickerVisible(true)}>
-                  <SuiviText variant="body" color="primary" style={styles.metadataValue}>
-                    {formatDate(task.dueDate)}
-                  </SuiviText>
+                  <MaterialCommunityIcons
+                    name="pencil"
+                    size={16}
+                    color={tokens.colors.neutral.medium}
+                    style={{ marginLeft: tokens.spacing.xs }}
+                  />
                 </Pressable>
-              ) : (
-                <Pressable onPress={() => setDueDatePickerVisible(true)}>
-                  <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
-                    {t('taskDetail.editDueDate')}
-                  </SuiviText>
-                </Pressable>
-              )}
+              </View>
             </View>
 
             {/* Assignee (éditable) */}
             <View style={styles.metadataRow}>
-              <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
-                {t('taskDetail.assignee')}
-              </SuiviText>
+              <View style={styles.metadataLabelContainer}>
+                <MaterialCommunityIcons
+                  name="account"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.assignee')}
+                </SuiviText>
+              </View>
               <Pressable
                 onPress={() => setAssigneePickerVisible(true)}
                 style={styles.metadataValueContainer}
@@ -1109,9 +1485,17 @@ export function TaskDetailScreen() {
             {/* Dernière mise à jour */}
             {task.updatedAt && (
               <View style={styles.metadataRow}>
-                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
-                  {t('taskDetail.updated')}
-                </SuiviText>
+                <View style={styles.metadataLabelContainer}>
+                  <MaterialCommunityIcons
+                    name="clock-outline"
+                    size={16}
+                    color={tokens.colors.neutral.medium}
+                    style={styles.metadataIcon}
+                  />
+                  <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                    {t('taskDetail.updated')}
+                  </SuiviText>
+                </View>
                 <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
                   {formatDate(task.updatedAt)}
                 </SuiviText>
@@ -1120,9 +1504,17 @@ export function TaskDetailScreen() {
 
             {/* Priority (éditable) */}
             <View style={styles.metadataRow}>
-              <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
-                {t('taskDetail.priority')}
-              </SuiviText>
+              <View style={styles.metadataLabelContainer}>
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.priority')}
+                </SuiviText>
+              </View>
               <Pressable
                 onPress={() => setPriorityPickerVisible(true)}
                 style={styles.metadataValueContainer}
@@ -1141,9 +1533,17 @@ export function TaskDetailScreen() {
 
             {/* Tags (éditable) */}
             <View style={styles.metadataRow}>
-              <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
-                {t('taskDetail.tags')}
-              </SuiviText>
+              <View style={styles.metadataLabelContainer}>
+                <MaterialCommunityIcons
+                  name="tag-outline"
+                  size={16}
+                  color={tokens.colors.neutral.medium}
+                  style={styles.metadataIcon}
+                />
+                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                  {t('taskDetail.tags')}
+                </SuiviText>
+              </View>
               <Pressable
                 onPress={() => setTagPickerVisible(true)}
                 style={styles.metadataValueContainer}
@@ -1180,9 +1580,17 @@ export function TaskDetailScreen() {
             {/* Project */}
             {task.projectName && (
               <View style={[styles.metadataRow, styles.metadataRowLast]}>
-                <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
-                  {t('taskDetail.projectBoard')}
-                </SuiviText>
+                <View style={styles.metadataLabelContainer}>
+                  <MaterialCommunityIcons
+                    name="folder-outline"
+                    size={16}
+                    color={tokens.colors.neutral.medium}
+                    style={styles.metadataIcon}
+                  />
+                  <SuiviText variant="label" color="secondary" style={styles.metadataLabel}>
+                    {t('taskDetail.projectBoard')}
+                  </SuiviText>
+                </View>
                 <SuiviText variant="body" color="primary" style={styles.metadataValue}>
                   {task.projectName}
                 </SuiviText>
@@ -1400,24 +1808,18 @@ export function TaskDetailScreen() {
             title={t('taskDetail.editDueDate')}
           >
             <View style={styles.datePickerContainer}>
-              <TextInput
-                style={[
-                  styles.dateInput,
-                  {
-                    color: isDark ? tokens.colors.text.dark.primary : tokens.colors.text.primary,
-                    borderColor: isDark ? tokens.colors.border.darkMode.default : tokens.colors.border.default,
-                    backgroundColor: isDark ? tokens.colors.surface.darkVariant : tokens.colors.surface.default,
-                  },
-                ]}
-                value={dueDateInput}
-                onChangeText={(text) => {
-                  setDueDateInput(text);
-                  if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    handleDueDateChange(text);
+              <DateTimePicker
+                value={datePickerDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  if (selectedDate) {
+                    setDatePickerDate(selectedDate);
+                    const isoString = selectedDate.toISOString().split('T')[0];
+                    handleDueDateChange(isoString);
                   }
                 }}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={tokens.colors.neutral.medium}
+                style={{ alignSelf: 'center' }}
               />
               <View style={styles.datePickerActions}>
                 <Pressable
@@ -1430,8 +1832,10 @@ export function TaskDetailScreen() {
                 </Pressable>
                 <Pressable
                   onPress={() => {
-                    const today = new Date().toISOString().split('T')[0];
-                    handleDueDateChange(today);
+                    const today = new Date();
+                    setDatePickerDate(today);
+                    const isoString = today.toISOString().split('T')[0];
+                    handleDueDateChange(isoString);
                     setDueDatePickerVisible(false);
                   }}
                   style={styles.datePickerButton}
@@ -1732,7 +2136,7 @@ export function TaskDetailScreen() {
             </SuiviText>
             
             {(() => {
-              const commentActivities = allActivities;
+              const commentActivities = allActivities.filter((activity) => activity.eventType === 'COMMENT');
               return commentActivities.length > 0 ? (
                 <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
                   {commentActivities.map((activity) => renderActivityItem(activity))}
@@ -1741,6 +2145,32 @@ export function TaskDetailScreen() {
                 <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
                   <SuiviText variant="body" color="secondary">
                     {t('taskDetail.noActivity')}
+                  </SuiviText>
+                </SuiviCard>
+              );
+            })()}
+          </View>
+        )}
+
+        {activeTab === 'history' && (
+          <View style={[styles.section, { marginTop: tokens.spacing.md }]}>
+            <SuiviText variant="h2" style={styles.sectionTitle}>
+              {t('taskDetail.tabs.history')}
+            </SuiviText>
+            <SuiviText variant="body" color="secondary" style={styles.sectionSubtitle}>
+              {t('taskDetail.historySubtitle')}
+            </SuiviText>
+            
+            {(() => {
+              const historyActivities = allActivities.filter((activity) => activity.eventType !== 'COMMENT');
+              return historyActivities.length > 0 ? (
+                <SuiviCard padding="md" elevation="card" variant="default" style={styles.metadataCard}>
+                  {historyActivities.map((activity) => renderHistoryItem(activity))}
+                </SuiviCard>
+              ) : (
+                <SuiviCard padding="md" elevation="sm" variant="outlined" style={styles.emptyActivityCard}>
+                  <SuiviText variant="body" color="secondary">
+                    {t('taskDetail.noHistory')}
                   </SuiviText>
                 </SuiviCard>
               );
@@ -2026,6 +2456,72 @@ function getAttachmentIcon(type: Attachment['type']): string {
     default:
       return 'file-outline';
   }
+}
+
+/**
+ * Retourne l'icône MaterialCommunityIcons pour un type d'événement d'historique
+ */
+function getHistoryIcon(activity: SuiviActivityEvent): string {
+  const title = activity.title.toLowerCase();
+  const eventType = activity.eventType;
+
+  // Détection par eventType en priorité
+  if (eventType === 'TASK_COMPLETED') {
+    return 'check-circle-outline';
+  }
+  if (eventType === 'TASK_CREATED') {
+    return 'plus-circle-outline';
+  }
+  if (eventType === 'TASK_REPLANNED') {
+    // Détection fine par titre pour TASK_REPLANNED
+    if (title.includes('progress') || title.includes('progression')) {
+      return 'progress-clock';
+    }
+    if (title.includes('tag') || title.includes('tags')) {
+      return 'tag-outline';
+    }
+    if (title.includes('assign') || title.includes('assigné')) {
+      return 'account';
+    }
+    if (title.includes('duedate') || title.includes('échéance') || title.includes('date')) {
+      return 'calendar';
+    }
+    if (title.includes('priority') || title.includes('priorité')) {
+      return 'alert-circle-outline';
+    }
+    if (title.includes('status') || title.includes('statut')) {
+      return 'flag';
+    }
+    if (title.includes('description')) {
+      return 'text';
+    }
+  }
+
+  // Fallback par titre si eventType non spécifique
+  if (title.includes('progress') || title.includes('progression')) {
+    return 'progress-clock';
+  }
+  if (title.includes('tag') || title.includes('tags')) {
+    return 'tag-outline';
+  }
+  if (title.includes('assign') || title.includes('assigné')) {
+    return 'account';
+  }
+  if (title.includes('duedate') || title.includes('échéance') || title.includes('date')) {
+    return 'calendar';
+  }
+  if (title.includes('priority') || title.includes('priorité')) {
+    return 'alert-circle-outline';
+  }
+  if (title.includes('status') || title.includes('statut')) {
+    return 'flag';
+  }
+  if (title.includes('description')) {
+    return 'text';
+  }
+
+  // Icône par défaut
+  return 'circle-outline';
 }
 
 /**
@@ -2320,8 +2816,54 @@ const styles = StyleSheet.create({
   commentText: {
     marginBottom: tokens.spacing.xs,
   },
+  commentTextContainer: {
+    marginBottom: tokens.spacing.xs,
+  },
   commentTimestamp: {
     marginTop: tokens.spacing.xs,
+  },
+  // Formatted comment styles
+  formattedCommentContainer: {
+    flexDirection: 'column',
+  },
+  formattedCommentLine: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  urlPressable: {
+    flexShrink: 1,
+  },
+  urlText: {
+    color: tokens.colors.brand.primary,
+    textDecorationLine: 'underline',
+  },
+  boldText: {
+    fontFamily: tokens.typography.display.fontFamily,
+  },
+  italicText: {
+    fontStyle: 'italic',
+  },
+  mentionText: {
+    color: tokens.colors.brand.primary,
+    fontWeight: '500',
+  },
+  strikethroughText: {
+    textDecorationLine: 'line-through',
+    color: tokens.colors.neutral.medium,
+  },
+  codeText: {
+    backgroundColor: tokens.colors.neutral.light,
+    paddingHorizontal: tokens.spacing.xs,
+    borderRadius: tokens.radius.sm,
+    color: tokens.colors.brand.primary,
+  },
+  listItemLine: {
+    marginTop: tokens.spacing.xs,
+  },
+  listMarker: {
+    marginRight: tokens.spacing.sm,
+    minWidth: 16,
   },
   activityRow: {
     flexDirection: 'row',

@@ -1,8 +1,20 @@
-import React from 'react';
-import { View, StyleSheet, Pressable, Modal, SafeAreaView, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Modal,
+  ScrollView,
+  Animated,
+  Dimensions,
+  ViewStyle,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
 import { SuiviText } from './SuiviText';
 import { tokens, getShadowStyle } from '@theme';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export interface BottomSheetProps {
   /** Contrôle la visibilité du bottom sheet */
@@ -27,8 +39,10 @@ export interface BottomSheetProps {
  * Composant standardisé pour tous les menus "montants" (bottom sheets) dans l'app Suivi.
  * 
  * Pattern standard :
- * - Modal transparent avec animation slide
- * - Backdrop semi-transparent
+ * - Modal transparent avec animations personnalisées
+ * - Backdrop semi-transparent avec FADE (opacity)
+ * - Sheet avec SLIDE UP (translateY)
+ * - Les deux animations sont INDÉPENDANTES (comportement professionnel)
  * - Fond arrondi top-xl
  * - Drag handle centré (optionnel)
  * - Header avec titre (optionnel)
@@ -49,6 +63,14 @@ export function BottomSheet({
   const theme = useTheme();
   const isDark = theme.dark;
 
+  // Animation values - séparées pour backdrop et sheet
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  // Track si le modal est en train de fermer (pour éviter double fermeture)
+  const isClosing = useRef(false);
+
+  // Couleurs selon le thème (tokens uniquement)
   const backgroundColor = isDark
     ? tokens.colors.surface.darkElevated
     : tokens.colors.background.default;
@@ -59,6 +81,65 @@ export function BottomSheet({
     ? tokens.colors.neutral.medium
     : tokens.colors.neutral.light;
 
+  // Animation d'ouverture
+  useEffect(() => {
+    if (visible) {
+      isClosing.current = false;
+      // Reset les valeurs au cas où
+      backdropOpacity.setValue(0);
+      sheetTranslateY.setValue(SCREEN_HEIGHT);
+
+      // Animations parallèles : fade backdrop + slide sheet
+      Animated.parallel([
+        // Backdrop : fade-in opacity
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: tokens.animation.normal, // 250ms
+          useNativeDriver: true,
+        }),
+        // Sheet : slide-up avec spring pour effet naturel
+        Animated.spring(sheetTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 65,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible, backdropOpacity, sheetTranslateY]);
+
+  // Animation de fermeture contrôlée
+  const handleAnimatedClose = useCallback(() => {
+    // Éviter double fermeture
+    if (isClosing.current) return;
+    isClosing.current = true;
+
+    // Animations parallèles de sortie
+    Animated.parallel([
+      // Backdrop : fade-out opacity
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: tokens.animation.fast, // 150ms
+        useNativeDriver: true,
+      }),
+      // Sheet : slide-down
+      Animated.timing(sheetTranslateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: tokens.animation.fast, // 150ms
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Appeler onClose APRÈS la fin de l'animation
+      onClose();
+    });
+  }, [backdropOpacity, sheetTranslateY, onClose]);
+
+  // Handler pour hardware back button (Android) et onRequestClose
+  const handleRequestClose = useCallback(() => {
+    handleAnimatedClose();
+  }, [handleAnimatedClose]);
+
+  // Contenu de la sheet
   const content = (
     <>
       {/* Handle indicator */}
@@ -103,30 +184,37 @@ export function BottomSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      animationType="none"
+      onRequestClose={handleRequestClose}
       statusBarTranslucent
     >
       <View style={styles.modalContainer}>
-        {/* Backdrop semi-transparent */}
-        <Pressable
-          style={styles.backdrop}
-          onPress={onClose}
-          activeOpacity={1}
-        />
+        {/* Backdrop semi-transparent avec FADE animation */}
+        <Animated.View
+          style={[
+            styles.backdrop,
+            { opacity: backdropOpacity },
+          ]}
+        >
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleAnimatedClose}
+          />
+        </Animated.View>
 
-        {/* Bottom Sheet Panel */}
-        <View
+        {/* Bottom Sheet Panel avec SLIDE animation */}
+        <Animated.View
           style={[
             styles.sheetContainer,
-            { backgroundColor, maxHeight },
+            { backgroundColor, maxHeight: maxHeight as ViewStyle['maxHeight'] },
             { ...getShadowStyle('lg', isDark), shadowOffset: { width: 0, height: -2 } },
+            { transform: [{ translateY: sheetTranslateY }] },
           ]}
         >
           <SafeAreaView edges={['bottom']}>
             {content}
           </SafeAreaView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -170,4 +258,3 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.spacing.sm,
   },
 });
-

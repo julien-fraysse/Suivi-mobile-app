@@ -144,6 +144,7 @@
     "tabs": {
       "overview": "Overview",
       "comments": "Comments",
+      "history": "History",
       "attachments": "Attachments"
     },
     "options": {
@@ -158,7 +159,9 @@
     "attachments": {
       "empty": "No attachments",
       "upload": "Upload a file"
-    }
+    },
+    "historySubtitle": "History of modifications and actions",
+    "noHistory": "No history"
   },
   "activityDetail": {
     "overview": "Activity overview",

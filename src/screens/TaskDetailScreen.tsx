@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { useRoute, RouteProp, useNavigation, StackNavigationProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +26,7 @@ import { SuiviText } from '@components/ui/SuiviText';
 import { SuiviSwitch } from '@components/ui/SuiviSwitch';
 import { UserAvatar } from '@components/ui/UserAvatar';
 import { SuiviStatusPicker } from '@components/ui/SuiviStatusPicker';
-import { BottomSheet } from '@components/ui/BottomSheet';
+import { BottomSheet, bottomSheetOptionStyles } from '@components/ui/BottomSheet';
 import { TagPickerBottomSheet } from '@components/ui/TagPickerBottomSheet';
 import { SuiviTagIndicator } from '@components/ui/SuiviTagIndicator';
 import { SegmentedControl } from '@components/ui/SegmentedControl';
@@ -67,7 +68,7 @@ type TaskDetailRoute = RouteProp<AppStackParamList, 'TaskDetail'>;
  */
 export function TaskDetailScreen() {
   const route = useRoute<TaskDetailRoute>();
-  const navigation = useNavigation<StackNavigationProp<AppStackParamList, 'TaskDetail'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'TaskDetail'>>();
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -637,6 +638,108 @@ export function TaskDetailScreen() {
     { id: '2', name: 'Alice', avatarUrl: undefined },
     { id: '3', name: 'Bob', avatarUrl: undefined },
   ];
+
+  /**
+   * Fonction de rendu réutilisable pour les options de BottomSheet (Priority, Assignee)
+   * Respecte le design system iOS avec :
+   * - Rectangle arrondi avec outline
+   * - État sélectionné avec background et border accentués
+   * - Radio-style premium : cercle violet rempli + check blanc (sélectionné) / cercle outline (non sélectionné)
+   * - Support avatar optionnel (Assignee)
+   * - Support icon optionnel (Priority)
+   */
+  function renderBottomSheetOption({
+    key,
+    label,
+    isSelected,
+    onPress,
+    avatar,
+    icon,
+  }: {
+    key: string;
+    label: string;
+    isSelected: boolean;
+    onPress: () => void;
+    avatar?: React.ReactNode;
+    icon?: React.ReactNode;
+  }) {
+    const borderColor = isDark
+      ? tokens.colors.border.darkMode.default
+      : tokens.colors.border.default;
+    const selectedBorderColor = tokens.colors.brand.primary;
+    const selectedBgColor = isDark
+      ? tokens.colors.brand.primary + '20' // 12.5% opacity en dark (plus marqué)
+      : tokens.colors.brand.primaryLight + '20'; // 12.5% opacity en light (plus marqué)
+
+    // Style du cercle radio
+    const radioSize = 24;
+    const radioInnerSize = 16;
+
+    return (
+      <Pressable
+        key={key}
+        onPress={onPress}
+        style={({ pressed }) => [
+          bottomSheetOptionStyles.optionRow,
+          { borderColor: isSelected ? selectedBorderColor : borderColor },
+          isSelected && { backgroundColor: selectedBgColor },
+          pressed && bottomSheetOptionStyles.optionRowPressed,
+        ]}
+      >
+        <View style={bottomSheetOptionStyles.optionLeftContent}>
+          {/* Icon (Priority) */}
+          {icon && (
+            <View style={{ marginRight: tokens.spacing.md }}>
+              {icon}
+            </View>
+          )}
+          {/* Avatar (Assignee) */}
+          {avatar && (
+            <View style={bottomSheetOptionStyles.optionAvatar}>
+              {avatar}
+            </View>
+          )}
+          <SuiviText variant="body" color="primary" style={bottomSheetOptionStyles.optionLabel}>
+            {label}
+          </SuiviText>
+        </View>
+        {/* Radio button style */}
+        <View style={bottomSheetOptionStyles.optionCheckmark}>
+          {isSelected ? (
+            // Cercle rempli violet + check blanc
+            <View
+              style={{
+                width: radioSize,
+                height: radioSize,
+                borderRadius: radioSize / 2,
+                backgroundColor: tokens.colors.brand.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <MaterialCommunityIcons
+                name="check"
+                size={radioInnerSize}
+                color={tokens.colors.text.onPrimary}
+              />
+            </View>
+          ) : (
+            // Cercle outline vide
+            <View
+              style={{
+                width: radioSize,
+                height: radioSize,
+                borderRadius: radioSize / 2,
+                borderWidth: 2,
+                borderColor: borderColor,
+                backgroundColor: 'transparent',
+              }}
+            />
+          )}
+        </View>
+      </Pressable>
+    );
+  }
 
   // Render activity item (comment or system activity)
   function renderActivityItem(activity: SuiviActivityEvent) {
@@ -1460,7 +1563,7 @@ export function TaskDetailScreen() {
                 {task.assignee?.name ? (
                   <>
                     <UserAvatar
-                      size={24}
+                      size={32}
                       fullName={task.assignee.name}
                       style={styles.metadataAvatar}
                     />
@@ -1496,7 +1599,7 @@ export function TaskDetailScreen() {
                     {t('taskDetail.updated')}
                   </SuiviText>
                 </View>
-                <SuiviText variant="body" color="secondary" style={styles.metadataValue}>
+                <SuiviText variant="body" color="primary" style={styles.metadataValue}>
                   {formatDate(task.updatedAt)}
                 </SuiviText>
               </View>
@@ -1558,7 +1661,7 @@ export function TaskDetailScreen() {
                         <SuiviTagIndicator key={tag.id} tag={tag} />
                       ))}
                     {task.tags.length > 1 && (
-                      <SuiviText variant="bodySm" color="secondary" style={styles.tagsMore}>
+                      <SuiviText variant="label" color="secondary" style={styles.tagsMore}>
                         {t('taskDetail.moreTags', { count: task.tags.length - 1 })}
                       </SuiviText>
                     )}
@@ -1774,31 +1877,23 @@ export function TaskDetailScreen() {
           <BottomSheet
             visible={assigneePickerVisible}
             onClose={() => setAssigneePickerVisible(false)}
+            onDone={() => setAssigneePickerVisible(false)}
             title={t('taskDetail.editAssignee')}
           >
-            {mockUsers.map((mockUser) => (
-              <Pressable
-                key={mockUser.id}
-                onPress={() => handleAssigneeChange(mockUser)}
-                style={styles.assigneeOption}
-              >
-                <UserAvatar
-                  size={32}
-                  fullName={mockUser.name}
-                  style={styles.assigneeOptionAvatar}
-                />
-                <SuiviText variant="body" color="primary">
-                  {mockUser.name}
-                </SuiviText>
-                {task.assignee?.id === mockUser.id && (
-                  <MaterialCommunityIcons
-                    name="check"
-                    size={20}
-                    color={tokens.colors.brand.primary}
+            {mockUsers.map((mockUser) =>
+              renderBottomSheetOption({
+                key: mockUser.id,
+                label: mockUser.name,
+                isSelected: task.assignee?.id === mockUser.id,
+                onPress: () => handleAssigneeChange(mockUser),
+                avatar: (
+                  <UserAvatar
+                    size={36}
+                    fullName={mockUser.name}
                   />
-                )}
-              </Pressable>
-            ))}
+                ),
+              })
+            )}
           </BottomSheet>
 
           {/* Due Date Picker Modal */}
@@ -1806,45 +1901,54 @@ export function TaskDetailScreen() {
             visible={dueDatePickerVisible}
             onClose={() => setDueDatePickerVisible(false)}
             title={t('taskDetail.editDueDate')}
+            onDone={() => {
+              const isoString = datePickerDate.toISOString().split('T')[0];
+              handleDueDateChange(isoString);
+              setDueDatePickerVisible(false);
+            }}
           >
-            <View style={styles.datePickerContainer}>
+            {/* Wrapper unique opaque iOS natif */}
+            <View
+              style={[
+                styles.datePickerWrapper,
+                { backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7' },
+              ]}
+            >
               <DateTimePicker
                 value={datePickerDate}
                 mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                display="spinner"
+                textColor={isDark ? '#FFFFFF' : '#111827'}
+                themeVariant={isDark ? 'dark' : 'light'}
                 onChange={(event, selectedDate) => {
+                  // Mise à jour locale uniquement - validation via bouton Done
                   if (selectedDate) {
                     setDatePickerDate(selectedDate);
-                    const isoString = selectedDate.toISOString().split('T')[0];
-                    handleDueDateChange(isoString);
                   }
                 }}
-                style={{ alignSelf: 'center' }}
+                style={styles.datePickerSpinner}
               />
-              <View style={styles.datePickerActions}>
-                <Pressable
-                  onPress={() => setDueDatePickerVisible(false)}
-                  style={styles.datePickerButton}
-                >
-                  <SuiviText variant="body" color="secondary">
-                    {t('taskDetail.cancel')}
-                  </SuiviText>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    const today = new Date();
-                    setDatePickerDate(today);
-                    const isoString = today.toISOString().split('T')[0];
-                    handleDueDateChange(isoString);
-                    setDueDatePickerVisible(false);
-                  }}
-                  style={styles.datePickerButton}
-                >
-                  <SuiviText variant="body" color="primary">
-                    {t('tasks.sections.today')}
-                  </SuiviText>
-                </Pressable>
-              </View>
+            </View>
+            <View style={styles.datePickerActions}>
+              <Pressable
+                onPress={() => setDueDatePickerVisible(false)}
+                style={styles.datePickerButton}
+              >
+                <SuiviText variant="body" color="secondary">
+                  {t('taskDetail.cancel')}
+                </SuiviText>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  // Raccourci Today : set la date locale sans fermer
+                  setDatePickerDate(new Date());
+                }}
+                style={styles.datePickerButton}
+              >
+                <SuiviText variant="body" color="primary">
+                  {t('tasks.sections.today')}
+                </SuiviText>
+              </Pressable>
             </View>
           </BottomSheet>
 
@@ -1852,53 +1956,49 @@ export function TaskDetailScreen() {
           <BottomSheet
             visible={priorityPickerVisible}
             onClose={() => setPriorityPickerVisible(false)}
+            onDone={() => setPriorityPickerVisible(false)}
             title={t('taskDetail.priority')}
           >
-            <Pressable
-              onPress={() => handlePriorityChange('normal')}
-              style={styles.assigneeOption}
-            >
-              <SuiviText variant="body" color="primary">
-                {t('taskDetail.priority.normal')}
-              </SuiviText>
-              {(!taskPriority || taskPriority === 'normal') && (
+            {/* Ordre : High → Normal → Low (priorité décroissante) */}
+            {renderBottomSheetOption({
+              key: 'high',
+              label: t('taskDetail.priority.high'),
+              isSelected: taskPriority === 'high',
+              onPress: () => handlePriorityChange('high'),
+              icon: (
                 <MaterialCommunityIcons
-                  name="check"
+                  name="chevron-double-up"
+                  size={20}
+                  color={tokens.colors.semantic.error}
+                />
+              ),
+            })}
+            {renderBottomSheetOption({
+              key: 'normal',
+              label: t('taskDetail.priority.normal'),
+              isSelected: !taskPriority || taskPriority === 'normal',
+              onPress: () => handlePriorityChange('normal'),
+              icon: (
+                <MaterialCommunityIcons
+                  name="minus"
                   size={20}
                   color={tokens.colors.brand.primary}
                 />
-              )}
-            </Pressable>
-            <Pressable
-              onPress={() => handlePriorityChange('low')}
-              style={styles.assigneeOption}
-            >
-              <SuiviText variant="body" color="primary">
-                {t('taskDetail.priority.low')}
-              </SuiviText>
-              {taskPriority === 'low' && (
+              ),
+            })}
+            {renderBottomSheetOption({
+              key: 'low',
+              label: t('taskDetail.priority.low'),
+              isSelected: taskPriority === 'low',
+              onPress: () => handlePriorityChange('low'),
+              icon: (
                 <MaterialCommunityIcons
-                  name="check"
+                  name="chevron-double-down"
                   size={20}
-                  color={tokens.colors.brand.primary}
+                  color={tokens.colors.neutral.medium}
                 />
-              )}
-            </Pressable>
-            <Pressable
-              onPress={() => handlePriorityChange('high')}
-              style={styles.assigneeOption}
-            >
-              <SuiviText variant="body" color="primary">
-                {t('taskDetail.priority.high')}
-              </SuiviText>
-              {taskPriority === 'high' && (
-                <MaterialCommunityIcons
-                  name="check"
-                  size={20}
-                  color={tokens.colors.brand.primary}
-                />
-              )}
-            </Pressable>
+              ),
+            })}
           </BottomSheet>
 
           {/* Tag Picker Bottom Sheet */}
@@ -2042,6 +2142,7 @@ export function TaskDetailScreen() {
                   onClose={() => {
                     setCustomFieldEditModal(null);
                   }}
+                  onDone={() => setCustomFieldEditModal(null)}
                   title={field.label}
                 >
                   {field.options?.map((option) => {
@@ -2049,34 +2150,22 @@ export function TaskDetailScreen() {
                       ? Array.isArray(field.value) && field.value.includes(option)
                       : field.value === option;
                     
-                    return (
-                      <Pressable
-                        key={option}
-                        onPress={() => {
-                          if (customFieldEditModal.type === 'multi') {
-                            const currentValues = Array.isArray(field.value) ? field.value : [];
-                            const newValues = isSelected
-                              ? currentValues.filter((v) => v !== option)
-                              : [...currentValues, option];
-                            handleCustomFieldChange(field.id, newValues);
-                          } else {
-                            handleCustomFieldChange(field.id, option);
-                          }
-                        }}
-                        style={styles.assigneeOption}
-                      >
-                        <SuiviText variant="body" color="primary">
-                          {option}
-                        </SuiviText>
-                        {isSelected && (
-                          <MaterialCommunityIcons
-                            name="check"
-                            size={20}
-                            color={tokens.colors.brand.primary}
-                          />
-                        )}
-                      </Pressable>
-                    );
+                    return renderBottomSheetOption({
+                      key: option,
+                      label: option,
+                      isSelected,
+                      onPress: () => {
+                        if (customFieldEditModal.type === 'multi') {
+                          const currentValues = Array.isArray(field.value) ? field.value : [];
+                          const newValues = isSelected
+                            ? currentValues.filter((v: string) => v !== option)
+                            : [...currentValues, option];
+                          handleCustomFieldChange(field.id, newValues);
+                        } else {
+                          handleCustomFieldChange(field.id, option);
+                        }
+                      },
+                    });
                   })}
                 </BottomSheet>
               );
@@ -2802,6 +2891,7 @@ const styles = StyleSheet.create({
   },
   metadataValue: {
     textAlign: 'right',
+    fontFamily: tokens.typography.h1.fontFamily, // Inter_600SemiBold
   },
   // Activity Timeline
   commentContainer: {
@@ -2932,19 +3022,6 @@ const styles = StyleSheet.create({
   descriptionText: {
     marginTop: tokens.spacing.xs,
   },
-  assigneeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.md,
-    borderRadius: tokens.radius.md,
-    marginBottom: tokens.spacing.xs,
-    borderWidth: 1,
-    borderColor: tokens.colors.border.default,
-  },
-  assigneeOptionAvatar: {
-    marginRight: tokens.spacing.md,
-  },
   tagsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2959,6 +3036,17 @@ const styles = StyleSheet.create({
   },
   datePickerContainer: {
     marginTop: tokens.spacing.md,
+  },
+  datePickerWrapper: {
+    borderRadius: tokens.radius.xl,
+    paddingVertical: tokens.spacing.lg,
+    paddingHorizontal: tokens.spacing.lg,
+    marginHorizontal: tokens.spacing.lg,
+    marginBottom: tokens.spacing.lg,
+    overflow: 'hidden',
+  },
+  datePickerSpinner: {
+    width: '100%',
   },
   dateInput: {
     borderWidth: 1,

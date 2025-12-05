@@ -5,7 +5,8 @@
     "back": "Retour",
     "delete": "Supprimer",
     "cancel": "Annuler",
-    "save": "Enregistrer"
+    "save": "Enregistrer",
+    "done": "OK"
   },
   "home": {
     "title": "Accueil",

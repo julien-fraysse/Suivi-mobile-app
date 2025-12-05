@@ -57,7 +57,9 @@ export function SegmentedControl({
     const textColor = isSelected 
       ? (theme.dark ? tokens.colors.text.dark.primary : tokens.colors.text.primary)
       : (theme.dark ? tokens.colors.text.dark.secondary : tokens.colors.text.secondary);
-    const fontWeight = isSelected ? '600' : '500';
+    const fontFamily = isSelected 
+      ? tokens.typography.display.fontFamily  // Inter_700Bold
+      : tokens.typography.h1.fontFamily;      // Inter_600SemiBold
     const backgroundColor = isSelected
       ? (theme.dark ? tokens.colors.surface.darkVariant : '#F2F2F6')
       : 'transparent';
@@ -85,7 +87,7 @@ export function SegmentedControl({
           numberOfLines={1}
           style={{ 
             color: textColor, 
-            fontWeight,
+            fontFamily,
             fontSize: isFullWidth ? 13 : undefined, // Réduire légèrement la taille de police (style Gemini 3)
             textAlign: 'center', // Textes centrés
           }}

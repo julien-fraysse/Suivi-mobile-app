@@ -35,7 +35,7 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
       onPress={onPress}
       elevation="none"
       variant="default"
-      padding="md"
+      padding="lg"
       style={[
         styles.card,
         {
@@ -47,7 +47,10 @@ export function TaskItem({ task, onPress, style }: TaskItemProps) {
     >
       <View style={styles.horizontalRow}>
         <View style={styles.titleSection}>
-          <SuiviText variant="body">
+          <SuiviText 
+            variant="body"
+            style={{ fontFamily: tokens.typography.h1.fontFamily }}
+          >
             {task.title}
           </SuiviText>
           {task.projectName && (
@@ -130,6 +133,7 @@ const styles = StyleSheet.create({
   horizontalRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: tokens.spacing.xs,
   },
   titleSection: {
     flex: 1,
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
   projectRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: tokens.spacing.xs / 2,
+    marginTop: tokens.spacing.sm,
   },
   projectDot: {
     width: 6,

@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   RefreshControl,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,16 +15,26 @@ import { useTheme } from 'react-native-paper';
 import type { AppStackParamList, MainTabParamList } from '../navigation/types';
 import { Screen } from '@components/Screen';
 import { AppHeader } from '@components/AppHeader';
+import { HomeSearchBar } from '@components/HomeSearchBar';
 import { TasksFilterControl } from '@components/ui/TasksFilterControl';
 import { SuiviText } from '@components/ui/SuiviText';
+import { SuiviCard } from '@components/ui/SuiviCard';
 import { TaskSectionHeader } from '@components/ui/TaskSectionHeader';
 import { SwipeableTaskItem } from '@components/tasks/SwipeableTaskItem';
-import { AiBriefingButton } from '@components/ui/AiBriefingButton';
 import { useMyWork } from '../hooks/useMyWork';
 import { useTasksContext } from '../tasks/TasksContext';
 import type { Task } from '../types/task';
 import type { SectionName } from '../hooks/useMyWork';
 import { tokens } from '@theme';
+import {
+  useSearchResults,
+  useSearchStatus,
+  useSearchQuery,
+  usePerformSearch,
+  useClearSearch,
+  useHasSearchQuery,
+} from '../features/search/searchSelectors';
+import type { SearchResult } from '../features/search/searchTypes';
 
 type FilterOption = 'active' | 'completed';
 
@@ -53,6 +66,77 @@ export function MyTasksScreen() {
   
   // Contexte pour mettre à jour les tâches (swipe → done)
   const { updateTask } = useTasksContext();
+  
+  // === SEARCH FEATURE ===
+  const searchResults = useSearchResults();
+  const searchStatus = useSearchStatus();
+  const searchQuery = useSearchQuery();
+  const performSearch = usePerformSearch();
+  const clearSearch = useClearSearch();
+  const hasSearchQuery = useHasSearchQuery();
+  
+  // State local pour l'input (UX immédiate)
+  const [searchInputValue, setSearchInputValue] = useState('');
+  
+  // Ref pour le debounce (compatible React Native)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Filtrer les résultats pour ne garder que les tâches (spécifique à MyTasksScreen)
+  const taskResults = useMemo(() => 
+    searchResults.filter(result => result.type === 'task'),
+    [searchResults]
+  );
+  
+  // Debounce de 300ms pour la recherche
+  const debouncedSearch = useCallback((query: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      if (query.trim()) {
+        performSearch(query);
+      } else {
+        clearSearch();
+      }
+    }, 300);
+  }, [performSearch, clearSearch]);
+  
+  // Cleanup du debounce au démontage
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+  
+  // Handler pour le changement de query
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchInputValue(query);
+    debouncedSearch(query);
+  }, [debouncedSearch]);
+  
+  // Handler pour la soumission (Enter ou tap sur icône)
+  const handleSearchSubmit = useCallback((query: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    if (query.trim()) {
+      performSearch(query);
+    }
+  }, [performSearch]);
+  
+  // Navigation vers le résultat de recherche (uniquement tâches sur cet écran)
+  const handleSearchResultPress = useCallback((result: SearchResult) => {
+    if (result.type === 'task' && result.taskId) {
+      navigation.navigate('TaskDetail', { taskId: result.taskId });
+    }
+  }, [navigation]);
+  
+  // Handler pour fermer le clavier en tapant hors de la SearchBar
+  const dismissKeyboard = useCallback(() => {
+    Keyboard.dismiss();
+  }, []);
   
   /**
    * Classifie une tâche par sa date d'échéance dans une section chronologique.
@@ -245,58 +329,142 @@ export function MyTasksScreen() {
 
   return (
     <Screen>
-      <AppHeader />
-      
-      {/* Date and Title Header */}
-      <View style={styles.dateTitleHeader}>
-        <SuiviText variant="label" color="secondary" style={styles.dateText}>
-          {dateHeader}
-        </SuiviText>
-        <SuiviText variant="h1" style={styles.titleText}>
-          {t('tasks.title')}
-        </SuiviText>
-      </View>
-      
-      {/* AI Daily Briefing Button */}
-      <AiBriefingButton
-        onPress={() => {
-          // TODO: When Suivi API is ready, navigate to BriefingScreen
-          // navigation.navigate('Briefing', { date: new Date() });
-        }}
-        style={styles.aiButtonContainer}
-      />
-      
-      {/* Filters */}
-      <View style={styles.filterBar}>
-        <TasksFilterControl
-          variant="fullWidth"
-          value={filter}
-          onChange={(newValue) => setFilter(newValue as FilterOption)}
-        />
-      </View>
+      <TouchableWithoutFeedback onPress={dismissKeyboard} accessible={false}>
+        <View style={styles.dismissKeyboardWrapper}>
+          <AppHeader />
+          
+          {/* Date and Title Header */}
+          <View style={styles.dateTitleHeader}>
+            <SuiviText variant="label" color="secondary" style={styles.dateText}>
+              {dateHeader}
+            </SuiviText>
+            <SuiviText variant="h1" style={styles.titleText}>
+              {t('tasks.title')}
+            </SuiviText>
+          </View>
+          
+          {/* Search Bar */}
+          <View style={styles.searchBarWrapper}>
+            <HomeSearchBar 
+              value={searchInputValue}
+              onChangeQuery={handleSearchChange}
+              onSubmit={handleSearchSubmit}
+            />
+          </View>
+          
+          {/* Filters (masqués pendant la recherche) */}
+          {!hasSearchQuery && (
+            <View style={styles.filterBar}>
+              <TasksFilterControl
+                variant="fullWidth"
+                value={filter}
+                onChange={(newValue) => setFilter(newValue as FilterOption)}
+              />
+            </View>
+          )}
 
-      {/* Task list with sections */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl 
-            refreshing={isLoading} 
-            onRefresh={refresh}
-            tintColor={refreshColor}
-            colors={[refreshColor]}
-          />
-        }
-      >
-        {ORDER.map((sectionName) => renderSection(sectionName))}
-        
-        {/* Empty state si aucune tâche */}
-        {tasks.length === 0 && !isLoading && renderEmptyState()}
-      </ScrollView>
+          {/* Task list with sections */}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl 
+                refreshing={isLoading} 
+                onRefresh={refresh}
+                tintColor={refreshColor}
+                colors={[refreshColor]}
+              />
+            }
+          >
+            {/* === SEARCH RESULTS (tâches uniquement) === */}
+            {hasSearchQuery && (
+              <View style={styles.section}>
+                <View style={styles.titleContainer}>
+                  <SuiviText variant="h1">
+                    {t('search.results')}
+                  </SuiviText>
+                </View>
+                
+                {searchStatus === 'loading' && (
+                  <View style={styles.searchStatusContainer}>
+                    <SuiviText variant="body" color="secondary">
+                      {t('search.searching')}
+                    </SuiviText>
+                  </View>
+                )}
+                
+                {searchStatus === 'success' && taskResults.length === 0 && (
+                  <View style={styles.searchStatusContainer}>
+                    <SuiviText variant="body" color="secondary">
+                      {t('search.noResults', { query: searchQuery })}
+                    </SuiviText>
+                  </View>
+                )}
+                
+                {searchStatus === 'success' && taskResults.length > 0 && (
+                  <View style={styles.searchResultsContainer}>
+                    {taskResults.map((result) => (
+                      <TouchableOpacity
+                        key={result.id}
+                        onPress={() => handleSearchResultPress(result)}
+                        activeOpacity={0.7}
+                      >
+                        <SuiviCard style={styles.searchResultCard}>
+                          <View style={styles.searchResultContent}>
+                            <View style={styles.searchResultHeader}>
+                              <SuiviText 
+                                variant="caption" 
+                                color="secondary"
+                                style={styles.searchResultType}
+                              >
+                                {t('search.tasks')}
+                              </SuiviText>
+                            </View>
+                            <SuiviText variant="body" numberOfLines={1}>
+                              {result.title}
+                            </SuiviText>
+                            {result.subtitle && (
+                              <SuiviText variant="caption" color="secondary" numberOfLines={1}>
+                                {result.subtitle}
+                              </SuiviText>
+                            )}
+                          </View>
+                        </SuiviCard>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                
+                {searchStatus === 'error' && (
+                  <View style={styles.searchStatusContainer}>
+                    <SuiviText variant="body" color="secondary">
+                      {t('home.errorLoading')}
+                    </SuiviText>
+                  </View>
+                )}
+              </View>
+            )}
+            
+            {/* === CONTENU NORMAL (masqué si recherche active) === */}
+            {!hasSearchQuery && (
+              <>
+                {ORDER.map((sectionName) => renderSection(sectionName))}
+                
+                {/* Empty state si aucune tâche */}
+                {tasks.length === 0 && !isLoading && renderEmptyState()}
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </TouchableWithoutFeedback>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  dismissKeyboardWrapper: {
+    flex: 1,
+  },
   dateTitleHeader: {
     paddingHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.lg,
@@ -308,8 +476,8 @@ const styles = StyleSheet.create({
   titleText: {
     // fontWeight est déjà géré par variant="h1" (Inter_600SemiBold)
   },
-  aiButtonContainer: {
-    marginBottom: tokens.spacing.lg,
+  searchBarWrapper: {
+    paddingHorizontal: tokens.spacing.lg,
   },
   filterBar: {
     width: '100%',
@@ -340,6 +508,33 @@ const styles = StyleSheet.create({
   emptyText: {
     marginBottom: tokens.spacing.lg,
     textAlign: 'center',
+  },
+  // Search results styles
+  section: {
+    marginBottom: tokens.spacing.xl,
+  },
+  titleContainer: {
+    marginBottom: tokens.spacing.md,
+  },
+  searchStatusContainer: {
+    paddingVertical: tokens.spacing.lg,
+    alignItems: 'center',
+  },
+  searchResultsContainer: {
+    gap: tokens.spacing.sm,
+  },
+  searchResultCard: {
+    marginBottom: tokens.spacing.xs,
+  },
+  searchResultContent: {
+    padding: tokens.spacing.md,
+  },
+  searchResultHeader: {
+    marginBottom: tokens.spacing.xs,
+  },
+  searchResultType: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
 

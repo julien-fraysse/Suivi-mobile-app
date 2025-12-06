@@ -6,38 +6,61 @@ import { tokens } from '@theme';
 
 export interface HomeSearchBarProps {
   /**
-   * Callback when search is submitted
+   * Callback appelé à chaque changement de texte (pour debounce côté parent)
    */
-  onSearch?: (query: string) => void;
+  onChangeQuery?: (query: string) => void;
+  /**
+   * Callback appelé lors de la soumission (Enter ou tap sur icône)
+   */
+  onSubmit?: (query: string) => void;
+  /**
+   * Valeur contrôlée (optionnel - si non fourni, utilise un state interne)
+   */
+  value?: string;
 }
 
 /**
  * HomeSearchBar
  * 
- * Barre de recherche pour l'écran Home uniquement.
- * Prête pour intégration future avec les APIs Suivi.
+ * Barre de recherche pour l'écran Home.
+ * Composant de présentation agnostique du domaine "search".
  * 
  * - Style pill-shaped (borderRadius full)
  * - Icône de recherche à gauche
  * - Couleurs adaptées au thème (light/dark mode)
+ * - Mode contrôlé (value + onChangeQuery) ou non contrôlé (state interne)
  * 
  * Note: SearchBar n'applique aucune marge horizontale pour hériter
  * du padding global de HomeScreen (paddingHorizontal: tokens.spacing.lg).
  * Cela garantit un alignement parfait avec toutes les sections de la Home.
+ * 
+ * La logique de recherche (debounce, appel au store) est gérée par le parent (HomeScreen).
  */
-export function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
+export function HomeSearchBar({ onChangeQuery, onSubmit, value }: HomeSearchBarProps) {
   const theme = useTheme();
   const isDark = theme.dark;
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // State interne pour le mode non contrôlé
+  const [internalQuery, setInternalQuery] = useState('');
+  
+  // Utiliser la valeur contrôlée si fournie, sinon le state interne
+  const searchQuery = value !== undefined ? value : internalQuery;
+
+  const handleChangeText = (text: string) => {
+    // Mode non contrôlé : mettre à jour le state interne
+    if (value === undefined) {
+      setInternalQuery(text);
+    }
+    // Notifier le parent du changement
+    if (onChangeQuery) {
+      onChangeQuery(text);
+    }
+  };
 
   const handleSearchSubmit = () => {
-    if (onSearch) {
-      onSearch(searchQuery);
-    } else {
-      // Fallback : log pour debug (sera remplacé par l'intégration API)
-      // TODO: wire this search to real Suivi APIs (tasks, notifications, boards) later.
-      console.log('Search query:', searchQuery);
+    if (onSubmit) {
+      onSubmit(searchQuery);
     }
   };
 
@@ -51,7 +74,7 @@ export function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
         mode="outlined"
         placeholder={t('home.searchPlaceholder')}
         value={searchQuery}
-        onChangeText={setSearchQuery}
+        onChangeText={handleChangeText}
         onSubmitEditing={handleSearchSubmit}
         style={[
           styles.searchInput,

@@ -1,8 +1,8 @@
 # Architecture Suivi Mobile - Documentation Complète
 
 > **Documentation technique** pour les développeurs backend Suivi Desktop  
-> **Version** : 1.0.0  
-> **Dernière mise à jour** : Décembre 2024
+> **Version** : 1.1.0  
+> **Dernière mise à jour** : Décembre 2025 (ajout Search Engine)
 
 ---
 
@@ -19,7 +19,8 @@
 9. [Mocks centralisés](#9-mocks-centralisés)
 10. [Comment brancher le backend Suivi Desktop](#10-comment-brancher-le-backend-suivi-desktop)
 11. [Checklist pour les dev backend](#11-checklist-pour-les-dev-backend)
-12. [Conclusion](#12-conclusion)
+12. [Search Engine (Moteur de recherche unifié)](#12-search-engine-moteur-de-recherche-unifié) ⭐ **Nouveau**
+13. [Conclusion](#13-conclusion)
 
 ---
 
@@ -55,43 +56,75 @@ L'app mobile est **API-ready** : toute l'architecture est préparée pour se con
 
 ```
 src/
-├── api/                    # Types et interfaces API (legacy)
+├── api/                    # Couche API (client HTTP + endpoints)
+│   ├── client.ts          # Client HTTP générique (apiFetch)
+│   ├── tasks.ts           # API tâches (getTasks, getTaskById, etc.)
+│   ├── notifications.ts   # API notifications
+│   ├── activity.ts        # API activités
+│   └── index.ts           # Exports API
 ├── assets/                 # Images, logos, backgrounds
 ├── auth/                   # Authentification (Provider + Context)
+│   ├── AuthContext.tsx    # Context et hook useAuth
+│   ├── AuthProvider.tsx   # Provider d'authentification
+│   └── index.ts           # Exports auth
 ├── components/             # Composants UI réutilisables
-│   ├── activity/          # Composants liés aux activités
-│   ├── home/              # Composants pour l'écran d'accueil
-│   ├── layout/            # Layouts (ScreenContainer, ScreenHeader)
-│   ├── tasks/             # Composants liés aux tâches
-│   └── ui/                # Composants UI génériques (Card, Button, Text, etc.)
+│   ├── Screen.tsx         # Wrapper de screen avec SafeAreaView
+│   ├── HomeSearchBar.tsx  # ⭐ Barre de recherche (composant de présentation)
+│   ├── AppHeader.tsx      # Header de l'application
+│   ├── activity/          # Composants activité (ActivityCard, etc.)
+│   ├── home/              # Composants Home (AIDailyPulseCard, DailyKPIs)
+│   ├── layout/            # Layout (ScreenContainer, ScreenHeader)
+│   ├── tasks/             # Composants tâches (TaskItem, QuickActions)
+│   └── ui/                # UI Kit Suivi (SuiviButton, SuiviCard, SuiviText, etc.)
 ├── config/                 # Configuration globale
 │   └── apiMode.ts         # ⭐ Bascule Mock/API
 ├── context/                # Contextes React (Settings)
-├── features/               # Features métier (notifications, tasks)
-├── hooks/                  # Hooks personnalisés
-│   └── queries/           # Hooks React Query (désactivés en mode mock)
-├── i18n/                   # Internationalisation (fr/en)
+├── features/               # ⭐ Features isolées (architecture feature-based)
+│   ├── search/            # 🔍 Moteur de recherche unifié
+│   │   ├── searchTypes.ts     # Types SearchResult, SearchStatus
+│   │   ├── searchService.ts   # Service mock + API-ready
+│   │   ├── searchStore.ts     # Store Zustand isolé
+│   │   └── searchSelectors.ts # Sélecteurs optimisés
+│   ├── tasks/             # Feature tâches
+│   │   ├── taskStore.ts   # Store tâches (hook-based)
+│   │   └── taskFilters.ts # Logique de filtrage
+│   └── notifications/     # Feature notifications
+│       └── notificationsStore.tsx
+├── hooks/                  # Hooks React Query et custom
+│   ├── useMyTasks.ts      # Hook React Query pour les tâches
+│   ├── useActivity.ts     # Hook pour le flux d'activité
+│   ├── useNotifications.ts# Hook pour les notifications
+│   └── queries/           # Hooks React Query spécifiques par domaine
+├── i18n/                   # Internationalisation
+│   ├── index.ts           # Configuration i18next
+│   └── resources/         # Fichiers de traduction
+│       ├── fr.json        # Traductions françaises
+│       └── en.json        # Traductions anglaises
 ├── mocks/                  # ⭐ Données mockées centralisées
-│   ├── data/              # Données brutes (activity, users, quickCapture)
-│   ├── tasks/             # Helpers pour mocks de tâches
-│   ├── activityMock.ts    # Export centralisé activités
-│   ├── notificationsMock.ts
-│   ├── projectsMock.ts
-│   └── tasksMock.ts
+│   ├── backend/           # Mock backend centralisé
+│   │   ├── store.ts       # Store en mémoire (TASKS_STORE, etc.)
+│   │   ├── handlers.ts    # Handlers mock (CRUD)
+│   │   ├── errors.ts      # Gestion d'erreurs API
+│   │   └── index.ts       # Exports
+│   ├── suiviData.ts       # Données centralisées (TASKS, NOTIFICATIONS)
+│   ├── tasksMock.ts       # Mocks tâches
+│   ├── notificationsMock.ts # Mocks notifications
+│   └── projectsMock.ts    # Mocks projets
 ├── navigation/             # Navigation (React Navigation)
-│   ├── MainTabNavigator.tsx
 │   ├── RootNavigator.tsx  # ⭐ Gère Auth vs App
-│   └── types.ts
+│   ├── MainTabNavigator.tsx # Bottom Tab Navigator
+│   └── types.ts           # Types TypeScript pour les routes
 ├── providers/              # Exports centralisés des providers
 ├── screens/                # Écrans de l'application
-│   ├── AppLoadingScreen.tsx
-│   ├── HomeScreen.tsx
-│   ├── LoginScreen.tsx
-│   ├── MyTasksScreen.tsx
-│   ├── NotificationsScreen.tsx
-│   ├── TaskDetailScreen.tsx
-│   └── MoreScreen.tsx
-├── services/               # ⭐ Services API avec sélection Mock/API
+│   ├── AppLoadingScreen.tsx   # Écran de chargement initial
+│   ├── HomeScreen.tsx         # ⭐ Écran d'accueil (AI Pulse, Activity, Search)
+│   ├── LoginScreen.tsx        # Écran de connexion
+│   ├── MyTasksScreen.tsx      # Liste des tâches utilisateur
+│   ├── TaskDetailScreen.tsx   # Détails d'une tâche
+│   ├── NotificationsScreen.tsx# Notifications
+│   ├── MoreScreen.tsx         # Menu "Plus" (profil, settings)
+│   └── ActivityDetailScreen.tsx # ⭐ Détails d'une activité
+├── services/               # Services (legacy, en migration vers api/)
 │   ├── api.ts             # Fonctions génériques (apiGet, apiPost)
 │   ├── QueryProvider.tsx  # React Query Provider
 │   ├── activityService.ts
@@ -100,12 +133,21 @@ src/
 │   ├── projectsService.ts
 │   └── tasksService.ts
 ├── store/                  # ⭐ Stores Zustand (état global)
-│   ├── authStore.ts
-│   ├── preferencesStore.ts
-│   └── uiStore.ts
+│   ├── authStore.ts       # État d'authentification (user, isLoading)
+│   ├── preferencesStore.ts# Préférences utilisateur (themeMode)
+│   ├── uiStore.ts         # État UI (quickCaptureOpen)
+│   ├── tagsStore.ts       # Store des tags
+│   └── index.ts           # Exports
 ├── tasks/                  # Logique métier tâches (Context, hooks)
 ├── theme/                  # Design tokens, thèmes Paper
-├── types/                  # Types TypeScript partagés
+│   ├── ThemeProvider.tsx  # Provider thème (light/dark/auto)
+│   ├── tokens.ts          # Design tokens (colors, spacing, etc.)
+│   ├── fonts.ts           # Configuration des polices
+│   └── index.ts           # Exports
+├── types/                  # Types TypeScript centralisés
+│   ├── task.ts            # Type Task normalisé
+│   ├── activity.ts        # Types activité
+│   └── index.ts           # Exports
 └── utils/                  # Utilitaires (storage, dates, etc.)
 ```
 
@@ -171,15 +213,17 @@ src/
 | Dossier | Rôle | Fichiers clés |
 |---------|------|---------------|
 | **`config/`** | Configuration globale | `apiMode.ts` (⭐ Mock/API bascule) |
-| **`store/`** | État global Zustand | `authStore.ts`, `uiStore.ts`, `preferencesStore.ts` |
-| **`services/`** | Logique API | Tous les `*Service.ts` avec sélection Mock/API |
-| **`mocks/`** | Données mockées | `tasksMock.ts`, `projectsMock.ts`, etc. |
-| **`hooks/queries/`** | Hooks React Query | `useTasksQuery.ts`, `useProjectsQuery.ts`, etc. |
+| **`store/`** | État global Zustand | `authStore.ts`, `uiStore.ts`, `preferencesStore.ts`, `tagsStore.ts` |
+| **`features/`** | ⭐ Features isolées | `search/` (moteur de recherche), `tasks/`, `notifications/` |
+| **`services/`** | Logique API (legacy) | Tous les `*Service.ts` avec sélection Mock/API |
+| **`api/`** | Couche API moderne | `client.ts`, `tasks.ts`, `notifications.ts`, `activity.ts` |
+| **`mocks/`** | Données mockées | `backend/` (store, handlers), `tasksMock.ts`, etc. |
+| **`hooks/`** | Hooks React Query | `useMyTasks.ts`, `useActivity.ts`, `useNotifications.ts` |
 | **`navigation/`** | Navigation | `RootNavigator.tsx` (⭐ gère Auth vs App) |
 | **`auth/`** | Authentification | `AuthProvider.tsx`, `AuthContext.tsx` |
-| **`screens/`** | Écrans de l'app | Tous les écrans utilisateur |
-| **`components/`** | Composants UI | Composants réutilisables |
-| **`theme/`** | Design system | Tokens, thèmes Material Design 3 |
+| **`screens/`** | Écrans de l'app | `HomeScreen.tsx` (⭐ Search + AI Pulse), `ActivityDetailScreen.tsx` |
+| **`components/`** | Composants UI | `HomeSearchBar.tsx`, `ui/`, `activity/`, `home/` |
+| **`theme/`** | Design system | Tokens, thèmes Material Design 3, `ThemeProvider.tsx` |
 
 ---
 
@@ -313,7 +357,44 @@ export function AuthProvider({ children }) {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.3 Comment l'état global contrôle tout
+### 3.3 Recherche unifiée (Search Engine)
+
+```
+User tape dans HomeSearchBar
+    ↓
+HomeSearchBar.onChangeQuery(text) → HomeScreen.handleSearchChange(text)
+    ↓
+HomeScreen met à jour searchInputValue (UX immédiate)
+    ↓
+debouncedSearch(text) → setTimeout 300ms
+    ↓
+performSearch(query) via sélecteur Zustand
+    ↓
+searchStore.performSearch() → set({ status: 'loading' })
+    ↓
+searchService.search(query)
+    ├─ Si API_MODE === 'mock' → searchMock(query)
+    │   ├─ getTasksStore() → filtre tâches
+    │   ├─ NOTIFICATIONS → filtre notifications
+    │   └─ mockProjects → filtre projets
+    └─ Si API_MODE === 'api' → GET /api/search?q=...
+    ↓
+Résultats retournés → searchStore.results
+    ↓
+HomeScreen se met à jour via sélecteurs (useSearchResults, useHasSearchQuery)
+    ↓
+Affichage des résultats (SuiviCard) + masquage des activités récentes
+    ↓
+User tap sur un résultat → navigation vers TaskDetail ou Notifications
+```
+
+**Points clés :**
+- **Debounce 300ms** : Évite les appels excessifs pendant la frappe
+- **Composant de présentation** : `HomeSearchBar` est agnostique du store (props only)
+- **Store isolé** : `searchStore` gère query, results, status, error
+- **Sélecteurs atomiques** : Évite les re-renders inutiles
+
+### 3.4 Comment l'état global contrôle tout
 
 **Zustand Store (`authStore.ts`) :**
 
@@ -1458,6 +1539,108 @@ Request body: {} (vide)
 Expected response: void (200 OK)
 ```
 
+### 8.6 `searchService.ts` (⭐ Nouveau)
+
+**Logique interne :**
+
+```typescript
+import { API_MODE } from '../config/apiMode';
+import { getTasksStore } from '../mocks/backend/store';
+import { NOTIFICATIONS } from '../mocks/suiviData';
+import { mockProjects } from '../mocks/projectsMock';
+import type { SearchResult } from '../features/search/searchTypes';
+
+export async function search(query: string): Promise<SearchResult[]> {
+  if (API_MODE === 'mock') {
+    return searchMock(query);
+  }
+  return apiGet(`/search?q=${encodeURIComponent(query)}`);
+}
+
+function searchMock(query: string): SearchResult[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+
+  const results: SearchResult[] = [];
+
+  // Recherche dans les tâches
+  const tasks = getTasksStore();
+  for (const task of tasks) {
+    if (task.title.toLowerCase().includes(q) ||
+        task.description?.toLowerCase().includes(q) ||
+        task.projectName?.toLowerCase().includes(q)) {
+      results.push({
+        id: `task-${task.id}`,
+        type: 'task',
+        title: task.title,
+        subtitle: task.projectName || task.status,
+        taskId: task.id,
+      });
+    }
+  }
+
+  // Recherche dans les notifications
+  for (const notif of NOTIFICATIONS) {
+    if (notif.title.toLowerCase().includes(q) ||
+        notif.message.toLowerCase().includes(q)) {
+      results.push({
+        id: `notif-${notif.id}`,
+        type: 'notification',
+        title: notif.title,
+        subtitle: notif.message.slice(0, 60),
+        notificationId: notif.id,
+      });
+    }
+  }
+
+  // Recherche dans les projets
+  for (const project of mockProjects) {
+    if (project.name.toLowerCase().includes(q)) {
+      results.push({
+        id: `project-${project.id}`,
+        type: 'project',
+        title: project.name,
+        subtitle: `${project.taskCount} tâches`,
+        projectId: project.id,
+      });
+    }
+  }
+
+  return results;
+}
+```
+
+**Où brancher le vrai endpoint :**
+
+**GET `/search`**
+```
+Query parameters:
+- q: string (required) - Terme de recherche
+
+Headers:
+Authorization: Bearer {accessToken}
+
+Expected response format:
+[
+  {
+    id: string;                    // ID unique du résultat (ex: "task-123")
+    type: "task" | "notification" | "project";
+    title: string;                 // Titre affiché
+    subtitle?: string;             // Sous-titre (description, status, etc.)
+    taskId?: string;               // ID tâche (si type === "task")
+    notificationId?: string;       // ID notification (si type === "notification")
+    projectId?: string;            // ID projet (si type === "project")
+  }
+]
+```
+
+**Comportement attendu :**
+- Recherche dans `title`, `description`, `projectName` des tâches
+- Recherche dans `title`, `message` des notifications
+- Recherche dans `name` des projets
+- Case-insensitive
+- Retourne un tableau vide si aucun résultat
+
 ---
 
 ## 9. Mocks centralisés
@@ -1832,6 +2015,15 @@ export function MyTasksScreen() {
 - ✅ `boardInfo`: object | undefined
 - ✅ `portalInfo`: object | undefined
 
+**Résultats de recherche (⭐ Nouveau) :**
+- ✅ `id`: string (format: "task-{id}", "notif-{id}", "project-{id}")
+- ✅ `type`: "task" | "notification" | "project"
+- ✅ `title`: string
+- ✅ `subtitle`: string | undefined
+- ✅ `taskId`: string | undefined (si type === "task")
+- ✅ `notificationId`: string | undefined (si type === "notification")
+- ✅ `projectId`: string | undefined (si type === "project")
+
 ### 11.2 Endpoints attendus
 
 | Méthode | Endpoint | Description |
@@ -1851,6 +2043,7 @@ export function MyTasksScreen() {
 | **POST** | `/notifications/read-all` | Marquer toutes les notifications comme lues |
 | **GET** | `/me/activity/recent` | Activités récentes |
 | **GET** | `/tasks/:taskId/activity` | Activités d'une tâche |
+| **GET** | `/search?q=...` | ⭐ Recherche unifiée (tâches, notifications, projets) |
 
 ### 11.3 Statuts HTTP gérés
 
@@ -1976,19 +2169,262 @@ export function MyTasksScreen() {
 - ✅ Filtrage par workspace
 - ✅ Filtrage par sévérité
 
-**6. Erreurs réseau :**
+**6. Recherche unifiée (⭐ Nouveau) :**
+- ✅ Recherche fonctionne avec terme valide
+- ✅ Résultats affichés (tâches, notifications, projets)
+- ✅ Navigation vers TaskDetail au tap sur une tâche
+- ✅ Navigation vers Notifications au tap sur une notification
+- ✅ État loading affiché pendant la recherche
+- ✅ État empty affiché si aucun résultat
+- ✅ Debounce 300ms fonctionne
+- ✅ Activités masquées pendant recherche active
+
+**7. Erreurs réseau :**
 - ✅ Affichage d'erreur si connexion perdue
 - ✅ Retry automatique quand connexion revient
 - ✅ Message clair à l'utilisateur
 
-**7. Performance :**
+**8. Performance :**
 - ✅ Cache efficace (pas de requêtes inutiles)
 - ✅ Chargement rapide des écrans
 - ✅ Pas de lag lors de la navigation
 
 ---
 
-## 12. Conclusion
+## 12. Search Engine (Moteur de recherche unifié)
+
+### 12.1 Objectif
+
+Le moteur de recherche unifié permet de rechercher dans **tâches**, **notifications** et **projets** depuis la barre de recherche de l'écran Home. Il est conçu pour être :
+
+- **API-ready** : Architecture mock → API réelle sans modification des écrans
+- **Performant** : Debounce 300ms, sélecteurs Zustand atomiques
+- **UX optimale** : Feedback immédiat, masquage du contenu normal pendant la recherche
+
+### 12.2 Architecture générale
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          SEARCH ENGINE ARCHITECTURE                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────┐                                                       │
+│  │  HomeSearchBar   │  Composant de présentation (agnostique du domaine)    │
+│  │  (props only)    │  Props: value, onChangeQuery, onSubmit                │
+│  └────────┬─────────┘                                                       │
+│           │ onChangeQuery(text)                                             │
+│           ▼                                                                 │
+│  ┌──────────────────┐                                                       │
+│  │   HomeScreen     │  Gère le debounce (300ms) + connexion au store        │
+│  │  (controller)    │  Hooks: usePerformSearch, useClearSearch, etc.        │
+│  └────────┬─────────┘                                                       │
+│           │ performSearch(query)                                            │
+│           ▼                                                                 │
+│  ┌──────────────────┐                                                       │
+│  │  searchStore.ts  │  Store Zustand isolé                                  │
+│  │   (Zustand)      │  State: query, results, status, error                 │
+│  └────────┬─────────┘                                                       │
+│           │ search(query)                                                   │
+│           ▼                                                                 │
+│  ┌──────────────────┐                                                       │
+│  │ searchService.ts │  Service mock + API-ready                             │
+│  │  (mock / API)    │  Recherche dans: tasks, notifications, projects       │
+│  └────────┬─────────┘                                                       │
+│           │                                                                 │
+│           ├─────────────────┬─────────────────┐                             │
+│           ▼                 ▼                 ▼                             │
+│  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐                   │
+│  │ getTasksStore()│ │  NOTIFICATIONS │ │  mockProjects  │                   │
+│  │   (tasks)      │ │  (suiviData)   │ │  (projects)    │                   │
+│  └────────────────┘ └────────────────┘ └────────────────┘                   │
+│                                                                             │
+│           ▲                                                                 │
+│           │ SearchResult[]                                                  │
+│           │                                                                 │
+│  ┌──────────────────┐                                                       │
+│  │   HomeScreen     │  Affiche les résultats via sélecteurs                 │
+│  │  (results UI)    │  useSearchResults(), useHasSearchQuery()              │
+│  └──────────────────┘                                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 12.3 Structure du dossier `src/features/search/`
+
+```
+src/features/search/
+├── searchTypes.ts       # Types TypeScript
+├── searchService.ts     # Service de recherche (mock + API-ready)
+├── searchStore.ts       # Store Zustand isolé
+└── searchSelectors.ts   # Sélecteurs optimisés
+```
+
+**`searchTypes.ts`** — Définit les types pour la recherche unifiée :
+
+```typescript
+export type SearchResultType = 'task' | 'notification' | 'project';
+
+export type SearchResult = {
+  id: string;
+  type: SearchResultType;
+  title: string;
+  subtitle?: string;
+  taskId?: string;
+  notificationId?: string;
+  projectId?: string;
+};
+
+export type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
+```
+
+**`searchStore.ts`** — Store Zustand isolé avec actions :
+
+```typescript
+interface SearchStoreState {
+  query: string;
+  results: SearchResult[];
+  status: SearchStatus;
+  error: string | null;
+  
+  setQuery: (query: string) => void;
+  performSearch: (query: string) => Promise<void>;
+  clearSearch: () => void;
+}
+```
+
+**`searchSelectors.ts`** — Sélecteurs atomiques pour éviter les re-renders inutiles :
+
+```typescript
+// Sélecteurs atomiques
+export const useSearchQuery = () => useSearchStore((s) => s.query);
+export const useSearchResults = () => useSearchStore((s) => s.results);
+export const useSearchStatus = () => useSearchStore((s) => s.status);
+
+// Sélecteurs d'actions (stable reference)
+export const usePerformSearch = () => useSearchStore((s) => s.performSearch);
+export const useClearSearch = () => useSearchStore((s) => s.clearSearch);
+
+// Sélecteurs dérivés
+export const useIsSearching = () => useSearchStore((s) => s.status === 'loading');
+export const useHasSearchQuery = () => useSearchStore((s) => s.query.length > 0);
+export const useHasResults = () => useSearchStore((s) => s.results.length > 0);
+```
+
+### 12.4 Intégration dans HomeScreen
+
+**Debounce côté écran :**
+
+Le debounce est géré dans `HomeScreen`, pas dans `HomeSearchBar` :
+
+```typescript
+// State local pour l'input (UX immédiate)
+const [searchInputValue, setSearchInputValue] = useState('');
+
+// Ref pour le debounce (compatible React Native)
+const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+// Debounce de 300ms
+const debouncedSearch = useCallback((query: string) => {
+  if (debounceRef.current) {
+    clearTimeout(debounceRef.current);
+  }
+  debounceRef.current = setTimeout(() => {
+    if (query.trim()) {
+      performSearch(query);
+    } else {
+      clearSearch();
+    }
+  }, 300);
+}, [performSearch, clearSearch]);
+```
+
+**Affichage conditionnel :**
+
+```tsx
+{/* Résultats de recherche (si query active) */}
+{hasSearchQuery && (
+  <SearchResultsSection />
+)}
+
+{/* Contenu normal (masqué si recherche active) */}
+{!hasSearchQuery && (
+  <>
+    <AIDailyPulseCard />
+    <RecentActivitiesSection />
+  </>
+)}
+```
+
+**Navigation vers les résultats :**
+
+```typescript
+const handleSearchResultPress = useCallback((result: SearchResult) => {
+  if (result.type === 'task' && result.taskId) {
+    navigation.navigate('TaskDetail', { taskId: result.taskId });
+  } else if (result.type === 'notification' && result.notificationId) {
+    navigation.navigate('MainTabs', { screen: 'Notifications' });
+  }
+  // Projets : navigation future
+}, [navigation]);
+```
+
+### 12.5 Règles UX
+
+| Règle | Implémentation |
+|-------|----------------|
+| **Debounce 300ms** | Évite les appels excessifs pendant la frappe |
+| **Masquage contenu** | AI Pulse + Activités masquées pendant recherche |
+| **État loading** | Affiche "Recherche en cours..." |
+| **État empty** | Affiche "Aucun résultat pour «query»" |
+| **État error** | Affiche message d'erreur générique |
+| **Clavier** | `keyboardShouldPersistTaps="handled"` sur ScrollView |
+
+### 12.6 Clés i18n
+
+```json
+{
+  "search": {
+    "results": "Résultats",
+    "noResults": "Aucun résultat pour \"{{query}}\"",
+    "searching": "Recherche en cours...",
+    "tasks": "Tâches",
+    "notifications": "Notifications",
+    "projects": "Projets"
+  }
+}
+```
+
+### 12.7 Extension future (API réelle)
+
+**Basculer vers l'API :**
+
+Dans `searchService.ts`, le switch est automatique via `API_MODE` :
+
+```typescript
+export async function search(query: string): Promise<SearchResult[]> {
+  if (API_MODE === 'mock') {
+    return searchMock(query);
+  }
+  
+  // Mode API : appeler l'endpoint réel
+  return apiGet(`/search?q=${encodeURIComponent(query)}`);
+}
+```
+
+**Fonctionnalités futures :**
+
+| Fonctionnalité | Description |
+|----------------|-------------|
+| **Scoring** | Trier par pertinence (titre exact > description > projet) |
+| **Highlight** | Mettre en surbrillance le terme recherché |
+| **Filtres** | Filtrer par type (tâches uniquement, notifications uniquement) |
+| **Pagination** | Limiter les résultats + "Voir plus" |
+| **Historique** | Suggestions basées sur les recherches précédentes |
+| **Recherche avancée** | Syntaxe `type:task status:todo` |
+
+---
+
+## 13. Conclusion
 
 ### L'app est API-ready
 
@@ -1998,6 +2434,7 @@ export function MyTasksScreen() {
 - Zustand stores optimisés
 - Authentification prête
 - Cache et retry configurés
+- ⭐ **Moteur de recherche unifié** (Search Engine)
 
 ✅ **Aucun écran ne dépend encore de l'API :**
 - Tous les écrans fonctionnent avec les mocks
@@ -2020,7 +2457,7 @@ export function MyTasksScreen() {
 
 ### Prochaines étapes
 
-1. **Backend Suivi Desktop** : Implémenter les endpoints documentés
+1. **Backend Suivi Desktop** : Implémenter les endpoints documentés (incluant `/search`)
 2. **Tests** : Tester chaque endpoint avec l'app mobile en mode API
 3. **Migration progressive** : Passer les écrans en data-driven (React Query) un par un
 4. **Optimisations** : Ajuster cache, retry, sync offline selon les besoins
@@ -2028,6 +2465,6 @@ export function MyTasksScreen() {
 ---
 
 **Documentation générée le** : Décembre 2024  
-**Version de l'app** : 1.0.0  
+**Version de l'app** : 1.1.0  
 **Contact** : Équipe Suivi Mobile
 

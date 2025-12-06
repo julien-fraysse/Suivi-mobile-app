@@ -25,6 +25,14 @@
     "viewMore": "View more activities",
     "searchPlaceholder": "Search tasks, notifications..."
   },
+  "search": {
+    "results": "Results",
+    "noResults": "No results for \"{{query}}\"",
+    "searching": "Searching...",
+    "tasks": "Tasks",
+    "notifications": "Notifications",
+    "projects": "Projects"
+  },
   "ai_pulse": {
     "title": "AI Daily Pulse",
     "summary_one": "{{count}} important update",

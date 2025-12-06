@@ -275,7 +275,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
   };
 
   /**
-   * Render l'action "Delete" révélée lors du swipe gauche
+   * Render l'action "Delete" pour le swipe gauche
    */
   const renderRightActions = () => {
     return (
@@ -295,7 +295,7 @@ export function NotificationItem({ notification, onPress, style }: NotificationI
   };
 
   /**
-   * Render l'action "Mark as read" révélée lors du swipe droite
+   * Render l'action "Mark as read" pour le swipe droit
    */
   const renderLeftActions = () => {
     if (notification.read) {
@@ -531,4 +531,3 @@ const styles = StyleSheet.create({
     marginLeft: tokens.spacing.sm,
   },
 });
-

@@ -80,11 +80,12 @@ export function SuiviCard({
     ? tokens.colors.surface.darkElevated // #242424 en dark mode (surfaceElevated)
     : '#FFFFFF'; // Blanc en light mode
 
-  // shadowWrapper : shadow uniquement, pas d'overflow
+  // shadowWrapper : shadow + backgroundColor opaque (évite le flicker dans les Swipeable)
   const shadowWrapperStyle = [
     styles.shadowWrapper,
     {
       borderRadius: tokens.radius.lg, // Pour éviter les coins carrés de la shadow
+      backgroundColor, // Même backgroundColor que roundedWrapper - rend la carte opaque
       ...getShadowStyle(),
     },
     style, // Le style passé en prop est appliqué au shadowWrapper
@@ -128,7 +129,7 @@ export function SuiviCard({
 
 const styles = StyleSheet.create({
   shadowWrapper: {
-    backgroundColor: 'transparent',
+    // backgroundColor appliqué dynamiquement (même que roundedWrapper)
     // Pas d'overflow ici - la shadow doit pouvoir dépasser
   },
   roundedWrapper: {

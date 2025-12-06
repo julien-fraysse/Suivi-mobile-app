@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -9,6 +9,7 @@ import { Screen } from '@components/Screen';
 import { AppHeader } from '@components/AppHeader';
 import { HomeSearchBar } from '@components/HomeSearchBar';
 import { SuiviText } from '@components/ui/SuiviText';
+import { SuiviCard } from '@components/ui/SuiviCard';
 import { ActivityCard } from '@components/activity/ActivityCard';
 import { SegmentedControl } from '@components/ui/SegmentedControl';
 import { AIDailyPulseCard } from '@components/home/AIDailyPulseCard';
@@ -16,6 +17,15 @@ import { SeeMoreActivitiesButton } from '@components/ui/SeeMoreActivitiesButton'
 import { useActivityFeed } from '@hooks/useActivity';
 import { tokens } from '@theme';
 import type { SuiviActivityEvent } from '../types/activity';
+import {
+  useSearchResults,
+  useSearchStatus,
+  useSearchQuery,
+  usePerformSearch,
+  useClearSearch,
+  useHasSearchQuery,
+} from '../features/search/searchSelectors';
+import type { SearchResult } from '../features/search/searchTypes';
 
 type HomeNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -52,6 +62,71 @@ export function HomeScreen() {
   
   // Couleur du pull-to-refresh (blanc en dark mode, primary en light mode)
   const refreshColor = isDark ? tokens.colors.text.dark.primary : tokens.colors.brand.primary;
+  
+  // === SEARCH FEATURE ===
+  const searchResults = useSearchResults();
+  const searchStatus = useSearchStatus();
+  const searchQuery = useSearchQuery();
+  const performSearch = usePerformSearch();
+  const clearSearch = useClearSearch();
+  const hasSearchQuery = useHasSearchQuery();
+  
+  // State local pour l'input (UX immédiate)
+  const [searchInputValue, setSearchInputValue] = useState('');
+  
+  // Ref pour le debounce (compatible React Native)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Debounce de 300ms pour la recherche
+  const debouncedSearch = useCallback((query: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      if (query.trim()) {
+        performSearch(query);
+      } else {
+        clearSearch();
+      }
+    }, 300);
+  }, [performSearch, clearSearch]);
+  
+  // Cleanup du debounce au démontage
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+  
+  // Handler pour le changement de query
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchInputValue(query);
+    debouncedSearch(query);
+  }, [debouncedSearch]);
+  
+  // Handler pour la soumission (Enter ou tap sur icône)
+  const handleSearchSubmit = useCallback((query: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    if (query.trim()) {
+      performSearch(query);
+    }
+  }, [performSearch]);
+  
+  // Navigation vers le résultat de recherche
+  const handleSearchResultPress = useCallback((result: SearchResult) => {
+    if (result.type === 'task' && result.taskId) {
+      navigation.navigate('TaskDetail', { taskId: result.taskId });
+    } else if (result.type === 'notification' && result.notificationId) {
+      // TODO: Navigation vers NotificationDetail quand disponible
+      // Pour l'instant, aller vers l'écran Notifications
+      navigation.navigate('MainTabs', { screen: 'Notifications' });
+    }
+    // Pour les projets, pas de navigation pour l'instant (futur)
+  }, [navigation]);
 
   /**
    * Réordonne les activités pour que la première soit un board si disponible
@@ -108,23 +183,21 @@ export function HomeScreen() {
     }
   };
 
-  // Handler pour la recherche (prêt pour intégration future avec les APIs Suivi)
-  const handleSearch = (query: string) => {
-    // TODO: wire this search to real Suivi APIs (tasks, notifications, boards) later.
-    console.log('Search query:', query);
-  };
-
-
   return (
     <Screen>
       <AppHeader />
       <View style={styles.searchBarWrapper}>
-        <HomeSearchBar onSearch={handleSearch} />
+        <HomeSearchBar 
+          value={searchInputValue}
+          onChangeQuery={handleSearchChange}
+          onSubmit={handleSearchSubmit}
+        />
       </View>
       
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -134,14 +207,89 @@ export function HomeScreen() {
           />
         }
       >
-        {/* AI Daily Pulse Card */}
-        <View style={styles.pulseContainer}>
-          <AIDailyPulseCard />
-        </View>
-
-        {/* KPI mock removed (placeholder until real API metrics) */}
+        {/* === SEARCH RESULTS === */}
+        {hasSearchQuery && (
+          <View style={styles.section}>
+            <View style={styles.titleContainer}>
+              <SuiviText variant="h1">
+                {t('search.results')}
+              </SuiviText>
+            </View>
+            
+            {searchStatus === 'loading' && (
+              <View style={styles.searchStatusContainer}>
+                <SuiviText variant="body" color="secondary">
+                  {t('search.searching')}
+                </SuiviText>
+              </View>
+            )}
+            
+            {searchStatus === 'success' && searchResults.length === 0 && (
+              <View style={styles.searchStatusContainer}>
+                <SuiviText variant="body" color="secondary">
+                  {t('search.noResults', { query: searchQuery })}
+                </SuiviText>
+              </View>
+            )}
+            
+            {searchStatus === 'success' && searchResults.length > 0 && (
+              <View style={styles.searchResultsContainer}>
+                {searchResults.map((result) => (
+                  <TouchableOpacity
+                    key={result.id}
+                    onPress={() => handleSearchResultPress(result)}
+                    activeOpacity={0.7}
+                  >
+                    <SuiviCard style={styles.searchResultCard}>
+                      <View style={styles.searchResultContent}>
+                        <View style={styles.searchResultHeader}>
+                          <SuiviText 
+                            variant="caption" 
+                            color="secondary"
+                            style={styles.searchResultType}
+                          >
+                            {t(`search.${result.type}s`)}
+                          </SuiviText>
+                        </View>
+                        <SuiviText variant="body" numberOfLines={1}>
+                          {result.title}
+                        </SuiviText>
+                        {result.subtitle && (
+                          <SuiviText variant="caption" color="secondary" numberOfLines={1}>
+                            {result.subtitle}
+                          </SuiviText>
+                        )}
+                      </View>
+                    </SuiviCard>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            
+            {searchStatus === 'error' && (
+              <View style={styles.searchStatusContainer}>
+                <SuiviText variant="body" color="secondary">
+                  {t('home.errorLoading')}
+                </SuiviText>
+              </View>
+            )}
+          </View>
+        )}
         
-        {/* Activités récentes */}
+        {/* === CONTENU NORMAL (masqué si recherche active) === */}
+        {!hasSearchQuery && (
+          <>
+            {/* AI Daily Pulse Card */}
+            <View style={styles.pulseContainer}>
+              <AIDailyPulseCard />
+            </View>
+
+            {/* KPI mock removed (placeholder until real API metrics) */}
+          </>
+        )}
+        
+        {/* Activités récentes (masquées si recherche active) */}
+        {!hasSearchQuery && (
         <View style={styles.section}>
           {/**
            * Titre de section "Activités récentes"
@@ -241,6 +389,7 @@ export function HomeScreen() {
             </>
           )}
         </View>
+        )}
       </ScrollView>
     </Screen>
   );
@@ -256,6 +405,27 @@ const styles = StyleSheet.create({
   filterBar: {
     marginBottom: tokens.spacing.lg,
     width: '100%',
+  },
+  // Search results styles
+  searchStatusContainer: {
+    paddingVertical: tokens.spacing.lg,
+    alignItems: 'center',
+  },
+  searchResultsContainer: {
+    gap: tokens.spacing.sm,
+  },
+  searchResultCard: {
+    marginBottom: tokens.spacing.xs,
+  },
+  searchResultContent: {
+    padding: tokens.spacing.md,
+  },
+  searchResultHeader: {
+    marginBottom: tokens.spacing.xs,
+  },
+  searchResultType: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   loadingContainer: {
     paddingVertical: tokens.spacing.lg,

@@ -11,3 +11,8 @@ npm-debug.*
 *.orig.*
 web-build/
 .DS_Store
+
+# Package lock backups and duplicates
+.backup-package-locks/
+package-lock*.json
+!package-lock.json

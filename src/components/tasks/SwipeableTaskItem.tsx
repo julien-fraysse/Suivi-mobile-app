@@ -74,22 +74,20 @@ export function SwipeableTaskItem({
   };
 
   /**
-   * Render l'action "Done" révélée lors du swipe (du bord droit vers la gauche)
+   * Render l'action "Done" pour le swipe droit
    */
   const renderRightActions = () => {
     return (
       <View style={styles.rightAction}>
         <View style={styles.rightActionContent}>
-          <View style={styles.rightActionTextContainer}>
-            <SuiviText variant="body" style={styles.rightActionText}>
-              {t('tasks.status.done')}
-            </SuiviText>
-          </View>
           <MaterialCommunityIcons
             name="check-circle"
             size={24}
             color={tokens.colors.text.onPrimary}
           />
+          <SuiviText variant="body" style={styles.rightActionText}>
+            {t('tasks.status.done')}
+          </SuiviText>
         </View>
       </View>
     );
@@ -117,19 +115,14 @@ const styles = StyleSheet.create({
     paddingRight: tokens.spacing.lg,
     borderRadius: tokens.radius.lg,
     marginBottom: tokens.spacing.md,
-    minWidth: tokens.spacing.xxl * 6,
   },
   rightActionContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    minWidth: 80,
-  },
-  rightActionTextContainer: {
-    marginRight: tokens.spacing.sm,
   },
   rightActionText: {
     color: tokens.colors.text.onPrimary,
+    marginLeft: tokens.spacing.sm,
   },
 });
-

@@ -10,11 +10,12 @@ Ce document liste tous les écrans de l'application mobile Suivi, leur rôle, le
 |--------|-------|-----------|-------------|-----------------|------------------------------|
 | **AppLoadingScreen** | `AppLoading` | `RootNavigator` | Écran de chargement initial (restauration de session) | None | None |
 | **LoginScreen** | `Login` | `AuthNavigator` | Écran de connexion (email/password) | None | `/api/auth/login` |
-| **HomeScreen** | `Home` | `MainTabNavigator` | Écran d'accueil | None (placeholder) | `/api/me/dashboard` (à confirmer) |
+| **HomeScreen** | `Home` | `MainTabNavigator` | Écran d'accueil (Search, AI Pulse, Activities) | `SuiviActivityEvent[]`, `SearchResult[]` | `/api/activities`, `/api/search` |
 | **MyTasksScreen** | `MyTasks` | `MainTabNavigator` | Liste des tâches de l'utilisateur avec filtres | `Task[]` | `/api/me/tasks` |
 | **TaskDetailScreen** | `TaskDetail` | `AppNavigator` (Stack) | Détails d'une tâche | `Task` | `/api/tasks/{id}` |
-| **NotificationsScreen** | `Notifications` | `MainTabNavigator` | Liste des notifications | None (placeholder) | `/api/me/notifications` |
-| **MoreScreen** | `More` | `MainTabNavigator` | Menu "Plus" (déconnexion, settings) | None | None |
+| **NotificationsScreen** | `Notifications` | `MainTabNavigator` | Liste des notifications | `SuiviNotification[]` | `/api/me/notifications` |
+| **MoreScreen** | `More` | `MainTabNavigator` | Menu "Plus" (profil, settings, déconnexion) | None | None |
+| **ActivityDetailScreen** | `ActivityDetail` | `AppNavigator` (Stack) | Détails d'une activité | `SuiviActivityEvent` | `/api/activities/{id}` |
 
 ## Détail par écran
 
@@ -98,25 +99,82 @@ Ce document liste tous les écrans de l'application mobile Suivi, leur rôle, le
 
 **Navigator** : `MainTabNavigator` (Bottom Tab)
 
-**Description** : Écran d'accueil de l'application (placeholder actuellement).
+**Description** : Écran d'accueil de l'application avec barre de recherche unifiée, AI Daily Pulse, et flux d'activités récentes.
 
 **Fonctionnalités** :
-- Titre "Home"
-- Sous-titre "Welcome to Suivi"
 
-**Data principale** : Aucune (placeholder)
+1. **Barre de recherche unifiée** (`HomeSearchBar`)
+   - Recherche dans tâches, notifications, projets
+   - Debounce 300ms géré côté HomeScreen
+   - Masque le contenu normal pendant la recherche
+   - Navigation vers TaskDetail ou Notifications au tap sur un résultat
+
+2. **AI Daily Pulse Card** (`AIDailyPulseCard`)
+   - Résumé intelligent de la journée
+   - Nombre de tâches en retard / dues aujourd'hui
+   - Focus du jour
+
+3. **Activités récentes** (`ActivityCard`)
+   - Flux d'activité avec filtres (Tous, Tâches, Boards, Portails)
+   - `SegmentedControl` pour le filtrage
+   - Pagination avec "Voir plus d'activités"
+   - Pull-to-refresh
+
+**Data principale** :
+```typescript
+// Activités
+SuiviActivityEvent[]
+
+// Recherche (via Zustand store)
+SearchResult[] // { id, type, title, subtitle, taskId?, notificationId?, projectId? }
+```
 
 **Source de données** :
-- **Actuel** : Aucune
-- **Futur** : API `/api/me/dashboard` ou similaire (à confirmer côté backend Suivi)
-  - Statistiques utilisateur
-  - Tâches récentes
-  - Notifications non lues
-  - Projets récents
+- **Activités** : `useActivityFeed()` → API `/api/activities` ou mocks
+- **Recherche** : `searchStore` (Zustand) → `searchService.search()` → mocks ou API `/api/search`
 
-**Navigation** : Aucune (écran d'accueil)
+**Navigation** :
+- **Tap sur activité** : `navigation.navigate('ActivityDetail', { eventId })`
+- **Tap sur résultat de recherche (tâche)** : `navigation.navigate('TaskDetail', { taskId })`
+- **Tap sur résultat de recherche (notification)** : `navigation.navigate('MainTabs', { screen: 'Notifications' })`
 
-**Dépendances** : Aucune
+**Dépendances** :
+- `useActivityFeed()` : Hook pour les activités
+- `useSearchResults()`, `useSearchStatus()`, `useHasSearchQuery()` : Sélecteurs Zustand pour la recherche
+- `usePerformSearch()`, `useClearSearch()` : Actions Zustand pour la recherche
+- `useTranslation()` : i18n (namespaces `home`, `search`)
+
+**Hooks utilisés** :
+```typescript
+// Activités
+const { data: activities, isLoading, isError, refetch } = useActivityFeed(50);
+
+// Recherche (via sélecteurs Zustand)
+const searchResults = useSearchResults();
+const searchStatus = useSearchStatus();
+const hasSearchQuery = useHasSearchQuery();
+const performSearch = usePerformSearch();
+const clearSearch = useClearSearch();
+```
+
+**États gérés** :
+- `filter`: Filtre actif ('all' | 'tasks' | 'board' | 'portal')
+- `limit`: Pagination des activités
+- `refreshing`: Pull-to-refresh
+- `searchInputValue`: Valeur de l'input (UX immédiate)
+
+**Architecture de recherche** :
+```
+HomeSearchBar (props: value, onChangeQuery, onSubmit)
+    ↓ onChangeQuery
+HomeScreen (debounce 300ms + appel store)
+    ↓ performSearch(query)
+searchStore (Zustand) → searchService.search()
+    ↓ results
+HomeScreen → affichage conditionnel (résultats OU contenu normal)
+```
+
+Voir `docs/mobile/architecture.md` section "Search Engine" pour la documentation complète.
 
 ---
 

@@ -25,6 +25,14 @@
     },
     "errorLoading": "Erreur lors du chargement"
   },
+  "search": {
+    "results": "Résultats",
+    "noResults": "Aucun résultat pour \"{{query}}\"",
+    "searching": "Recherche en cours...",
+    "tasks": "Tâches",
+    "notifications": "Notifications",
+    "projects": "Projets"
+  },
   "ai_pulse": {
     "title": "AI Daily Pulse",
     "summary_one": "{{count}} mise à jour importante",
